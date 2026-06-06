@@ -1,0 +1,1746 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CTG Click Shop — Dubai Finance Hub</title>
+
+<!-- Firebase 9 Compat -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+:root {
+  --bg-deep: #070C14;
+  --bg:      #0C1220;
+  --s1:      #111929;
+  --s2:      #182035;
+  --s3:      #1D2840;
+  --brd:     #253247;
+  --brd2:    #3A4F6A;
+  --gold:    #F5B731;
+  --gold2:   #7C5C10;
+  --gn:      #00D97E;
+  --gn2:     #00482A;
+  --rd:      #F2584A;
+  --rd2:     #621F1A;
+  --bl:      #4FA6F8;
+  --bl2:     #173866;
+  --pu:      #A78BFA;
+  --pu2:     #3B2A6E;
+  --tx:      #DCE8F5;
+  --txd:     #6E8A9E;
+  --txm:     #3C5068;
+  --r:       8px;
+  --rl:      12px;
+  --font-m:  'IBM Plex Mono', monospace;
+  --font-b:  'Noto Sans Bengali', sans-serif;
+}
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg-deep); color:var(--tx); font-family:var(--font-b); min-height:100vh; overflow-x:hidden; }
+
+/* ── HEADER ── */
+.hdr {
+  background:linear-gradient(135deg,var(--bg),var(--s1));
+  border-bottom:1px solid var(--brd);
+  padding:14px 22px;
+  display:flex; align-items:center; justify-content:space-between;
+  position:sticky; top:0; z-index:100;
+}
+.logo { display:flex; align-items:center; gap:12px; }
+.logo-ico {
+  width:38px; height:38px;
+  background:linear-gradient(135deg,var(--gold),#E08000);
+  border-radius:8px; display:flex; align-items:center; justify-content:center;
+  font:700 16px/1 var(--font-m); color:var(--bg-deep);
+}
+.logo-t { font:700 14px/1.1 var(--font-m); color:var(--gold); letter-spacing:.4px; }
+.logo-s { font:400 11px/1 var(--font-m); color:var(--txd); margin-top:3px; }
+.hkpis { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+.kbadge {
+  background:var(--s2); border:1px solid var(--brd);
+  border-radius:var(--r); padding:5px 12px; min-width:100px; text-align:center;
+}
+.kbl { font:400 10px/1 var(--font-m); color:var(--txm); text-transform:uppercase; letter-spacing:.4px; }
+.kbv { font:700 13px/1 var(--font-m); margin-top:3px; }
+.kbv.g { color:var(--gold); } .kbv.gn { color:var(--gn); } .kbv.rd { color:var(--rd); } .kbv.bl { color:var(--bl); }
+.rate-badge {
+  background:var(--s2); border:1px solid var(--gold2);
+  border-radius:var(--r); padding:5px 12px; cursor:pointer;
+  display:flex; align-items:center; gap:8px;
+}
+.rate-v { font:700 13px/1 var(--font-m); color:var(--gold); }
+.rate-l { font:400 10px/1 var(--font-m); color:var(--txd); }
+.btn-ico { background:var(--s2); border:1px solid var(--brd); border-radius:var(--r); padding:6px 10px; cursor:pointer; color:var(--txd); font-size:13px; }
+
+/* ── TABS ── */
+.nav {
+  background:var(--s1); border-bottom:1px solid var(--brd);
+  padding:0 22px; display:flex; gap:2px; overflow-x:auto;
+}
+.nav::-webkit-scrollbar { height:0; }
+.ntab {
+  padding:11px 16px; font:500 12.5px/1 var(--font-b); color:var(--txd);
+  cursor:pointer; border-bottom:2px solid transparent; white-space:nowrap;
+  transition:color .15s, border-color .15s; display:flex; align-items:center; gap:7px;
+}
+.ntab:hover { color:var(--tx); }
+.ntab.on { color:var(--gold); border-bottom-color:var(--gold); }
+
+/* ── MAIN ── */
+.main { padding:22px; max-width:1440px; margin:0 auto; }
+.panel { display:none; }
+.panel.on { display:block; }
+
+/* ── SECTION HEAD ── */
+.sh { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+.sh h2 { font:700 17px/1 var(--font-b); }
+.mod-badge { background:var(--s2); border:1px solid var(--brd); border-radius:20px; padding:2px 10px; font:400 11px/1 var(--font-m); color:var(--txd); margin-left:8px; }
+
+/* ── CARDS ── */
+.cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:14px; margin-bottom:20px; }
+.card {
+  background:var(--s1); border:1px solid var(--brd); border-radius:var(--rl);
+  padding:15px 18px; position:relative; overflow:hidden;
+}
+.card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; }
+.card.g::before  { background:var(--gold); } .card.gn::before { background:var(--gn); }
+.card.rd::before { background:var(--rd); }  .card.bl::before  { background:var(--bl); }
+.card.pu::before { background:var(--pu); }
+.cl  { font:400 10px/1 var(--font-m); color:var(--txm); text-transform:uppercase; letter-spacing:.4px; margin-bottom:8px; }
+.cv  { font:700 20px/1 var(--font-m); }
+.card.g .cv  { color:var(--gold); } .card.gn .cv { color:var(--gn); }
+.card.rd .cv { color:var(--rd); }  .card.bl .cv  { color:var(--bl); }
+.card.pu .cv { color:var(--pu); }
+.cs  { font:400 11px/1 var(--font-m); color:var(--txd); margin-top:4px; }
+
+/* ── FORM ── */
+.fwrap { background:var(--s1); border:1px solid var(--brd); border-radius:var(--rl); padding:18px 20px; margin-bottom:20px; display:none; }
+.ftitle { font:600 13px/1 var(--font-m); color:var(--gold); margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+.fgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(155px,1fr)); gap:11px; }
+.fg { display:flex; flex-direction:column; gap:5px; }
+.fg.full { grid-column:1/-1; }
+label { font:400 10px/1 var(--font-m); color:var(--txd); text-transform:uppercase; letter-spacing:.4px; }
+input, select, textarea {
+  background:var(--s2); border:1px solid var(--brd); border-radius:var(--r);
+  padding:8px 11px; color:var(--tx); font:400 12px/1 var(--font-m); outline:none; transition:border-color .15s;
+}
+input:focus, select:focus, textarea:focus { border-color:var(--gold); }
+select option { background:var(--s2); }
+.fbtns { display:flex; gap:9px; margin-top:14px; }
+.btn { padding:8px 18px; border-radius:var(--r); border:none; cursor:pointer; font:600 12.5px/1 var(--font-b); transition:all .15s; }
+.btn-p { background:var(--gold); color:var(--bg-deep); }
+.btn-p:hover { background:#E5A820; }
+.btn-s { background:var(--s2); color:var(--txd); border:1px solid var(--brd); }
+.btn-d { background:var(--rd2); color:var(--rd); border:1px solid var(--rd2); padding:4px 9px; font-size:11px; }
+.btn-v { background:var(--gn2); color:var(--gn); border:1px solid var(--gn2); padding:4px 9px; font-size:11px; }
+.btn-add { font:500 12px/1 var(--font-b); background:var(--s2); border:1px solid var(--brd); border-radius:var(--r); padding:7px 14px; cursor:pointer; color:var(--txd); }
+.btn-add:hover { color:var(--gold); border-color:var(--gold2); }
+
+/* ── TABLE ── */
+.twrap { background:var(--s1); border:1px solid var(--brd); border-radius:var(--rl); overflow:hidden; }
+.thead2 { padding:12px 18px; border-bottom:1px solid var(--brd); display:flex; align-items:center; justify-content:space-between; }
+.ttitle { font:600 12px/1 var(--font-m); color:var(--txd); }
+.tscroll { overflow-x:auto; }
+table { width:100%; border-collapse:collapse; }
+thead th {
+  padding:9px 14px; text-align:left; font:500 10px/1 var(--font-m);
+  color:var(--txm); text-transform:uppercase; letter-spacing:.4px;
+  border-bottom:1px solid var(--brd); background:var(--s2); white-space:nowrap;
+}
+tbody tr { border-bottom:1px solid var(--brd); transition:background .1s; }
+tbody tr:hover { background:var(--s2); }
+tbody tr:last-child { border-bottom:none; }
+td { padding:9px 14px; font:400 12px/1 var(--font-m); white-space:nowrap; }
+td.bn { font-family:var(--font-b); font-size:12.5px; }
+.ag  { color:var(--gold); } .agn { color:var(--gn); }
+.ard { color:var(--rd); }  .abl { color:var(--bl); }
+
+/* ── TAGS ── */
+.tag { display:inline-block; padding:2px 7px; border-radius:4px; font:600 10.5px/1 var(--font-m); }
+.t-vf { background:var(--gn2); color:var(--gn); border:1px solid var(--gn2); }
+.t-pd { background:#2A1F00; color:var(--gold); border:1px solid var(--gold2); }
+.t-lt { background:var(--bl2); color:var(--bl); }
+.t-pk { background:var(--gn2); color:var(--gn); }
+.t-up { background:var(--rd2); color:var(--rd); }
+
+/* ── EMPTY ── */
+.empty { text-align:center; padding:40px; color:var(--txm); }
+.empty i { font-size:28px; margin-bottom:10px; display:block; opacity:.25; }
+.empty p { font-size:13px; }
+
+/* ── SPINNER ── */
+.spin { display:inline-block; width:14px; height:14px; border:2px solid var(--brd); border-top-color:var(--gold); border-radius:50%; animation:sp .7s linear infinite; }
+@keyframes sp { to { transform:rotate(360deg); } }
+
+/* ── TOAST ── */
+.toast {
+  position:fixed; bottom:22px; right:22px; z-index:9999;
+  background:var(--s1); border:1px solid var(--brd2); border-radius:var(--r);
+  padding:11px 18px; font-size:13px; color:var(--tx);
+  transform:translateY(80px); opacity:0; transition:all .25s;
+  box-shadow:0 8px 32px rgba(0,0,0,.4);
+}
+.toast.on { transform:translateY(0); opacity:1; }
+.toast.ok { border-color:var(--gn); color:var(--gn); }
+.toast.err { border-color:var(--rd); color:var(--rd); }
+
+/* ── MODAL ── */
+.moverlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.85); backdrop-filter:blur(4px); z-index:1000; align-items:center; justify-content:center; }
+.moverlay.on { display:flex; }
+.modal { background:var(--s1); border:1px solid var(--brd2); border-radius:var(--rl); padding:26px; max-width:540px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,.5); }
+.mtitle { font:700 17px/1 var(--font-m); color:var(--gold); margin-bottom:6px; }
+.msub { font-size:12.5px; color:var(--txd); margin-bottom:18px; line-height:1.6; }
+.cfgtxt {
+  width:100%; background:var(--s2); border:1px solid var(--brd); border-radius:var(--r);
+  padding:11px; color:var(--tx); font:400 11px/1.5 var(--font-m); height:190px; resize:vertical; outline:none;
+}
+.cfgtxt:focus { border-color:var(--gold); }
+.msteps { background:var(--s2); border:1px solid var(--brd); border-radius:var(--r); padding:12px 14px; margin-bottom:16px; font-size:12px; color:var(--txd); line-height:1.9; }
+.msteps a { color:var(--bl); }
+.msteps b { color:var(--tx); }
+
+/* ── LOT BREAKDOWN ── */
+.lbd { background:var(--s2); border:1px solid var(--brd); border-radius:var(--r); padding:11px 15px; margin-bottom:8px; }
+.lbd-h { display:flex; justify-content:space-between; align-items:center; margin-bottom:7px; }
+.lbd-t { font:600 12px/1 var(--font-m); color:var(--bl); }
+.lbd-v { font:700 12px/1 var(--font-m); color:var(--gold); }
+.chips { display:flex; gap:6px; flex-wrap:wrap; }
+.chip { background:var(--s1); border:1px solid var(--brd); border-radius:20px; padding:3px 10px; font:400 11px/1 var(--font-m); color:var(--txd); }
+
+/* ── COURIER FLOW ── */
+.cflow { display:flex; align-items:center; gap:6px; }
+.cs-step { background:var(--s2); border:1px solid var(--brd); border-radius:4px; padding:3px 7px; font:400 10px/1 var(--font-m); color:var(--txm); }
+.cs-step.done { background:var(--gn2); border-color:var(--gn2); color:var(--gn); }
+.cs-step.live { background:#2A1F00; border-color:var(--gold2); color:var(--gold); }
+.cs-arr { color:var(--txm); font-size:10px; }
+
+/* ── RESPONSIVE ── */
+@media(max-width:768px) {
+  .hdr { flex-direction:column; gap:10px; align-items:flex-start; }
+  .main { padding:14px; }
+  .fgrid { grid-template-columns:1fr 1fr; }
+  .cards { grid-template-columns:1fr 1fr; }
+}
+@media(max-width:480px) {
+  .fgrid { grid-template-columns:1fr; }
+  .cards { grid-template-columns:1fr; }
+}
+@media print {
+  body { background:#fff !important; color:#111 !important; }
+  .header,.nav,.sh button,.btn-add,.btn,.fwrap,#rpt-filter-bar { display:none !important; }
+  .panel { display:block !important; box-shadow:none !important; padding:0 !important; }
+  #panel-rpt { background:#fff !important; }
+  .rpt-kpi-grid { break-inside:avoid; }
+  .rpt-section { break-inside:avoid; page-break-inside:avoid; }
+  table { border-collapse:collapse; width:100%; }
+  th,td { border:1px solid #ccc !important; padding:5px 8px !important; color:#111 !important; background:#fff !important; font-size:11px; }
+  th { background:#f5f5f5 !important; }
+  .tag { border:1px solid #999 !important; color:#333 !important; background:#eee !important; }
+  .rpt-bar-wrap,.rpt-no-print { display:none !important; }
+}
+</style>
+
+</head>
+<body>
+
+<!-- Firebase Config Modal -->
+<div class="moverlay on" id="cfgModal">
+  <div class="modal">
+    <div class="mtitle">🔥 Firebase Setup</div>
+    <p class="msub">আপনার Firebase project config JSON paste করুন।<br>একবার সেভ হলে localStorage-এ থাকবে — পরে আর দিতে হবে না।</p>
+    <div class="msteps">
+      <b>Firebase Config পেতে:</b><br>
+      1. <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a> → Project Settings<br>
+      2. Your apps → Web app → <b>SDK setup and configuration</b><br>
+      3. <b>Config</b> রেডিও সিলেক্ট → JSON কপি করুন<br>
+      4. Firestore → <b>Create Database</b> (test mode) চালু রাখুন
+    </div>
+    <textarea class="cfgtxt" id="fbJson" placeholder='{
+  "apiKey": "AIzaSy...",
+  "authDomain": "your-project.firebaseapp.com",
+  "projectId": "your-project-id",
+  "storageBucket": "your-project.appspot.com",
+  "messagingSenderId": "123456789",
+  "appId": "1:123456789:web:abcdef"
+}'></textarea>
+    <div class="fbtns" style="margin-top:14px">
+      <button class="btn btn-p" onclick="connectFirebase()">Connect Firebase</button>
+      <button class="btn btn-s" onclick="demoMode()">Demo Mode (No Firebase)</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="logo">
+    <div class="logo-ico">CC</div>
+    <div>
+      <div class="logo-t">CTG CLICK SHOP</div>
+      <div class="logo-s">Dubai Finance Hub — v1.0</div>
+    </div>
+  </div>
+  <div class="hkpis">
+    <div class="kbadge"><div class="kbl">BDT Sent</div><div class="kbv g" id="hBDT">৳0</div></div>
+    <div class="kbadge"><div class="kbl">AED Received</div><div class="kbv bl" id="hAED">dh0</div></div>
+    <div class="kbadge"><div class="kbl">AED Expense</div><div class="kbv rd" id="hEXP">dh0</div></div>
+    <div class="kbadge"><div class="kbl">AED Balance</div><div class="kbv gn" id="hBAL">dh0</div></div>
+    <div class="kbadge"><div class="kbl">Total Lots</div><div class="kbv" id="hLOTS">0</div></div>
+    <div class="kbadge"><div class="kbl">Total PCs</div><div class="kbv bl" id="hPCS">0</div></div>
+    <div class="kbadge" style="border-color:var(--pu2)"><div class="kbl">Inventory Value</div><div class="kbv" id="hINV" style="color:var(--pu)">—</div></div>
+    <div class="rate-badge" onclick="editRate()">
+      <div><div class="rate-l">Rate</div><div class="rate-v" id="hRATE">1 AED = ৳?</div></div>
+      <i class="fas fa-pencil" style="color:var(--txm);font-size:10px"></i>
+    </div>
+    <button class="btn-ico" onclick="document.getElementById('cfgModal').classList.add('on')" title="Firebase Settings"><i class="fas fa-cog"></i></button>
+  </div>
+</div>
+
+<!-- NAV TABS -->
+<div class="nav">
+  <div class="ntab on" onclick="tab('m1',this)"><span>💸</span> পেমেন্ট</div>
+  <div class="ntab"    onclick="tab('m2',this)"><span>⏩</span> অ্যাডভান্স</div>
+  <div class="ntab"    onclick="tab('m3',this)"><span>🛒</span> পার্চেজ লট</div>
+  <div class="ntab"    onclick="tab('m4',this)"><span>🔧</span> লট খরচ</div>
+  <div class="ntab"    onclick="tab('m5',this)"><span>🏢</span> অফিস খরচ</div>
+  <div class="ntab"    onclick="tab('m6',this)"><span>👤</span> পার্সোনাল</div>
+  <div class="ntab"    onclick="tab('m7',this)"><span>📦</span> কুরিয়ার</div>
+  <div class="ntab"    onclick="tab('m8',this)"><span>👨‍💼</span> নেজাম</div>
+  <div class="ntab"    onclick="tab('m9',this)"><span>🏪</span> CTG অফিস</div>
+  <div class="ntab"    onclick="tab('rpt',this)"><span>📊</span> রিপোর্ট</div>
+</div>
+
+<div class="main">
+
+<!-- ─── M1: PAYMENT RECEIVED ─── -->
+<div class="panel on" id="panel-m1">
+  <div class="sh">
+    <div><h2>💸 পেমেন্ট রিসিভড <span class="mod-badge">M1</span></h2></div>
+    <button class="btn-add" onclick="tog('f-m1')">+ নতুন এন্ট্রি</button>
+  </div>
+  <div class="cards">
+    <div class="card g"><div class="cl">Total BDT Sent</div><div class="cv" id="m1tb">—</div><div class="cs">বাংলাদেশ থেকে</div></div>
+    <div class="card bl"><div class="cl">Total AED Received</div><div class="cv" id="m1ta">—</div><div class="cs">দুবাই অফিসে</div></div>
+    <div class="card gn"><div class="cl">Verified</div><div class="cv" id="m1vf">0</div><div class="cs">ভেরিফাইড এন্ট্রি</div></div>
+    <div class="card pu"><div class="cl">Pending Verify</div><div class="cv" id="m1pn">0</div><div class="cs">চেক বাকি</div></div>
+  </div>
+  <div class="fwrap" id="f-m1">
+    <div class="ftitle"><i class="fas fa-plus-circle"></i> নতুন পেমেন্ট</div>
+    <div class="fgrid">
+      <div class="fg"><label>তারিখ</label><input type="date" id="p1d"></div>
+      <div class="fg"><label>BDT Amount (৳)</label><input type="number" id="p1b" placeholder="0"></div>
+      <div class="fg"><label>Exchange Rate</label><input type="number" id="p1r" placeholder="34.20" step="0.01"></div>
+      <div class="fg"><label>AED (Auto)</label><input type="number" id="p1a" readonly style="opacity:.55"></div>
+      <div class="fg"><label>Sender / Source</label><input type="text" id="p1s" placeholder="Jabed, Shafiqur..."></div>
+      <div class="fg"><label>Payment Slip URL</label><input type="url" id="p1sl" placeholder="https://prnt.sc/..."></div>
+      <div class="fg"><label>Notes</label><input type="text" id="p1n" placeholder="অতিরিক্ত তথ্য"></div>
+    </div>
+    <div class="fbtns">
+      <button class="btn btn-p" onclick="savePayment()">Save</button>
+      <button class="btn btn-s" onclick="tog('f-m1')">Cancel</button>
+    </div>
+  </div>
+  <div class="twrap">
+    <div class="thead2"><span class="ttitle">পেমেন্ট রেকর্ড</span><span class="spin" id="sp1" style="display:none"></span></div>
+    <div class="tscroll"><table>
+      <thead><tr><th>তারিখ</th><th>BDT ৳</th><th>Rate</th><th>AED dh</th><th>Sender</th><th>Slip</th><th>Status</th><th>Action</th></tr></thead>
+      <tbody id="tb-m1"><tr><td colspan="8"><div class="empty"><i class="fas fa-database"></i><p>কোনো রেকর্ড নেই</p></div></td></tr></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- ─── M2: ADVANCE ─── -->
+<div class="panel" id="panel-m2">
+  <div class="sh">
+    <div><h2>⏩ অ্যাডভান্স পেমেন্ট <span class="mod-badge">M2</span></h2></div>
+    <button class="btn-add" onclick="tog('f-m2')">+ নতুন অ্যাডভান্স</button>
+  </div>
+  <div class="cards">
+    <div class="card g"><div class="cl">Total Advance</div><div class="cv" id="m2ta">—</div><div class="cs">মোট অ্যাডভান্স</div></div>
+    <div class="card rd"><div class="cl">Outstanding</div><div class="cv" id="m2ou">—</div><div class="cs">Balance থেকে বাদ</div></div>
+    <div class="card gn"><div class="cl">Cleared</div><div class="cv" id="m2cl">—</div><div class="cs">পার্চেজে বাদ গেছে</div></div>
+    <div class="card pu"><div class="cl">Reversed</div><div class="cv" id="m2rv2">—</div><div class="cs">ফেরত পেয়েছি</div></div>
+  </div>
+  <div class="fwrap" id="f-m2">
+    <div class="ftitle"><i class="fas fa-forward"></i> নতুন অ্যাডভান্স</div>
+    <div class="fgrid">
+      <div class="fg"><label>তারিখ</label><input type="date" id="p2d"></div>
+      <div class="fg"><label>Lot (Optional)</label><select id="p2l"><option value="">— Lot —</option></select></div>
+      <div class="fg"><label>Supplier নাম</label><input type="text" id="p2su" placeholder="Supplier নাম"></div>
+      <div class="fg"><label>Supplier Mobile</label><input type="tel" id="p2mob" placeholder="+971 50 XXX XXXX"></div>
+      <div class="fg full"><label>Model</label><input type="text" id="p2m" placeholder="HP 840 G7 i5 10th 8/256..."></div>
+      <div class="fg"><label>Qty</label><input type="number" id="p2q" placeholder="0"></div>
+      <div class="fg"><label>Deal Total (AED)</label><input type="number" id="p2dt" placeholder="0" step="0.5"></div>
+      <div class="fg"><label>Advance Amount (AED) ★</label><input type="number" id="p2a" placeholder="0"></div>
+      <div class="fg full"><label>Invoice URL <span style="color:var(--rd);font-size:10px">★ বাধ্যতামূলক</span></label><input type="url" id="p2i" placeholder="https://prnt.sc/..." style="border-color:var(--gold2)"></div>
+    </div>
+    <div class="fbtns">
+      <button class="btn btn-p" onclick="saveAdvance()">Save</button>
+      <button class="btn btn-s" onclick="tog('f-m2')">Cancel</button>
+    </div>
+  </div>
+  <div class="twrap">
+    <div class="thead2"><span class="ttitle">অ্যাডভান্স রেকর্ড</span></div>
+    <div class="tscroll"><table>
+      <thead><tr><th>তারিখ</th><th>Lot</th><th>Supplier</th><th>Mobile</th><th>Model</th><th>Qty</th><th>Deal Total</th><th>Advance (AED)</th><th>Invoice</th><th>Status</th><th>Action</th></tr></thead>
+      <tbody id="tb-m2"><tr><td colspan="11"><div class="empty"><i class="fas fa-database"></i><p>কোনো রেকর্ড নেই</p></div></td></tr></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- ─── M3: PURCHASE LOTS ─── -->
+<div class="panel" id="panel-m3">
+  <div class="sh">
+    <div><h2>🛒 পার্চেজ লট <span class="mod-badge">M3</span></h2></div>
+    <button class="btn-add" onclick="tog('f-m3')">+ নতুন পার্চেজ</button>
+  </div>
+  <div class="cards">
+    <div class="card bl"><div class="cl">Total PCs</div><div class="cv" id="m3tq">0</div><div class="cs">মোট ল্যাপটপ</div></div>
+    <div class="card g"><div class="cl">Total AED Spent</div><div class="cv" id="m3ta">—</div><div class="cs">পার্চেজ খরচ</div></div>
+    <div class="card gn"><div class="cl">Lots Count</div><div class="cv" id="m3tl">0</div><div class="cs">মোট লট</div></div>
+    <div class="card pu"><div class="cl">Avg Cost/Pc</div><div class="cv" id="m3av">—</div><div class="cs">গড় প্রতি পিছ</div></div>
+  </div>
+  <div id="m3-lot-status"></div>
+  <div class="fwrap" id="f-m3">
+    <div class="ftitle"><i class="fas fa-shopping-cart"></i> নতুন পার্চেজ</div>
+    <div class="fgrid">
+      <div class="fg"><label>তারিখ</label><input type="date" id="p3d"></div>
+      <div class="fg"><label>Lot No. (Auto)</label><input type="text" id="p3l" readonly style="color:var(--bl)"></div>
+      <div class="fg"><label>Supplier</label><input type="text" id="p3su" placeholder="Supplier নাম"></div>
+      <div class="fg full"><label>Model Description</label><input type="text" id="p3m" placeholder="HP 840 G7 i5 10th 8/256"></div>
+      <div class="fg"><label>Qty</label><input type="number" id="p3q" placeholder="0"></div>
+      <div class="fg"><label>Unit Price (AED)</label><input type="number" id="p3u" placeholder="0"></div>
+      <div class="fg"><label>Total AED (Auto)</label><input type="number" id="p3t" readonly style="opacity:.55"></div>
+      <div class="fg"><label>Advance Deduct (AED)</label><input type="number" id="p3ad" placeholder="0"></div>
+      <div class="fg"><label>Advance Ref (Auto-Clear)</label><select id="p3ar"><option value="">— Select Advance —</option></select></div>
+      <div class="fg"><label>Invoice URL <span style="color:var(--rd);font-size:10px">★ বাধ্যতামূলক</span></label><input type="url" id="p3i" placeholder="https://prnt.sc/..." style="border-color:var(--gold2)"></div>
+    </div>
+    <div class="fbtns">
+      <button class="btn btn-p" onclick="savePurchase()">Save Purchase</button>
+      <button class="btn btn-s" onclick="tog('f-m3')">Cancel</button>
+    </div>
+  </div>
+  <div class="twrap">
+    <div class="thead2"><span class="ttitle">পার্চেজ রেকর্ড (Lot-wise)</span></div>
+    <div class="tscroll"><table>
+      <thead><tr><th>তারিখ</th><th>Lot</th><th>Model</th><th>Qty</th><th>Unit(AED)</th><th>Total(AED)</th><th>Adv.Ded.</th><th style="color:var(--gn)">Net Payable</th><th>Invoice</th><th>Del</th></tr></thead>
+      <tbody id="tb-m3"><tr><td colspan="10"><div class="empty"><i class="fas fa-database"></i><p>কোনো রেকর্ড নেই</p></div></td></tr></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- ─── M4: LOT COSTS ─── -->
+<div class="panel" id="panel-m4">
+  <div class="sh">
+    <div><h2>🔧 লট প্রস্তুতি খরচ <span class="mod-badge">M4</span></h2></div>
+    <button class="btn-add" onclick="tog('f-m4')">+ খরচ যুক্ত করুন</button>
+  </div>
+  <div class="cards">
+    <div class="card rd"><div class="cl">Total Prep Cost</div><div class="cv" id="m4tc">—</div><div class="cs">সকল লটের খরচ</div></div>
+    <div class="card g"><div class="cl">Avg Cost/Pc</div><div class="cv" id="m4av">—</div><div class="cs">গড় প্রতি পিছ</div></div>
+  </div>
+  <div id="lbd-container" style="margin-bottom:18px"></div>
+  <div class="fwrap" id="f-m4">
+    <div class="ftitle"><i class="fas fa-tools"></i> লট খরচ এন্ট্রি</div>
+    <div class="fgrid">
+      <div class="fg"><label>তারিখ</label><input type="date" id="p4d"></div>
+      <div class="fg"><label>Lot</label><select id="p4l"><option value="">— Lot —</option></select></div>
+      <div class="fg"><label>Category</label>
+        <select id="p4c" onchange="onLotCatChange()">
+          <option value="paint">Paint</option><option value="spot">Spot / Polarized</option>
+          <option value="charger">Charger</option><option value="ssd">SSD</option>
+          <option value="parts">Parts</option><option value="technician">Technician</option>
+          <option value="packing">Packing Box</option><option value="other">Other</option>
+        </select>
+      </div>
+      <div class="fg"><label>Description</label><input type="text" id="p4de" placeholder="HP 840 G7 Charger..."></div>
+      <div class="fg"><label>Qty</label><input type="number" id="p4q" placeholder="0"></div>
+      <div class="fg"><label>Unit Price (AED)</label><input type="number" id="p4u" placeholder="0" step="0.5"></div>
+      <div class="fg"><label>Total (Auto)</label><input type="number" id="p4t" readonly style="opacity:.55"></div>
+      <div class="fg"><label id="p4i-label">Invoice URL <span id="p4i-req" style="color:var(--rd);font-size:10px">★ বাধ্যতামূলক</span></label><input type="url" id="p4i" placeholder="https://prnt.sc/..." style="border-color:var(--gold2)"></div>
+    </div>
+    <div class="fbtns">
+      <button class="btn btn-p" onclick="saveLotCost()">Save</button>
+      <button class="btn btn-s" onclick="tog('f-m4')">Cancel</button>
+    </div>
+  </div>
+  <div class="twrap">
+    <div class="thead2"><span class="ttitle">খরচ রেকর্ড</span></div>
+    <div class="tscroll"><table>
+      <thead><tr><th>তারিখ</th><th>Lot</th><th>Category</th><th>Description</th><th>Qty</th><th>Unit</th><th>Total(AED)</th><th>Invoice</th><th>Del</th></tr></thead>
+      <tbody id="tb-m4"><tr><td colspan="9"><div class="empty"><i class="fas fa-database"></i><p>কোনো রেকর্ড নেই</p></div></td></tr></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- ─── M5: OFFICE EXPENSE ─── -->
+<div class="panel" id="panel-m5">
+  <div class="sh">
+    <div><h2>🏢 অফিস খরচ <span class="mod-badge">M5</span></h2></div>
+    <button class="btn-add" onclick="tog('f-m5')">+ খরচ যুক্ত করুন</button>
+  </div>
+  <div class="cards">
+    <div class="card rd"><div class="cl">This Month</div><div class="cv" id="m5cm">—</div></div>
+    <div class="card g"><div class="cl">All Time Total</div><div class="cv" id="m5at">—</div></div>
+  </div>
+  <div class="fwrap" id="f-m5">
+    <div class="ftitle"><i class="fas fa-building"></i> অফিস খরচ</div>
+    <div class="fgrid">
+      <div class="fg"><label>তারিখ</label><input type="date" id="p5d"></div>
+      <div class="fg"><label>Category</label>
+        <select id="p5c">
+          <option value="rent">Office Rent</option><option value="room_rent">Room Rent</option>
+          <option value="wifi">WiFi</option><option value="nasta">Food/Nasta</option>
+          <option value="transport">Transport</option><option value="other">Other</option>
+        </select>
+      </div>
+      <div class="fg"><label>Description</label><input type="text" id="p5de" placeholder="Rent April 2026..."></div>
+      <div class="fg"><label>Amount (AED)</label><input type="number" id="p5a" placeholder="0"></div>
+      <div class="fg"><label>Receipt URL</label><input type="url" id="p5r" placeholder="https://..."></div>
+    </div>
+    <div class="fbtns">
+      <button class="btn btn-p" onclick="saveOffice()">Save</button>
+      <button class="btn btn-s" onclick="tog('f-m5')">Cancel</button>
+    </div>
+  </div>
+  <div class="twrap">
+    <div class="thead2"><span class="ttitle">অফিস খরচ রেকর্ড</span></div>
+    <div class="tscroll"><table>
+      <thead><tr><th>তারিখ</th><th>Category</th><th>Description</th><th>Amount(AED)</th><th>Receipt</th><th>Del</th></tr></thead>
+      <tbody id="tb-m5"><tr><td colspan="6"><div class="empty"><i class="fas fa-database"></i><p>কোনো রেকর্ড নেই</p></div></td></tr></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- ─── M6: PERSONAL ─── -->
+<div class="panel" id="panel-m6">
+  <div class="sh">
+    <div><h2>👤 পার্সোনাল খরচ <span class="mod-badge">M6</span></h2></div>
+    <button class="btn-add" onclick="tog('f-m6')">+ খরচ যুক্ত করুন</button>
+  </div>
+  <div class="cards">
+    <div class="card bl"><div class="cl">রাশেদ Total</div><div class="cv" id="m6ra">—</div></div>
+    <div class="card pu"><div class="cl">নেজাম Total</div><div class="cv" id="m6ne">—</div></div>
+    <div class="card rd"><div class="cl">Combined</div><div class="cv" id="m6tt">—</div></div>
+  </div>
+  <div class="fwrap" id="f-m6">
+    <div class="ftitle"><i class="fas fa-user"></i> পার্সোনাল খরচ</div>
+    <div class="fgrid">
+      <div class="fg"><label>তারিখ</label><input type="date" id="p6d"></div>
+      <div class="fg"><label>Person</label><select id="p6p"><option value="rashed">রাশেদ</option><option value="nejam">নেজাম</option><option value="both">রাশেদ + নেজাম (Both)</option></select></div>
+      <div class="fg"><label>Category</label>
+        <select id="p6c">
+          <option value="food">Food</option><option value="transport">Transport</option>
+          <option value="accommodation">Accommodation</option><option value="sim">SIM/Mobile</option><option value="other">Other</option>
+        </select>
+      </div>
+      <div class="fg"><label>Description</label><input type="text" id="p6de" placeholder="বিবরণ"></div>
+      <div class="fg"><label>Amount (AED)</label><input type="number" id="p6a" placeholder="0"></div>
+    </div>
+    <div class="fbtns">
+      <button class="btn btn-p" onclick="savePersonal()">Save</button>
+      <button class="btn btn-s" onclick="tog('f-m6')">Cancel</button>
+    </div>
+  </div>
+  <div class="twrap">
+    <div class="thead2"><span class="ttitle">পার্সোনাল খরচ রেকর্ড</span></div>
+    <div class="tscroll"><table>
+      <thead><tr><th>তারিখ</th><th>Person</th><th>Category</th><th>Description</th><th>Amount(AED)</th><th>Del</th></tr></thead>
+      <tbody id="tb-m6"><tr><td colspan="6"><div class="empty"><i class="fas fa-database"></i><p>কোনো রেকর্ড নেই</p></div></td></tr></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- ─── M7: COURIER ─── -->
+<div class="panel" id="panel-m7">
+  <div class="sh">
+    <div><h2>📦 কুরিয়ার ট্র্যাকিং <span class="mod-badge">M7</span></h2></div>
+    <button class="btn-add" onclick="initCourierForm()">+ কুরিয়ার এন্ট্রি</button>
+  </div>
+  <div class="cards">
+    <div class="card g"><div class="cl">Total Booked</div><div class="cv" id="m7bk">0</div><div class="cs">পিছ</div></div>
+    <div class="card gn"><div class="cl">CTG Received</div><div class="cv" id="m7rv">0</div><div class="cs">পিছ</div></div>
+    <div class="card bl"><div class="cl">In Transit</div><div class="cv" id="m7tr">0</div><div class="cs">পিছ</div></div>
+    <div class="card rd"><div class="cl">Payment Due</div><div class="cv" id="m7pd">0</div><div class="cs">শিপমেন্ট</div></div>
+  </div>
+  <div class="fwrap" id="f-m7">
+    <div class="ftitle"><i class="fas fa-truck"></i> কুরিয়ার এন্ট্রি</div>
+    <div class="fgrid">
+      <div class="fg"><label>Booking Date</label><input type="date" id="p7bd"></div>
+      <div class="fg"><label>Box Number</label><input type="text" id="p7bx" placeholder="Box-01"></div>
+      <div class="fg"><label>Cargo Company</label><input type="text" id="p7cg" placeholder="Aramex, DHL, Sea Cargo..."></div>
+      <div class="fg"><label>Sent By</label><select id="p7sn"><option value="nejam">নেজাম</option><option value="rashed">রাশেদ</option></select></div>
+      <div class="fg full"><label>Model Description</label><input type="text" id="p7m" placeholder="HP 840 G7, HP 845 G8..."></div>
+      <div class="fg full" style="grid-column:1/-1">
+        <label style="display:flex;justify-content:space-between;align-items:center">
+          <span>Lot Breakdown</span>
+          <button type="button" onclick="addLotRow()" style="padding:3px 10px;background:var(--s2);border:1px solid var(--brd2);border-radius:4px;color:var(--bl);font-size:11px;cursor:pointer">+ Lot যুক্ত করুন</button>
+        </label>
+        <div id="p7-lot-rows" style="display:flex;flex-direction:column;gap:6px;margin-top:6px"></div>
+        <div id="p7-lot-total" style="font-size:11px;color:var(--txd);margin-top:6px;font-family:var(--font-m)"></div>
+      </div>
+      <div class="fg"><label>Total Booked Qty</label><input type="number" id="p7bq" placeholder="0"></div>
+      <div class="fg"><label>Weight (KG)</label><input type="number" id="p7wt" placeholder="0" step="0.1"></div>
+      <div class="fg"><label>Payment Status</label><select id="p7ps"><option value="unpaid">Unpaid</option><option value="paid">Paid</option></select></div>
+      <div class="fg"><label>Courier Slip URL</label><input type="url" id="p7sl" placeholder="https://prnt.sc/..."></div>
+    </div>
+    <div class="fbtns">
+      <button class="btn btn-p" onclick="saveCourier()">Save</button>
+      <button class="btn btn-s" onclick="tog('f-m7')">Cancel</button>
+    </div>
+  </div>
+  <div class="twrap">
+    <div class="thead2"><span class="ttitle">কুরিয়ার রেকর্ড</span></div>
+    <div class="tscroll"><table>
+      <thead><tr><th>Date</th><th>Box</th><th>Sender / Cargo</th><th>Lot / Qty</th><th>Model</th><th>Booked</th><th>CTG Date</th><th>Days</th><th>Flow</th><th>Pay</th><th>Slip</th><th>Action</th></tr></thead>
+      <tbody id="tb-m7"><tr><td colspan="12"><div class="empty"><i class="fas fa-database"></i><p>কোনো রেকর্ড নেই</p></div></td></tr></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- ─── M8: NEJAM ─── -->
+<div class="panel" id="panel-m8">
+  <div class="sh">
+    <div><h2>👨‍💼 নেজাম হিসাব <span class="mod-badge">M8</span></h2></div>
+    <button class="btn-add" onclick="setOpeningBalance()" style="background:var(--pu2);border-color:var(--pu);color:var(--pu)">✏️ আগের ব্যালেন্স সেট</button>
+  </div>
+  <div class="cards">
+    <div class="card bl"><div class="cl">Total Booked</div><div class="cv" id="m8tq">0 pcs</div><div class="cs">নেজামের শিপমেন্ট</div></div>
+    <div class="card pu"><div class="cl">Opening Balance</div><div class="cv" id="m8ob">৳0</div><div class="cs">আগের ব্যালেন্স</div></div>
+    <div class="card g"><div class="cl">Total Owed</div><div class="cv" id="m8tc">—</div><div class="cs">কমিশন + আগের ব্যালেন্স</div></div>
+    <div class="card gn"><div class="cl">Total Paid</div><div class="cv" id="m8tp">—</div><div class="cs">পরিশোধ করা</div></div>
+    <div class="card rd"><div class="cl">Remaining Due</div><div class="cv" id="m8rd">—</div><div class="cs">বাকি আছে</div></div>
+  </div>
+  <!-- Sub-tabs -->
+  <div style="display:flex;border-bottom:2px solid var(--brd);margin-bottom:16px">
+    <div class="ntab on" id="m8tab-book" onclick="m8Tab('book')" style="padding-bottom:10px">📦 বুকিং হিসাব</div>
+    <div class="ntab" id="m8tab-pay" onclick="m8Tab('pay')" style="padding-bottom:10px">💸 পরিশোধ হিসাব</div>
+  </div>
+  <!-- Booking sub-panel -->
+  <div id="m8p-book">
+    <div style="font-size:11px;color:var(--txd);margin-bottom:12px;padding:8px 12px;background:var(--s2);border-radius:6px;border-left:3px solid var(--bl)">
+      ℹ️ M7 কুরিয়ারে <b style="color:var(--bl)">নেজাম</b> Sender হলে এইখানে অটো যুক্ত হয় • প্রতি বুকিংয়ে Commission (BDT ৳) ম্যানুয়ালি যুক্ত করুন
+    </div>
+    <div class="tscroll"><table>
+      <thead><tr><th>তারিখ</th><th>Box</th><th>Lot</th><th>Pcs</th><th>Cargo</th><th>Status</th><th>Commission (৳ BDT)</th></tr></thead>
+      <tbody id="tb-m8book"><tr><td colspan="7"><div class="empty"><i class="fas fa-users"></i><p>নেজামের কোনো বুকিং নেই — M7 কুরিয়ারে নেজামকে Sender হিসেবে যুক্ত করুন</p></div></td></tr></tbody>
+    </table></div>
+  </div>
+  <!-- Payment sub-panel -->
+  <div id="m8p-pay" style="display:none">
+    <button class="btn-add" onclick="tog('f-m8pay')" style="margin-bottom:12px">+ পেমেন্ট যুক্ত করুন</button>
+    <div class="fwrap" id="f-m8pay">
+      <div class="ftitle"><i class="fas fa-money-bill-wave"></i> নেজামকে পেমেন্ট</div>
+      <div class="fgrid">
+        <div class="fg"><label>তারিখ</label><input type="date" id="p8pd"></div>
+        <div class="fg"><label>Amount (BDT ৳)</label><input type="number" id="p8pa" placeholder="0"></div>
+        <div class="fg full"><label>Notes</label><input type="text" id="p8pn" placeholder="কোন মাসের / কোন লটের পেমেন্ট..."></div>
+        <div class="fg"><label>Slip URL</label><input type="url" id="p8psl" placeholder="https://prnt.sc/..."></div>
+      </div>
+      <div class="fbtns">
+        <button class="btn btn-p" onclick="saveNejamPayment()">Save</button>
+        <button class="btn btn-s" onclick="tog('f-m8pay')">Cancel</button>
+      </div>
+    </div>
+    <div class="tscroll"><table>
+      <thead><tr><th>তারিখ</th><th>Amount (BDT)</th><th>Notes</th><th>Slip</th><th>Del</th></tr></thead>
+      <tbody id="tb-m8pay"><tr><td colspan="5"><div class="empty"><i class="fas fa-database"></i><p>কোনো পেমেন্ট রেকর্ড নেই</p></div></td></tr></tbody>
+    </table></div>
+  </div>
+</div>
+
+</div><!-- /.main -->
+
+<!-- ─── REPORT ─── -->
+<div class="panel" id="panel-rpt">
+  <div class="sh">
+    <div><h2>📊 রিপোর্ট <span class="mod-badge">RPT</span></h2></div>
+    <div style="display:flex;gap:8px" class="rpt-no-print">
+      <button onclick="copyReportWA()" id="rpt-wa-btn" style="display:none;padding:5px 12px;background:var(--gn2);border:1px solid var(--gn);color:var(--gn);border-radius:var(--r);cursor:pointer;font-size:12px"><i class="fab fa-whatsapp"></i> WhatsApp Copy</button>
+      <button onclick="window.print()" id="rpt-print-btn" style="display:none;padding:5px 12px;background:var(--s2);border:1px solid var(--brd2);color:var(--tx);border-radius:var(--r);cursor:pointer;font-size:12px">🖨️ Print / PDF</button>
+    </div>
+  </div>
+
+  <!-- Filter Bar -->
+  <div id="rpt-filter-bar" style="background:var(--s2);border:1px solid var(--brd);border-radius:var(--r);padding:14px 16px;margin-bottom:16px">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+      <div>
+        <div style="font-size:10px;color:var(--txd);text-transform:uppercase;margin-bottom:5px">Filter Type</div>
+        <div style="display:flex;border:1px solid var(--brd);border-radius:var(--r);overflow:hidden">
+          <button id="rpt-btn-month" onclick="rptMode('month')" style="padding:6px 16px;background:var(--gold);color:var(--bg);border:none;cursor:pointer;font-size:12px;font-weight:700">মাস</button>
+          <button id="rpt-btn-range" onclick="rptMode('range')" style="padding:6px 16px;background:var(--s3);color:var(--txd);border:none;cursor:pointer;font-size:12px">Custom Range</button>
+        </div>
+      </div>
+      <div id="rpt-month-wrap">
+        <div style="font-size:10px;color:var(--txd);text-transform:uppercase;margin-bottom:5px">Month</div>
+        <input type="month" id="rpt-month" style="padding:6px 10px;background:var(--s2);border:1px solid var(--brd);border-radius:var(--r);color:var(--tx);font-family:var(--font-m)">
+      </div>
+      <div id="rpt-range-wrap" style="display:none;gap:8px;flex-wrap:wrap">
+        <div><div style="font-size:10px;color:var(--txd);text-transform:uppercase;margin-bottom:5px">From</div><input type="date" id="rpt-from" style="padding:6px 10px;background:var(--s2);border:1px solid var(--brd);border-radius:var(--r);color:var(--tx)"></div>
+        <div><div style="font-size:10px;color:var(--txd);text-transform:uppercase;margin-bottom:5px">To</div><input type="date" id="rpt-to" style="padding:6px 10px;background:var(--s2);border:1px solid var(--brd);border-radius:var(--r);color:var(--tx)"></div>
+      </div>
+      <button onclick="generateReport()" style="padding:8px 22px;background:var(--gold);color:var(--bg);border:none;border-radius:var(--r);cursor:pointer;font-weight:700;font-size:13px">▶ Generate</button>
+    </div>
+  </div>
+
+  <!-- Report Output -->
+  <div id="rpt-output">
+    <div style="padding:40px;text-align:center;color:var(--txm)">
+      <i class="fas fa-chart-bar" style="font-size:40px;opacity:.2;display:block;margin-bottom:12px"></i>
+      <p style="font-size:13px">মাস বা তারিখ সিলেক্ট করে <b style="color:var(--gold)">Generate</b> করুন</p>
+    </div>
+  </div>
+</div>
+<div class="panel" id="panel-m9">
+  <div class="sh">
+    <div><h2>🏪 চট্টগ্রাম অফিস <span class="mod-badge">M9</span></h2></div>
+    <button class="btn-add" onclick="tog('f-m9')">+ পার্টস এন্ট্রি</button>
+  </div>
+  <div class="cards">
+    <div class="card rd"><div class="cl">Total Spent (AED)</div><div class="cv" id="m9ta">—</div><div class="cs">সকল পার্টস খরচ</div></div>
+    <div class="card g"><div class="cl">This Month</div><div class="cv" id="m9tm">—</div><div class="cs">এই মাসের খরচ</div></div>
+    <div class="card bl"><div class="cl">Total Entries</div><div class="cv" id="m9tc">0</div><div class="cs">মোট রেকর্ড</div></div>
+  </div>
+  <div class="fwrap" id="f-m9">
+    <div class="ftitle"><i class="fas fa-tools"></i> পার্টস / ওয়ারেন্টি খরচ</div>
+    <div class="fgrid">
+      <div class="fg"><label>তারিখ</label><input type="date" id="p9d"></div>
+      <div class="fg">
+        <label>Category</label>
+        <select id="p9cat" onchange="onCTGCatChange()">
+          <option value="RAM">RAM</option>
+          <option value="SSD">SSD</option>
+          <option value="Battery">Battery</option>
+          <option value="Display">Display</option>
+          <option value="MotherBoard">MotherBoard</option>
+          <option value="Charger">Charger</option>
+          <option value="Keyboard">Keyboard</option>
+          <option value="Fan">Fan</option>
+          <option value="other">✏️ Custom (লিখুন)</option>
+        </select>
+      </div>
+      <div class="fg" id="p9cat-custom-wrap" style="display:none"><label>Custom Category</label><input type="text" id="p9catc" placeholder="Category লিখুন..."></div>
+      <div class="fg"><label>Model (Laptop)</label><input type="text" id="p9m" placeholder="HP 840 G7..."></div>
+      <div class="fg"><label>Customer (Optional)</label><input type="text" id="p9cus" placeholder="Customer নাম..."></div>
+      <div class="fg"><label>Qty</label><input type="number" id="p9q" placeholder="0" oninput="sv('p9t',(nv('p9q')*nv('p9u')).toFixed(2))"></div>
+      <div class="fg"><label>Unit Price (AED)</label><input type="number" id="p9u" placeholder="0" step="0.5" oninput="sv('p9t',(nv('p9q')*nv('p9u')).toFixed(2))"></div>
+      <div class="fg"><label>Total AED (Auto)</label><input type="number" id="p9t" readonly style="opacity:.6"></div>
+      <div class="fg"><label>Slip / Invoice URL</label><input type="url" id="p9sl" placeholder="https://prnt.sc/..."></div>
+      <div class="fg full"><label>Notes</label><input type="text" id="p9n" placeholder="বিস্তারিত নোট..."></div>
+    </div>
+    <div class="fbtns">
+      <button class="btn btn-p" onclick="saveCTGOffice()">Save</button>
+      <button class="btn btn-s" onclick="tog('f-m9')">Cancel</button>
+    </div>
+  </div>
+  <div class="twrap">
+    <div class="thead2"><span class="ttitle">পার্টস রেকর্ড</span></div>
+    <div class="tscroll"><table>
+      <thead><tr><th>তারিখ</th><th>Category</th><th>Model</th><th>Customer</th><th>Qty</th><th>Unit(AED)</th><th>Total(AED)</th><th>Notes</th><th>Slip</th><th>Del</th></tr></thead>
+      <tbody id="tb-m9"><tr><td colspan="10"><div class="empty"><i class="fas fa-tools"></i><p>কোনো রেকর্ড নেই</p></div></td></tr></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- ─── CTG RECEIVE DATE EDIT MODAL ─── -->
+<div class="overlay" id="ctgModal">
+  <div class="modal">
+    <div class="mtitle">📦 CTG Receive Date আপডেট</div>
+    <p class="msub">চট্টগ্রাম অফিসে কোনো দিন পৌঁছেছে?</p>
+    <input type="hidden" id="ctgEditId">
+    <div style="margin:10px 0;padding:8px 12px;background:var(--s2);border:1px solid var(--brd2);border-radius:6px;display:flex;align-items:center;gap:10px">
+      <span style="font-size:10px;color:var(--txd);text-transform:uppercase;letter-spacing:.4px">Box</span>
+      <span id="ctgBoxDisplay" style="font-family:var(--font-m);font-size:14px;font-weight:700;color:var(--gold)">—</span>
+      <span id="ctgModelDisplay" style="font-size:11px;color:var(--txd);margin-left:4px"></span>
+    </div>
+    <div class="fgrid" style="margin-top:14px">
+      <div class="fg"><label>CTG Received Date</label><input type="date" id="ctgDateInput"></div>
+      <div class="fg"><label>Received Qty</label><input type="number" id="ctgQtyInput" placeholder="0"></div>
+      <div class="fg"><label>Payment Status</label><select id="ctgPayInput"><option value="unpaid">⚠ Unpaid</option><option value="paid">✓ Paid</option></select></div>
+    </div>
+    <div class="fbtns" style="margin-top:14px">
+      <button class="btn btn-p" onclick="saveCTGReceive()">Save</button>
+      <button class="btn btn-s" onclick="g('ctgModal').classList.remove('on')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── LOT DETAIL MODAL ─── -->
+<div class="overlay" id="lotModal">
+  <div class="modal" style="max-width:680px;max-height:88vh;overflow-y:auto">
+    <div class="mtitle" id="lotModalTitle">📋 Lot Detail</div>
+    <div id="lotModalBody"></div>
+    <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap">
+      <button class="btn btn-p" onclick="printLot()"><i class="fas fa-print"></i> Print</button>
+      <button class="btn btn-s" onclick="copyLotWA()" style="border-color:var(--gn);color:var(--gn)"><i class="fab fa-whatsapp"></i> WhatsApp Copy</button>
+      <button class="btn btn-s" onclick="g('lotModal').classList.remove('on')" style="margin-left:auto">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════
+const COLS = { P:'payments', AD:'advances', PU:'purchases', LC:'lot_costs', OE:'office_expenses', PE:'personal_expenses', CO:'courier', NE:'nejam_commission', CT:'ctg_office' };
+const S = { payments:[], advances:[], purchases:[], lot_costs:[], office_expenses:[], personal_expenses:[], courier:[], nejam_commission:[], ctg_office:[] };
+let db = null;
+
+// ══════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════
+window.addEventListener('load', () => {
+  const saved = localStorage.getItem('fb_config');
+  if (saved) { try { connectFirebase(JSON.parse(saved), true); return; } catch(e){} }
+  document.getElementById('cfgModal').classList.add('on');
+  setRate(localStorage.getItem('rate') || '34.20');
+  setupCalc();
+});
+
+function connectFirebase(cfgArg, silent) {
+  let cfg = cfgArg;
+  if (!cfg) {
+    try { cfg = JSON.parse(document.getElementById('fbJson').value.trim()); }
+    catch(e) { showToast('JSON invalid — চেক করুন','err'); return; }
+  }
+  try {
+    if (!firebase.apps.length) firebase.initializeApp(cfg);
+    db = firebase.firestore();
+    localStorage.setItem('fb_config', JSON.stringify(cfg));
+    document.getElementById('cfgModal').classList.remove('on');
+    if (!silent) showToast('Firebase Connected ✓','ok');
+    loadAll();
+  } catch(e) { showToast('Firebase Error: ' + e.message,'err'); }
+  setupCalc();
+}
+
+function demoMode() {
+  document.getElementById('cfgModal').classList.remove('on');
+  Object.values(COLS).forEach(c => { const d=localStorage.getItem('lc_'+c); if(d) S[c]=JSON.parse(d); });
+  showToast('Demo Mode — data localStorage-এ সেভ হবে','ok');
+  refreshAll();
+  setupCalc();
+}
+
+// ══════════════════════════════════════════
+//  FIRESTORE LISTENERS
+// ══════════════════════════════════════════
+function loadAll() {
+  if (!db) { demoMode(); return; }
+  let pending = Object.keys(COLS).length;
+  Object.values(COLS).forEach(col => {
+    db.collection(col).onSnapshot(snap => {
+      S[col] = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      refreshAll();
+    }, err => console.warn(col, err));
+  });
+}
+
+// ══════════════════════════════════════════
+//  CRUD
+// ══════════════════════════════════════════
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+async function add(col, data) {
+  const id = uid();
+  const doc = { id, ...data, _ts: new Date().toISOString() };
+  if (db) { await db.collection(col).doc(id).set(doc); }
+  else { S[col].push(doc); lsave(col); }
+  return doc;
+}
+
+async function upd(col, id, data) {
+  if (db) { await db.collection(col).doc(id).update(data); }
+  else { const i=S[col].findIndex(x=>x.id===id); if(i>-1){ Object.assign(S[col][i],data); lsave(col); } }
+}
+
+async function del(col, id) {
+  if (!confirm('Delete করবেন?')) return;
+  if (db) { await db.collection(col).doc(id).delete(); }
+  else { S[col]=S[col].filter(x=>x.id!==id); lsave(col); }
+  refreshAll();
+  showToast('Deleted','ok');
+}
+
+function lsave(col) { localStorage.setItem('lc_'+col, JSON.stringify(S[col])); }
+
+// ══════════════════════════════════════════
+//  AUTO-CALC
+// ══════════════════════════════════════════
+function setupCalc() {
+  on2('p1b','p1r', () => {
+    const v = (nv('p1b') / nv('p1r')).toFixed(2);
+    sv('p1a', isFinite(v) ? v : '');
+  });
+  on2('p3q','p3u', () => sv('p3t', (nv('p3q')*nv('p3u')).toFixed(2)));
+  on2('p4q','p4u', () => sv('p4t', (nv('p4q')*nv('p4u')).toFixed(2)));
+  on2('p8q','p8cp', () => sv('p8ct',(nv('p8q')*nv('p8cp')).toFixed(2)));
+  onLotCatChange();
+  // Report: set current month default
+  const now=new Date();
+  const cm=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const rptEl=g('rpt-month'); if(rptEl) rptEl.value=cm;
+}
+function on2(a,b,fn) {
+  [a,b].forEach(id => { const el=g(id); if(el) el.addEventListener('input',fn); });
+}
+function nv(id) { return parseFloat(g(id)?.value||0)||0; }
+function sv(id,v) { const el=g(id); if(el) el.value=v; }
+function g(id) { return document.getElementById(id); }
+
+// ══════════════════════════════════════════
+//  EXCHANGE RATE
+// ══════════════════════════════════════════
+function setRate(r) {
+  localStorage.setItem('rate', r);
+  g('hRATE').textContent = `1 AED = ৳${r}`;
+  sv('p1r', r);
+}
+function editRate() {
+  const r = prompt('নতুন Rate দিন (1 AED = ? BDT):', localStorage.getItem('rate')||'34.20');
+  if (r && !isNaN(r)) { setRate(r); showToast(`Rate: 1 AED = ৳${r}`,'ok'); updateHeader(); }
+}
+function getRate() { return parseFloat(localStorage.getItem('rate')||'34.20'); }
+
+// ══════════════════════════════════════════
+//  LOT AUTO-NUMBER
+// ══════════════════════════════════════════
+function nextLot() {
+  const lots = new Set(S.purchases.map(p=>p.lot).filter(Boolean));
+  let n = lots.size + 1;
+  while(lots.has(`Lot-${String(n).padStart(2,'0')}`)) n++;
+  return `Lot-${String(n).padStart(2,'0')}`;
+}
+function refreshSelectors() {
+  const lots = [...new Set(S.purchases.map(p=>p.lot).filter(Boolean))].sort();
+  const fill = (id, prefix='') => {
+    const el=g(id); if(!el)return; const cur=el.value;
+    el.innerHTML = `<option value="">— Lot —</option>` + lots.map(l=>`<option value="${l}">${l}</option>`).join('');
+    el.value = cur;
+  };
+  fill('p2l'); fill('p4l');
+  // advance selector for M3
+  const adv = S.advances.filter(a=>a.status!=='cleared');
+  const ar = g('p3ar'); if(!ar)return;
+  const cur=ar.value;
+  ar.innerHTML = `<option value="">— Advance Select (Optional) —</option>` + adv.map(a=>`<option value="${a.id}">${a.model||'Model?'} | dh${a.advanceAmount||a.amount||0} | ${a.lot||''}</option>`).join('');
+  ar.value = cur;
+  sv('p3l', nextLot());
+}
+
+// ══════════════════════════════════════════
+//  FORMAT
+// ══════════════════════════════════════════
+function fAED(n) { n=parseFloat(n)||0; return n===Math.floor(n)?`dh${n.toLocaleString('en-US')}`:`dh${n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`; }
+function fBDT(n) { n=parseFloat(n)||0; return n===Math.floor(n)?`৳${n.toLocaleString('en-BD')}`:`৳${n.toLocaleString('en-BD',{minimumFractionDigits:2,maximumFractionDigits:2})}`; }
+function fD(d) { if(!d)return'—'; return new Date(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'2-digit'}); }
+function lnk(u,t) { return u?`<a href="${u}" target="_blank" style="color:var(--bl);font-size:11px">📎${t||''}</a>`:'<span style="color:var(--txm)">—</span>'; }
+function tag(cls,txt) { return `<span class="tag ${cls}">${txt}</span>`; }
+function clr(ids) { ids.forEach(i=>{ const el=g(i); if(el)el.value=''; }); }
+
+// ══════════════════════════════════════════
+//  RENDER ALL
+// ══════════════════════════════════════════
+function refreshAll() {
+  rPayments(); rAdvances(); rPurchases(); rLotCosts();
+  rOffice(); rPersonal(); rCourier(); rNejam(); rCTGOffice();
+  rLotCourierStatus();
+  updateHeader(); refreshSelectors();
+}
+
+// ─── HEADER ───
+function updateHeader() {
+  const rate = getRate();
+  const tBDT  = S.payments.reduce((s,p)=>s+(p.bdt||0),0);
+  const tAED  = S.payments.reduce((s,p)=>s+(p.aed||0),0);
+  const spPur = S.purchases.reduce((s,p)=>s+(p.netPayable!==undefined?p.netPayable:p.totalAED||0),0);
+  const spAdv = S.advances.reduce((s,a)=>s+(a.status==='pending'?(a.advanceAmount||a.amount||0):0),0);
+  const spCst = S.lot_costs.reduce((s,c)=>s+(c.totalAED||0),0);
+  const spOff = S.office_expenses.reduce((s,e)=>s+(e.amount||0),0);
+  const spPer = S.personal_expenses.reduce((s,e)=>s+(e.amount||0),0);
+  const spCTG = S.ctg_office.reduce((s,e)=>s+(e.totalAED||0),0);
+  const bal   = tAED - (spPur+spAdv+spCst+spOff+spPer+spCTG);
+  const lots  = new Set(S.purchases.map(p=>p.lot)).size;
+  const pcs   = S.purchases.reduce((s,p)=>s+(p.qty||0),0);
+  // Inventory Value = lot-by-lot (purchase + prep cost) × remaining pcs
+  const allLots=[...new Set(S.purchases.map(p=>p.lot).filter(Boolean))];
+  let invVal=0;
+  allLots.forEach(lot=>{
+    const purPcs=S.purchases.filter(p=>p.lot===lot).reduce((s,p)=>s+(p.qty||0),0);
+    const purAED=S.purchases.filter(p=>p.lot===lot).reduce((s,p)=>s+(p.totalAED||0),0);
+    const prepAED=S.lot_costs.filter(c=>c.lot===lot).reduce((s,c)=>s+(c.totalAED||0),0);
+    const grandPP=purPcs>0?(purAED+prepAED)/purPcs:0;
+    // Already received in CTG = not in inventory
+    const ctgRcvd=S.courier.filter(c=>c.ctgReceiveDate).reduce((s,c)=>{
+      return s+getLotEntries(c).filter(l=>l.lotRef===lot).reduce((ss,l)=>ss+(l.lotQty||0),0);
+    },0);
+    const remaining=Math.max(0,purPcs-ctgRcvd);
+    invVal+=remaining*grandPP;
+  });
+  g('hBDT').textContent  = fBDT(tBDT);
+  g('hAED').textContent  = fAED(tAED);
+  g('hEXP').textContent  = fAED(spPur+spAdv+spCst+spOff+spPer+spCTG);
+  g('hBAL').textContent  = fAED(bal);
+  g('hBAL').className    = 'kbv ' + (bal>=0?'gn':'rd');
+  g('hLOTS').textContent = lots;
+  g('hPCS').textContent  = pcs + ' pcs';
+  g('hRATE').textContent = `1 AED = ৳${rate}`;
+  const invEl=g('hINV'); if(invEl) invEl.textContent = fAED(invVal);
+}
+
+// ─── M1 ───
+async function savePayment() {
+  const d={date:g('p1d').value,bdt:nv('p1b'),rate:nv('p1r'),aed:nv('p1a'),source:g('p1s').value,slip:g('p1sl').value,notes:g('p1n').value,verified:false};
+  if(!d.bdt||!d.rate){showToast('BDT ও Rate দিন','err');return;}
+  await add(COLS.P,d);
+  clr(['p1d','p1b','p1r','p1a','p1s','p1sl','p1n']); tog('f-m1');
+  showToast('পেমেন্ট সেভ ✓','ok'); rPayments(); updateHeader();
+}
+function rPayments() {
+  const data=S.payments.sort((a,b)=>new Date(b.date)-new Date(a.date));
+  let tB=0,tA=0,vf=0,pn=0;
+  data.forEach(p=>{tB+=p.bdt||0;tA+=p.aed||0;p.verified?vf++:pn++;});
+  g('m1tb').textContent=fBDT(tB); g('m1ta').textContent=fAED(tA);
+  g('m1vf').textContent=vf; g('m1pn').textContent=pn;
+  const tb=g('tb-m1');
+  if(!data.length){tb.innerHTML=`<tr><td colspan="8"><div class="empty"><i class="fas fa-database"></i><p>কোনো রেকর্ড নেই</p></div></td></tr>`;return;}
+  tb.innerHTML=data.map(p=>`<tr>
+    <td>${fD(p.date)}</td><td class="ag">${fBDT(p.bdt)}</td><td>${p.rate||'—'}</td>
+    <td class="abl">${fAED(p.aed)}</td><td class="bn">${p.source||'—'}</td>
+    <td>${lnk(p.slip,'Slip')}</td>
+    <td>${tag(p.verified?'t-vf':'t-pd',p.verified?'✓ Verified':'⏳ Pending')}</td>
+    <td style="display:flex;gap:5px">
+      ${!p.verified?`<button class="btn btn-v" onclick="verifyP('${p.id}')">Verify</button>`:''}
+      <button class="btn btn-d" onclick="del('${COLS.P}','${p.id}')">Del</button>
+    </td></tr>`).join('');
+}
+async function verifyP(id) {
+  await upd(COLS.P,id,{verified:true,verifiedAt:new Date().toISOString()});
+  const p=S.payments.find(x=>x.id===id); if(p){p.verified=true;} rPayments(); showToast('Verified ✓','ok');
+}
+
+// ─── M2 ───
+async function saveAdvance() {
+  const inv=g('p2i').value.trim();
+  if(!inv){showToast('Invoice URL বাধ্যতামূলক ★','err');return;}
+  const advAmt=nv('p2a');
+  if(!advAmt){showToast('Advance Amount দিন','err');return;}
+  const d={date:g('p2d').value,lot:g('p2l').value,supplier:g('p2su').value,supplierMobile:g('p2mob').value,model:g('p2m').value,qty:nv('p2q'),dealTotal:nv('p2dt'),advanceAmount:advAmt,amount:advAmt,invoice:inv,status:'pending'};
+  await add(COLS.AD,d); clr(['p2d','p2su','p2mob','p2m','p2q','p2dt','p2a','p2i']); tog('f-m2');
+  showToast('অ্যাডভান্স সেভ ✓ — Balance থেকে বাদ হয়েছে','ok'); rAdvances(); refreshSelectors(); updateHeader();
+}
+function rAdvances() {
+  const data=S.advances.sort((a,b)=>new Date(b.date)-new Date(a.date));
+  let total=0,out=0,clrd=0,revd=0;
+  data.forEach(a=>{
+    const amt=a.advanceAmount||a.amount||0;
+    total+=amt;
+    if(a.status==='cleared')clrd+=amt;
+    else if(a.status==='reversed')revd+=amt;
+    else out+=amt;
+  });
+  g('m2ta').textContent=fAED(total); g('m2ou').textContent=fAED(out);
+  g('m2cl').textContent=fAED(clrd); g('m2rv2').textContent=fAED(revd);
+  const tb=g('tb-m2');
+  if(!data.length){tb.innerHTML=`<tr><td colspan="11"><div class="empty"><i class="fas fa-database"></i><p>কোনো রেকর্ড নেই</p></div></td></tr>`;return;}
+  tb.innerHTML=data.map(a=>{
+    const adv=a.advanceAmount||a.amount||0;
+    const st=a.status;
+    const statusTag=st==='cleared'?tag('t-pk','✓ Cleared'):st==='reversed'?tag('t-up','↩ Reversed'):tag('t-pd','⏳ Outstanding');
+    const actions=st==='pending'
+      ?`<button class="btn btn-v" style="background:var(--pu2);color:var(--pu);font-size:10px;padding:3px 7px" onclick="reverseAdvance('${a.id}')">↩ Reverse</button><button class="btn btn-d" onclick="del('${COLS.AD}','${a.id}')">Del</button>`
+      :`<button class="btn btn-d" onclick="del('${COLS.AD}','${a.id}')">Del</button>`;
+    return `<tr>
+    <td>${fD(a.date)}</td><td>${a.lot?tag('t-lt',a.lot):'—'}</td>
+    <td class="bn">${a.supplier||'—'}</td>
+    <td style="color:var(--bl);font-size:11px;font-family:var(--font-m)">${a.supplierMobile||'—'}</td>
+    <td class="bn">${a.model||'—'}</td><td>${a.qty||'—'}</td>
+    <td class="ag">${a.dealTotal?fAED(a.dealTotal):'—'}</td>
+    <td class="ag" style="font-weight:700">${fAED(adv)}</td>
+    <td>${lnk(a.invoice,'Invoice')}</td>
+    <td>${statusTag}</td>
+    <td style="display:flex;gap:4px;flex-wrap:wrap">${actions}</td></tr>`;
+  }).join('');
+}
+async function reverseAdvance(id) {
+  if(!confirm('Advance Reverse করবেন? টাকা ফেরত পেয়েছেন — Balance-এ যুক্ত হবে।')) return;
+  await upd(COLS.AD,id,{status:'reversed',reversedAt:new Date().toISOString()});
+  const a=S.advances.find(x=>x.id===id); if(a)a.status='reversed';
+  rAdvances(); updateHeader(); showToast('↩ Reversed ✓ — Balance-এ যুক্ত হয়েছে','ok');
+}
+
+// ─── M3 ───
+async function savePurchase() {
+  const lot=g('p3l').value||nextLot();
+  const qty=nv('p3q'), unit=nv('p3u'), adDed=nv('p3ad'), advRef=g('p3ar').value;
+  const inv=g('p3i').value.trim();
+  if(!qty||!unit){showToast('Qty ও Price দিন','err');return;}
+  if(!inv){showToast('Invoice URL বাধ্যতামূলক ★','err');return;}
+  const d={date:g('p3d').value,lot,supplier:g('p3su').value,model:g('p3m').value,qty,unitPrice:unit,totalAED:qty*unit,advanceDeducted:adDed,netPayable:(qty*unit)-adDed,invoice:g('p3i').value,advanceRef:advRef};
+  if(advRef){ await upd(COLS.AD,advRef,{status:'cleared'}); const a=S.advances.find(x=>x.id===advRef); if(a)a.status='cleared'; }
+  await add(COLS.PU,d); clr(['p3d','p3su','p3m','p3q','p3u','p3t','p3ad','p3i']); sv('p3ar',''); tog('f-m3');
+  showToast('পার্চেজ সেভ ✓','ok'); rPurchases(); rAdvances(); refreshSelectors(); updateHeader();
+}
+function rPurchases() {
+  const data=S.purchases.sort((a,b)=>new Date(b.date)-new Date(a.date));
+  let tQ=0,tA=0,lots=new Set();
+  data.forEach(p=>{tQ+=p.qty||0;tA+=p.totalAED||0;lots.add(p.lot);});
+  g('m3tq').textContent=tQ+' pcs'; g('m3ta').textContent=fAED(tA);
+  g('m3tl').textContent=lots.size; g('m3av').textContent=tQ?fAED(tA/tQ):'—';
+  const tb=g('tb-m3');
+  if(!data.length){tb.innerHTML=`<tr><td colspan="9"><div class="empty"><i class="fas fa-database"></i><p>কোনো রেকর্ড নেই</p></div></td></tr>`;return;}
+  tb.innerHTML=data.map(p=>`<tr>
+    <td>${fD(p.date)}</td>
+    <td><span class="tag t-lt" style="cursor:pointer" onclick="showLotDetail('${p.lot}')">${p.lot} ▶</span></td>
+    <td class="bn">${p.model||'—'}</td><td>${p.qty}</td>
+    <td class="ag">${fAED(p.unitPrice)}</td><td class="abl">${fAED(p.totalAED)}</td>
+    <td class="agn">${fAED(p.advanceDeducted||0)}</td>
+    <td class="agn" style="color:var(--gn);font-weight:700">${fAED(p.netPayable!==undefined?p.netPayable:p.totalAED)}</td>
+    <td>${lnk(p.invoice,'Invoice')}</td>
+    <td><button class="btn btn-d" onclick="del('${COLS.PU}','${p.id}')">Del</button></td></tr>`).join('');
+}
+
+// ─── M4 ───
+function onLotCatChange() {
+  const cat=g('p4c').value;
+  const req=['paint','spot'].includes(cat);
+  const el=g('p4i-req'); if(el) el.style.display=req?'':'none';
+  const inp=g('p4i'); if(inp) inp.style.borderColor=req?'var(--gold2)':'var(--brd)';
+}
+async function saveLotCost() {
+  const lot=g('p4l').value;
+  if(!lot){showToast('Lot select করুন','err');return;}
+  const qty=nv('p4q'),unit=nv('p4u');
+  if(!qty&&!unit){showToast('Qty ও Price দিন','err');return;}
+  const cat=g('p4c').value;
+  const inv=g('p4i').value.trim();
+  if(['paint','spot'].includes(cat)&&!inv){showToast(`${cat==='paint'?'Paint':'Spot/Polarized'} — Invoice URL বাধ্যতামূলক ★`,'err');return;}
+  const d={date:g('p4d').value,lot,category:g('p4c').value,description:g('p4de').value,qty,unitPrice:unit,totalAED:qty*unit,invoice:g('p4i').value};
+  await add(COLS.LC,d); clr(['p4d','p4de','p4q','p4u','p4t','p4i']); tog('f-m4');
+  showToast('খরচ সেভ ✓','ok'); rLotCosts(); updateHeader();
+}
+function rLotCosts() {
+  const data=S.lot_costs.sort((a,b)=>new Date(b.date)-new Date(a.date));
+  let total=0; data.forEach(c=>total+=c.totalAED||0);
+  const tPcs=S.purchases.reduce((s,p)=>s+(p.qty||0),0);
+  g('m4tc').textContent=fAED(total); g('m4av').textContent=tPcs?fAED(total/tPcs):'—';
+  // Lot breakdown
+  const lbd={};
+  data.forEach(c=>{if(!lbd[c.lot])lbd[c.lot]={total:0,cats:{}};lbd[c.lot].total+=c.totalAED||0;lbd[c.lot].cats[c.category]=(lbd[c.lot].cats[c.category]||0)+(c.totalAED||0);});
+  g('lbd-container').innerHTML=Object.entries(lbd).map(([lot,v])=>{
+    const pcs=S.purchases.filter(p=>p.lot===lot).reduce((s,p)=>s+(p.qty||0),0);
+    const purItems=S.purchases.filter(p=>p.lot===lot);
+    const purTotal=purItems.reduce((s,p)=>s+(p.totalAED||0),0);
+    const unitPriceStr=purItems.length===1?fAED(purItems[0].unitPrice||0):(purItems.length>0?purItems.map(p=>fAED(p.unitPrice||0)).join('/'):'—');
+    const pp=pcs?v.total/pcs:0;
+    const grandPP=pcs?(purTotal+v.total)/pcs:0;
+    return `<div class="lbd" style="cursor:pointer" onclick="showLotDetail('${lot}')">
+      <div class="lbd-h">
+        <span class="lbd-t">${lot} <span style="font-size:10px;color:var(--txm);font-family:var(--font-b)">▶ বিস্তারিত</span></span>
+        <span class="lbd-v" style="font-size:11px">${unitPriceStr} | prep: ${fAED(pp)}/pc (${pcs}pcs) | <span style="color:var(--gn)">Grand: ${fAED(grandPP)}/pc</span></span>
+      </div>
+      <div class="chips">${Object.entries(v.cats).map(([c,amt])=>`<span class="chip">${c}: dh${amt.toFixed(2)}</span>`).join('')}</div>
+    </div>`;
+  }).join('')||'<p style="color:var(--txm);font-size:12px;padding:8px">লট যুক্ত হলে breakdown দেখাবে</p>';
+  const tb=g('tb-m4');
+  if(!data.length){tb.innerHTML=`<tr><td colspan="9"><div class="empty"><i class="fas fa-database"></i><p>কোনো রেকর্ড নেই</p></div></td></tr>`;return;}
+  tb.innerHTML=data.map(c=>`<tr>
+    <td>${fD(c.date)}</td><td>${tag('t-lt',c.lot||'—')}</td>
+    <td>${tag('t-pd',c.category||'—')}</td><td class="bn">${c.description||'—'}</td>
+    <td>${c.qty}</td><td>${fAED(c.unitPrice)}</td><td class="ard">${fAED(c.totalAED)}</td>
+    <td>${lnk(c.invoice,'Invoice')}</td>
+    <td><button class="btn btn-d" onclick="del('${COLS.LC}','${c.id}')">Del</button></td></tr>`).join('');
+}
+
+// ─── M5 ───
+async function saveOffice() {
+  const d={date:g('p5d').value,category:g('p5c').value,description:g('p5de').value,amount:nv('p5a'),receipt:g('p5r').value};
+  if(!d.amount){showToast('Amount দিন','err');return;}
+  await add(COLS.OE,d); clr(['p5d','p5de','p5a','p5r']); tog('f-m5');
+  showToast('অফিস খরচ সেভ ✓','ok'); rOffice(); updateHeader();
+}
+function rOffice() {
+  const data=S.office_expenses.sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const now=new Date(); const total=data.reduce((s,d)=>s+(d.amount||0),0);
+  const cm=data.filter(d=>{const dd=new Date(d.date);return dd.getMonth()===now.getMonth()&&dd.getFullYear()===now.getFullYear();}).reduce((s,d)=>s+(d.amount||0),0);
+  g('m5cm').textContent=fAED(cm); g('m5at').textContent=fAED(total);
+  const tb=g('tb-m5');
+  if(!data.length){tb.innerHTML=`<tr><td colspan="6"><div class="empty"><i class="fas fa-database"></i><p>কোনো রেকর্ড নেই</p></div></td></tr>`;return;}
+  tb.innerHTML=data.map(d=>`<tr>
+    <td>${fD(d.date)}</td><td>${tag('t-pd',d.category)}</td>
+    <td class="bn">${d.description||'—'}</td><td class="ard">${fAED(d.amount)}</td>
+    <td>${lnk(d.receipt,'Receipt')}</td>
+    <td><button class="btn btn-d" onclick="del('${COLS.OE}','${d.id}')">Del</button></td></tr>`).join('');
+}
+
+// ─── M6 ───
+async function savePersonal() {
+  const d={date:g('p6d').value,person:g('p6p').value,category:g('p6c').value,description:g('p6de').value,amount:nv('p6a')};
+  if(!d.amount){showToast('Amount দিন','err');return;}
+  await add(COLS.PE,d); clr(['p6d','p6de','p6a']); tog('f-m6');
+  showToast('খরচ সেভ ✓','ok'); rPersonal(); updateHeader();
+}
+function rPersonal() {
+  const data=S.personal_expenses.sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const bo=data.filter(d=>d.person==='both').reduce((s,d)=>s+(d.amount||0),0);
+  const ra=data.filter(d=>d.person==='rashed').reduce((s,d)=>s+(d.amount||0),0)+bo/2;
+  const ne=data.filter(d=>d.person==='nejam').reduce((s,d)=>s+(d.amount||0),0)+bo/2;
+  g('m6ra').textContent=fAED(ra); g('m6ne').textContent=fAED(ne); g('m6tt').textContent=fAED(ra+ne-bo/2+bo/2);
+  const tb=g('tb-m6');
+  if(!data.length){tb.innerHTML=`<tr><td colspan="6"><div class="empty"><i class="fas fa-database"></i><p>কোনো রেকর্ড নেই</p></div></td></tr>`;return;}
+  tb.innerHTML=data.map(d=>`<tr>
+    <td>${fD(d.date)}</td>
+    <td>${tag(d.person==='rashed'?'t-lt':d.person==='both'?'t-vf':'t-pd',d.person==='rashed'?'রাশেদ':d.person==='both'?'রাশেদ+নেজাম':'নেজাম')}</td>
+    <td>${tag('t-pd',d.category)}</td><td class="bn">${d.description||'—'}</td>
+    <td class="ard">${fAED(d.amount)}</td>
+    <td><button class="btn btn-d" onclick="del('${COLS.PE}','${d.id}')">Del</button></td></tr>`).join('');
+}
+
+// ─── M7 MULTI-LOT ───
+let _lotRowCount=0;
+function initCourierForm() {
+  tog('f-m7');
+  const rowsEl=g('p7-lot-rows');
+  if(rowsEl&&rowsEl.children.length===0) addLotRow();
+}
+function addLotRow(lotVal='',qtyVal='') {
+  const idx=_lotRowCount++;
+  const lots=[...new Set(S.purchases.map(p=>p.lot).filter(Boolean))].sort();
+  const row=document.createElement('div');
+  row.id=`lot-row-${idx}`;
+  row.style.cssText='display:flex;gap:6px;align-items:flex-start';
+  row.innerHTML=`<div style="flex:1.5">
+    <select id="p7lot-${idx}" onchange="onLotRowChange(${idx})"
+      style="width:100%;padding:7px 8px;background:var(--s2);border:1px solid var(--brd);border-radius:var(--r);color:var(--tx);font-size:12px">
+      <option value="">— Lot —</option>
+      ${lots.map(l=>`<option value="${l}"${l===lotVal?' selected':''}>${l}</option>`).join('')}
+    </select>
+    <div id="lot-info-${idx}" style="font-size:10px;font-family:var(--font-m);margin-top:4px;padding:4px 7px;background:var(--s3);border-radius:4px;display:none"></div>
+  </div>
+  <div style="width:90px">
+    <input type="number" id="p7lq-${idx}" value="${qtyVal||''}" placeholder="Qty pcs"
+      style="width:100%;padding:7px 8px;background:var(--s2);border:1px solid var(--brd);border-radius:var(--r);color:var(--tx);font-size:12px"
+      oninput="syncLotTotal()">
+  </div>
+  <button type="button" onclick="removeLotRow(${idx})"
+    style="padding:7px 10px;background:var(--rd2);border:1px solid var(--rd);border-radius:var(--r);color:var(--rd);cursor:pointer;font-size:12px;flex-shrink:0">×</button>`;
+  g('p7-lot-rows').appendChild(row);
+  if(lotVal) onLotRowChange(idx);
+}
+function removeLotRow(idx) {
+  const r=g(`lot-row-${idx}`); if(r)r.remove(); syncLotTotal();
+}
+function onLotRowChange(idx) {
+  const lot=g(`p7lot-${idx}`)?.value;
+  const infoEl=g(`lot-info-${idx}`);
+  if(!lot){if(infoEl)infoEl.style.display='none';return;}
+  const purchased=S.purchases.filter(p=>p.lot===lot).reduce((s,p)=>s+(p.qty||0),0);
+  const already=S.courier.reduce((s,c)=>{
+    const cl=getLotEntries(c);
+    return s+cl.filter(l=>l.lotRef===lot).reduce((ss,l)=>ss+(l.lotQty||0),0);
+  },0);
+  const avail=Math.max(0,purchased-already);
+  if(infoEl){
+    infoEl.style.display='block';
+    infoEl.innerHTML=`<span style="color:var(--gold)">Purchased: ${purchased}</span> | <span style="color:var(--rd)">Booked: ${already}</span> | <span style="color:var(--gn);font-weight:700">Available: ${avail}</span>`;
+  }
+  const qEl=g(`p7lq-${idx}`); if(qEl&&!qEl.value&&avail>0) qEl.value=avail;
+  syncLotTotal();
+}
+function syncLotTotal() {
+  const rows=g('p7-lot-rows')?.children||[];
+  let total=0;
+  for(const row of rows){
+    const idx=row.id.replace('lot-row-','');
+    total+=nv(`p7lq-${idx}`);
+  }
+  sv('p7bq',total);
+  const tEl=g('p7-lot-total');
+  if(tEl) tEl.innerHTML=total>0?`<span style="color:var(--gn)">✓ Total Booked Qty: <b>${total} pcs</b></span>`:'';
+}
+function getLotRows() {
+  const rows=g('p7-lot-rows')?.children||[];
+  const res=[];
+  for(const row of rows){
+    const idx=row.id.replace('lot-row-','');
+    const lotRef=g(`p7lot-${idx}`)?.value;
+    const lotQty=nv(`p7lq-${idx}`);
+    if(lotRef&&lotQty>0) res.push({lotRef,lotQty});
+  }
+  return res;
+}
+function getLotEntries(c) {
+  if(c.lots&&c.lots.length>0) return c.lots;
+  if(c.lotRef) return [{lotRef:c.lotRef,lotQty:Math.min(c.lotQty||0,c.bookedQty||c.lotQty||0)}];
+  return [];
+}
+// ─── M7 ───
+async function saveCourier() {
+  const lots=getLotRows();
+  const bq=nv('p7bq');
+  if(!bq&&!lots.length){showToast('Lot Qty দিন','err');return;}
+  const d={bookDate:g('p7bd').value,boxNumber:g('p7bx').value,cargoCompany:g('p7cg').value,senderName:g('p7sn').value,model:g('p7m').value,lots,lotRef:lots[0]?.lotRef||'',lotQty:lots.reduce((s,l)=>s+(l.lotQty||0),0),bookedQty:bq||lots.reduce((s,l)=>s+(l.lotQty||0),0),weight:nv('p7wt'),paymentStatus:g('p7ps').value,courierSlip:g('p7sl').value,status:'in_transit'};
+  await add(COLS.CO,d);
+  clr(['p7bd','p7bx','p7cg','p7m','p7bq','p7wt','p7sl']);
+  const rowsEl=g('p7-lot-rows'); if(rowsEl) rowsEl.innerHTML='';
+  _lotRowCount=0;
+  const tEl=g('p7-lot-total'); if(tEl) tEl.innerHTML='';
+  tog('f-m7');
+  showToast('কুরিয়ার সেভ ✓','ok'); rCourier(); rNejam(); rLotCourierStatus(); updateHeader();
+}
+function rCourier() {
+  const data=S.courier.sort((a,b)=>new Date(b.bookDate)-new Date(a.bookDate));
+  let bk=0,rv=0,pd=0; data.forEach(c=>{bk+=c.bookedQty||0;rv+=c.receivedQty||0;if(c.paymentStatus==='unpaid')pd++;});
+  g('m7bk').textContent=bk+' pcs'; g('m7rv').textContent=rv+' pcs';
+  g('m7tr').textContent=(bk-rv)+' pcs'; g('m7pd').textContent=pd+' shipments';
+  const tb=g('tb-m7');
+  if(!data.length){tb.innerHTML=`<tr><td colspan="9"><div class="empty"><i class="fas fa-database"></i><p>কোনো রেকর্ড নেই</p></div></td></tr>`;return;}
+  tb.innerHTML=data.map(c=>{
+    const ctgDate=c.ctgReceiveDate||c.receivedDate||'';
+    let days='—';
+    if(c.bookDate&&ctgDate){
+      const d=Math.round((new Date(ctgDate)-new Date(c.bookDate))/(86400000));
+      if(d>=0)days=`<span style="color:var(--bl);font-family:var(--font-m)">${d}d</span>`;
+    }
+    const notReceived=!ctgDate||(c.receivedQty||0)<(c.bookedQty||0);
+    const senderTag=c.senderName==='nejam'?tag('t-pd','নেজাম'):c.senderName==='rashed'?tag('t-lt','রাশেদ'):'—';
+    const allLots=getLotEntries(c);
+    const lotDisplay=allLots.length>0?allLots.map(l=>`${tag('t-lt',l.lotRef)} <span style="font-family:var(--font-m);font-size:11px;color:var(--txd)">${l.lotQty}p</span>`).join(' '):'—';
+    return `<tr>
+    <td>${fD(c.bookDate)}</td><td style="color:var(--gold)">${c.boxNumber||'—'}</td>
+    <td><div>${senderTag}</div><div style="font-size:10px;color:var(--txd);margin-top:2px">${c.cargoCompany||''}</div></td>
+    <td>${lotDisplay}</td>
+    <td class="bn">${c.model||'—'}</td><td class="ag">${c.bookedQty}</td>
+    <td style="font-size:12px">${ctgDate?`<span style="color:var(--gn)">${fD(ctgDate)}</span>${c.receivedQty?`<span style="color:var(--txd);font-size:10px"> (${c.receivedQty})</span>`:''}` :'<span style="color:var(--txm)">—</span>'}</td>
+    <td style="text-align:center">${days}</td>
+    <td><div class="cflow">
+      <span class="cs-step done">Dubai</span><span class="cs-arr">→</span>
+      <span class="cs-step ${c.status==='delivered'?'done':'live'}">Transit</span><span class="cs-arr">→</span>
+      <span class="cs-step ${c.status==='delivered'?'done':''}">CTG</span>
+    </div></td>
+    <td>${tag(c.paymentStatus==='paid'?'t-pk':'t-up',c.paymentStatus==='paid'?'✓ Paid':'⚠ Unpaid')}</td>
+    <td>${lnk(c.courierSlip,'Slip')}</td>
+    <td style="display:flex;gap:4px;flex-wrap:wrap">
+      ${c.paymentStatus==='unpaid'?`<button class="btn btn-v" onclick="markPaid('${c.id}')">Paid</button>`:''}
+      ${notReceived?`<button class="btn btn-v" style="background:var(--gn2);color:var(--gn);font-size:10px;padding:3px 7px" onclick="editCourier('${c.id}')">CTG ✓</button>`:''}
+      <button class="btn btn-d" onclick="del('${COLS.CO}','${c.id}')">Del</button>
+    </td></tr>`;
+  }).join('');
+}
+async function markPaid(id) {
+  await upd(COLS.CO,id,{paymentStatus:'paid'}); const c=S.courier.find(x=>x.id===id); if(c)c.paymentStatus='paid';
+  rCourier(); showToast('Payment Marked ✓','ok');
+}
+function editCourier(id) {
+  const c=S.courier.find(x=>x.id===id); if(!c)return;
+  sv('ctgDateInput', c.ctgReceiveDate||c.receivedDate||'');
+  sv('ctgQtyInput', c.receivedQty||c.bookedQty||'');
+  const ps=g('ctgPayInput'); if(ps) ps.value=c.paymentStatus||'unpaid';
+  const bd=g('ctgBoxDisplay'); if(bd) bd.textContent=c.boxNumber||'—';
+  const md=g('ctgModelDisplay'); if(md) md.textContent=c.model?`• ${c.model.substring(0,40)}`:'';
+  g('ctgEditId').value=id;
+  g('ctgModal').classList.add('on');
+}
+async function saveCTGReceive() {
+  const id=g('ctgEditId').value;
+  const ctgDate=g('ctgDateInput').value;
+  const rqty=nv('ctgQtyInput');
+  if(!ctgDate){showToast('Date দিন','err');return;}
+  const c=S.courier.find(x=>x.id===id); if(!c)return;
+  const days=c.bookDate?Math.round((new Date(ctgDate)-new Date(c.bookDate))/86400000):0;
+  const newStatus=rqty>=(c.bookedQty||0)?'delivered':'in_transit';
+  const payStatus=g('ctgPayInput')?.value||c.paymentStatus||'unpaid';
+  await upd(COLS.CO,id,{ctgReceiveDate:ctgDate,receivedQty:rqty,transitDays:days,status:newStatus,paymentStatus:payStatus});
+  Object.assign(c,{ctgReceiveDate:ctgDate,receivedQty:rqty,transitDays:days,status:newStatus,paymentStatus:payStatus});
+  g('ctgModal').classList.remove('on');
+  rCourier(); rLotCourierStatus(); updateHeader(); showToast(`CTG Received ✓ | Transit: ${days} দিন`,'ok');
+}
+
+// ─── M8 ───
+function m8Tab(t) {
+  g('m8p-book').style.display=t==='book'?'':'none';
+  g('m8p-pay').style.display=t==='pay'?'':'none';
+  g('m8tab-book').classList.toggle('on',t==='book');
+  g('m8tab-pay').classList.toggle('on',t==='pay');
+}
+function rNejam() {
+  const bookings=S.courier.filter(c=>c.senderName==='nejam').sort((a,b)=>new Date(b.bookDate)-new Date(a.bookDate));
+  let tQ=0,tC=0; bookings.forEach(b=>{
+    const pcs=b.lotQty||b.bookedQty||0;
+    const perPc=b.nejamCommissionPerPc||0;
+    const total=perPc>0?pcs*perPc:(b.nejamCommissionBDT||0);
+    tQ+=pcs; tC+=total;
+  });
+  // Separate opening balance from payments
+  const openingEntries=S.nejam_commission.filter(n=>n.type==='opening_balance');
+  const paymentEntries=S.nejam_commission.filter(n=>n.type!=='opening_balance').sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const openingBal=openingEntries.reduce((s,n)=>s+(n.amountBDT||0),0);
+  let tP=0; paymentEntries.forEach(p=>tP+=(p.amountBDT||p.paidBDT||0));
+  const totalOwed=tC+openingBal;
+  const rem=Math.max(0,totalOwed-tP);
+  g('m8tq').textContent=tQ+' pcs';
+  g('m8ob').textContent=fBDT(openingBal);
+  g('m8tc').textContent=fBDT(totalOwed);
+  g('m8tp').textContent=fBDT(tP);
+  g('m8rd').textContent=fBDT(rem);
+  // Booking tab
+  const tb1=g('tb-m8book');
+  if(!bookings.length){tb1.innerHTML=`<tr><td colspan="7"><div class="empty"><i class="fas fa-users"></i><p>নেজামের কোনো বুকিং নেই — M7 কুরিয়ারে নেজামকে Sender হিসেবে যুক্ত করুন</p></div></td></tr>`;return;}
+  tb1.innerHTML=bookings.map(b=>{
+    const pcs=b.lotQty||b.bookedQty||0;
+    const perPc=b.nejamCommissionPerPc||0;
+    const comTotal=perPc>0?pcs*perPc:(b.nejamCommissionBDT||0);
+    return `<tr>
+    <td>${fD(b.bookDate)}</td>
+    <td style="color:var(--gold);font-family:var(--font-m)">${b.boxNumber||'—'}</td>
+    <td>${b.lotRef?tag('t-lt',b.lotRef):'—'}</td>
+    <td class="abl">${pcs}</td>
+    <td style="font-size:11px;color:var(--txd)">${b.cargoCompany||'—'}</td>
+    <td>${tag(b.status==='delivered'?'t-pk':'t-pd',b.status==='delivered'?'✅ Received':'⏳ Transit')}</td>
+    <td>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:4px">
+          <span style="font-size:10px;color:var(--txd)">৳/pc</span>
+          <input type="number" value="${perPc||''}" placeholder="0"
+            style="width:80px;padding:4px 8px;background:var(--s2);border:1px solid var(--brd);border-radius:5px;color:var(--tx);font-family:var(--font-m);font-size:12px"
+            onchange="setNejamCommission('${b.id}',${pcs},this.value)">
+        </div>
+        ${pcs>0&&perPc>0?`<span style="color:var(--txd);font-size:11px;font-family:var(--font-m)">${pcs} × ${fBDT(perPc)} =</span> <span style="color:var(--gn);font-weight:700;font-family:var(--font-m)">${fBDT(comTotal)}</span>`:''}
+      </div>
+    </td></tr>`;
+  }).join('');
+  // Payment tab
+  const tb2=g('tb-m8pay');
+  if(!paymentEntries.length){tb2.innerHTML=`<tr><td colspan="5"><div class="empty"><i class="fas fa-database"></i><p>কোনো পেমেন্ট রেকর্ড নেই</p></div></td></tr>`;}
+  else{tb2.innerHTML=paymentEntries.map(p=>`<tr>
+    <td>${fD(p.date)}</td>
+    <td class="agn" style="font-weight:700">${fBDT(p.amountBDT||p.paidBDT||0)}</td>
+    <td class="bn">${p.notes||'—'}</td>
+    <td>${lnk(p.slip,'Slip')}</td>
+    <td><button class="btn btn-d" onclick="del('${COLS.NE}','${p.id}')">Del</button></td></tr>`).join('');}
+}
+async function setNejamCommission(courierId,pcs,perPcAmount) {
+  const perPc=parseFloat(perPcAmount)||0;
+  const total=pcs*perPc;
+  await upd(COLS.CO,courierId,{nejamCommissionPerPc:perPc,nejamCommissionBDT:total});
+  const c=S.courier.find(x=>x.id===courierId);
+  if(c){c.nejamCommissionPerPc=perPc;c.nejamCommissionBDT=total;}
+  rNejam(); showToast(`${pcs} × ${fBDT(perPc)} = ${fBDT(total)}`,'ok');
+}
+async function saveNejamPayment() {
+  const amt=nv('p8pa');
+  if(!amt){showToast('Amount দিন','err');return;}
+  const d={date:g('p8pd').value,amountBDT:amt,notes:g('p8pn').value,slip:g('p8psl').value};
+  await add(COLS.NE,d); clr(['p8pd','p8pa','p8pn','p8psl']); tog('f-m8pay');
+  showToast('পেমেন্ট সেভ ✓','ok'); rNejam();
+}
+async function setOpeningBalance() {
+  const existing=S.nejam_commission.find(n=>n.type==='opening_balance');
+  const current=existing?existing.amountBDT||0:0;
+  const input=prompt(`নেজামের আগের ব্যালেন্স (BDT ৳):\nবর্তমান: ৳${current.toLocaleString('en-BD')}`,''+current);
+  if(input===null)return;
+  const amt=parseFloat(input)||0;
+  if(existing){
+    await upd(COLS.NE,existing.id,{amountBDT:amt});
+    existing.amountBDT=amt;
+  } else {
+    await add(COLS.NE,{type:'opening_balance',amountBDT:amt,notes:'আগের ব্যালেন্স (Opening Balance)',date:new Date().toISOString().split('T')[0]});
+  }
+  rNejam(); showToast(`Opening Balance সেট ✓ — ${fBDT(amt)}`,'ok');
+}
+
+// ─── LOT COURIER STATUS (M3) ───
+function rLotCourierStatus() {
+  const container=g('m3-lot-status'); if(!container)return;
+  const lots=[...new Set(S.purchases.map(p=>p.lot).filter(Boolean))].sort();
+  if(!lots.length){container.innerHTML='';return;}
+  container.innerHTML=`<div style="margin-bottom:18px">
+    <div class="cl" style="margin-bottom:10px">📦 Lot-wise Courier Status</div>
+    <div style="display:grid;gap:8px">${lots.map(lot=>{
+      const purchased=S.purchases.filter(p=>p.lot===lot).reduce((s,p)=>s+(p.qty||0),0);
+      const courierForLot=S.courier.filter(c=>getLotEntries(c).some(l=>l.lotRef===lot));
+      const booked=courierForLot.reduce((s,c)=>{
+        const lq=getLotEntries(c).filter(l=>l.lotRef===lot).reduce((ss,l)=>ss+(l.lotQty||0),0);
+        const bq=c.bookedQty||0;
+        const totalLq=getLotEntries(c).reduce((ss,l)=>ss+(l.lotQty||0),0);
+        return s+(totalLq>0?Math.min(lq,bq*(lq/totalLq)):lq);
+      },0);
+      const received=courierForLot.filter(c=>c.ctgReceiveDate).reduce((s,c)=>
+        s+getLotEntries(c).filter(l=>l.lotRef===lot).reduce((ss,l)=>ss+(l.lotQty||0),0),0);
+      const inTransit=Math.max(0,booked-received);
+      const dubaiRemaining=Math.max(0,purchased-booked);
+      const pct=purchased>0?Math.round((received/purchased)*100):0;
+      return `<div style="background:var(--s2);border:1px solid var(--brd);border-radius:var(--r);padding:12px 16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <span class="tag t-lt" style="cursor:pointer;font-size:12px" onclick="showLotDetail('${lot}')">${lot} ▶</span>
+          <span style="font-size:11px;color:var(--txd);font-family:var(--font-m)">Delivered: ${pct}%</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;text-align:center">
+          <div style="background:var(--s3);border-radius:6px;padding:8px 6px">
+            <div style="font-size:10px;color:var(--txd);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Purchased</div>
+            <div style="font-family:var(--font-m);font-size:15px;font-weight:700;color:var(--gold)">${purchased}</div>
+            <div style="font-size:10px;color:var(--txm)">pcs</div>
+          </div>
+          <div style="background:var(--bl2);border:1px solid var(--bl);border-radius:6px;padding:8px 6px">
+            <div style="font-size:10px;color:var(--bl);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">In Transit</div>
+            <div style="font-family:var(--font-m);font-size:15px;font-weight:700;color:var(--bl)">${inTransit}</div>
+            <div style="font-size:10px;color:var(--bl);opacity:.6">pcs</div>
+          </div>
+          <div style="background:var(--gn2);border:1px solid var(--gn);border-radius:6px;padding:8px 6px">
+            <div style="font-size:10px;color:var(--gn);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">CTG Received</div>
+            <div style="font-family:var(--font-m);font-size:15px;font-weight:700;color:var(--gn)">${received}</div>
+            <div style="font-size:10px;color:var(--gn);opacity:.6">pcs</div>
+          </div>
+          <div style="background:var(--gold2);border:1px solid var(--gold);border-radius:6px;padding:8px 6px">
+            <div style="font-size:10px;color:var(--gold);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Remaining</div>
+            <div style="font-family:var(--font-m);font-size:15px;font-weight:700;color:var(--gold)">${dubaiRemaining}</div>
+            <div style="font-size:10px;color:var(--gold);opacity:.6">Dubai</div>
+          </div>
+        </div>
+        <div style="margin-top:10px;height:4px;background:var(--s3);border-radius:3px;overflow:hidden">
+          <div style="height:100%;background:linear-gradient(90deg,var(--gn),var(--bl));width:${pct}%;transition:width .4s"></div>
+        </div>
+      </div>`;
+    }).join('')}</div></div>`;
+}
+
+// ─── LOT DETAIL MODAL ───
+let _currentLot='';
+function showLotDetail(lot) {
+  _currentLot=lot;
+  const purItems=S.purchases.filter(p=>p.lot===lot);
+  const costItems=S.lot_costs.filter(c=>c.lot===lot);
+  const purTotal=purItems.reduce((s,p)=>s+(p.totalAED||0),0);
+  const costTotal=costItems.reduce((s,c)=>s+(c.totalAED||0),0);
+  const pcs=purItems.reduce((s,p)=>s+(p.qty||0),0);
+  const grandTotal=purTotal+costTotal;
+  const grandPP=pcs?grandTotal/pcs:0;
+  const date=purItems[0]?.date||'';
+  g('lotModalTitle').textContent=`📋 ${lot} — Full Cost Breakdown`;
+  let html=`<div style="background:var(--s2);border:1px solid var(--brd);border-radius:8px;padding:14px;margin-bottom:14px">
+    <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <div><div style="font-size:10px;color:var(--txd);text-transform:uppercase">Purchase Date</div><div style="font-family:var(--font-m);color:var(--tx)">${fD(date)}</div></div>
+      <div><div style="font-size:10px;color:var(--txd);text-transform:uppercase">Total PCs</div><div style="font-family:var(--font-m);color:var(--bl)">${pcs}</div></div>
+      <div><div style="font-size:10px;color:var(--txd);text-transform:uppercase">Purchase Cost</div><div style="font-family:var(--font-m);color:var(--gold)">${fAED(purTotal)}</div></div>
+      <div><div style="font-size:10px;color:var(--txd);text-transform:uppercase">Prep Cost</div><div style="font-family:var(--font-m);color:var(--rd)">${fAED(costTotal)}</div></div>
+      <div><div style="font-size:10px;color:var(--txd);text-transform:uppercase">Grand Total</div><div style="font-family:var(--font-m);color:var(--gn);font-weight:700">${fAED(grandTotal)}</div></div>
+      <div><div style="font-size:10px;color:var(--txd);text-transform:uppercase">Per Piece</div><div style="font-family:var(--font-m);color:var(--gn);font-weight:700">dh${grandPP.toFixed(2)}</div></div>
+    </div>
+  </div>`;
+  if(purItems.length){
+    html+=`<div style="margin-bottom:10px"><div style="font-size:11px;color:var(--gold);font-weight:600;margin-bottom:6px;text-transform:uppercase">📦 Purchase Items</div>
+    <table style="width:100%;border-collapse:collapse;font-size:12px">
+    <thead><tr style="background:var(--s2)">${['Model','Qty','Unit','Total'].map(h=>`<th style="padding:6px 8px;text-align:left;color:var(--txd);font-size:10px;text-transform:uppercase">${h}</th>`).join('')}</tr></thead>
+    <tbody>${purItems.map(p=>`<tr style="border-bottom:1px solid var(--brd)"><td style="padding:6px 8px;color:var(--tx)">${p.model||'—'}</td><td style="padding:6px 8px;color:var(--bl);font-family:var(--font-m)">${p.qty}</td><td style="padding:6px 8px;color:var(--gold);font-family:var(--font-m)">${fAED(p.unitPrice)}</td><td style="padding:6px 8px;color:var(--gold);font-family:var(--font-m)">${fAED(p.totalAED)}</td></tr>`).join('')}
+    <tr style="background:var(--s2)"><td colspan="3" style="padding:6px 8px;color:var(--txd);font-size:11px">Purchase Subtotal</td><td style="padding:6px 8px;color:var(--gold);font-family:var(--font-m);font-weight:700">${fAED(purTotal)}</td></tr>
+    </tbody></table></div>`;
+  }
+  if(costItems.length){
+    html+=`<div><div style="font-size:11px;color:var(--rd);font-weight:600;margin-bottom:6px;text-transform:uppercase">🔧 Preparation Costs</div>
+    <table style="width:100%;border-collapse:collapse;font-size:12px">
+    <thead><tr style="background:var(--s2)">${['Category','Description','Qty','Unit','Total'].map(h=>`<th style="padding:6px 8px;text-align:left;color:var(--txd);font-size:10px;text-transform:uppercase">${h}</th>`).join('')}</tr></thead>
+    <tbody>${costItems.map(c=>`<tr style="border-bottom:1px solid var(--brd)"><td style="padding:6px 8px">${tag('t-pd',c.category||'—')}</td><td style="padding:6px 8px;color:var(--tx)">${c.description||'—'}</td><td style="padding:6px 8px;color:var(--txd);font-family:var(--font-m)">${c.qty||1}</td><td style="padding:6px 8px;color:var(--txd);font-family:var(--font-m)">${fAED(c.unitPrice)}</td><td style="padding:6px 8px;color:var(--rd);font-family:var(--font-m)">${fAED(c.totalAED)}</td></tr>`).join('')}
+    <tr style="background:var(--s2)"><td colspan="4" style="padding:6px 8px;color:var(--txd);font-size:11px">Prep Subtotal</td><td style="padding:6px 8px;color:var(--rd);font-family:var(--font-m);font-weight:700">${fAED(costTotal)}</td></tr>
+    </tbody></table></div>`;
+  }
+  html+=`<div style="margin-top:12px;background:var(--gn2);border:1px solid var(--gn);border-radius:8px;padding:12px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px">
+    <span style="color:var(--gn);font-weight:700">🏆 Grand Total (${lot})</span>
+    <span style="font-family:var(--font-m);color:var(--gn);font-weight:700">${fAED(grandTotal)} | dh${grandPP.toFixed(2)}/pc (${pcs} pcs)</span>
+  </div>`;
+  g('lotModalBody').innerHTML=html;
+  g('lotModal').classList.add('on');
+}
+function printLot() {
+  const content=`<!DOCTYPE html><html><head><title>${_currentLot} Cost Report</title>
+  <style>body{font-family:Arial,sans-serif;padding:20px;color:#111}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid #ccc;padding:8px;text-align:left;font-size:12px}th{background:#f0f0f0}h2{color:#111}.grand{background:#e6ffe6;font-weight:bold}</style></head>
+  <body><h2>${_currentLot} — Full Cost Report</h2>${g('lotModalBody').innerHTML}</body></html>`;
+  const w=window.open('','_blank'); w.document.write(content); w.document.close(); w.print();
+}
+function copyLotWA() {
+  const lot=_currentLot;
+  const purItems=S.purchases.filter(p=>p.lot===lot);
+  const costItems=S.lot_costs.filter(c=>c.lot===lot);
+  const purTotal=purItems.reduce((s,p)=>s+(p.totalAED||0),0);
+  const costTotal=costItems.reduce((s,c)=>s+(c.totalAED||0),0);
+  const pcs=purItems.reduce((s,p)=>s+(p.qty||0),0);
+  const grandTotal=purTotal+costTotal;
+  const grandPP=pcs?grandTotal/pcs:0;
+  let txt=`*${lot} — Cost Breakdown*\n\n`;
+  txt+=`*Purchase:*\n`;
+  purItems.forEach(p=>{txt+=`• ${p.model||'—'}: ${p.qty}pcs × dh${p.unitPrice||0} = dh${(p.totalAED||0).toFixed(2)}\n`;});
+  txt+=`Purchase Total: dh${purTotal.toFixed(2)}\n\n`;
+  if(costItems.length){
+    txt+=`*Prep Costs:*\n`;
+    costItems.forEach(c=>{txt+=`• ${c.category}: ${c.description||''} = dh${(c.totalAED||0).toFixed(2)}\n`;});
+    txt+=`Prep Total: dh${costTotal.toFixed(2)}\n\n`;
+  }
+  txt+=`*Grand Total: dh${grandTotal.toFixed(2)}*\n*Per Piece: dh${grandPP.toFixed(2)} (${pcs} pcs)*`;
+  navigator.clipboard.writeText(txt).then(()=>showToast('WhatsApp copy ✓','ok')).catch(()=>{
+    const ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); showToast('Copied ✓','ok');
+  });
+}
+
+// ─── REPORT ───
+let _rptMode='month'; let _rptData={};
+function rptMode(m) {
+  _rptMode=m;
+  g('rpt-month-wrap').style.display=m==='month'?'':'none';
+  g('rpt-range-wrap').style.display=m==='range'?'flex':'none';
+  const on='padding:6px 16px;background:var(--gold);color:var(--bg);border:none;cursor:pointer;font-size:12px;font-weight:700';
+  const off='padding:6px 16px;background:var(--s3);color:var(--txd);border:none;cursor:pointer;font-size:12px';
+  g('rpt-btn-month').style.cssText=m==='month'?on:off;
+  g('rpt-btn-range').style.cssText=m==='range'?on:off;
+}
+function rptInRange(d,f,t){if(!d)return false;const s=d.substring(0,10);return s>=f&&s<=t;}
+function generateReport() {
+  let from='',to='',label='';
+  if(_rptMode==='month'){
+    const mo=g('rpt-month').value; if(!mo){showToast('Month সিলেক্ট করুন','err');return;}
+    from=mo+'-01'; to=mo+'-31'; label=mo;
+  } else {
+    from=g('rpt-from').value; to=g('rpt-to').value;
+    if(!from||!to){showToast('তারিখ দিন','err');return;}
+    if(from>to){showToast('From > To হতে পারে না','err');return;}
+    label=from+' → '+to;
+  }
+  const R=d=>rptInRange(d,from,to);
+  const pay=S.payments.filter(p=>R(p.date));
+  const pur=S.purchases.filter(p=>R(p.date));
+  const lc=S.lot_costs.filter(c=>R(c.date));
+  const oe=S.office_expenses.filter(e=>R(e.date));
+  const pe=S.personal_expenses.filter(e=>R(e.date));
+  const ct=S.ctg_office.filter(e=>R(e.date));
+  const co=S.courier.filter(c=>R(c.bookDate));
+  const tBDT=pay.reduce((s,p)=>s+(p.bdt||0),0);
+  const tAED=pay.reduce((s,p)=>s+(p.aed||0),0);
+  const tPcs=pur.reduce((s,p)=>s+(p.qty||0),0);
+  const tPur=pur.reduce((s,p)=>s+(p.netPayable!==undefined?p.netPayable:p.totalAED||0),0);
+  const tLC=lc.reduce((s,c)=>s+(c.totalAED||0),0);
+  const tOE=oe.reduce((s,e)=>s+(e.amount||0),0);
+  const tPE=pe.reduce((s,e)=>s+(e.amount||0),0);
+  const tCT=ct.reduce((s,e)=>s+(e.totalAED||0),0);
+  const tSpent=tPur+tLC+tOE+tPE+tCT;
+  const tBal=tAED-tSpent;
+  const tCouPcs=co.reduce((s,c)=>s+(c.bookedQty||0),0);
+  const tCouRcvd=co.filter(c=>c.ctgReceiveDate).reduce((s,c)=>s+(c.receivedQty||c.bookedQty||0),0);
+  _rptData={label,from,to,tBDT,tAED,tPcs,tPur,tLC,tOE,tPE,tCT,tSpent,tBal,tCouPcs,tCouRcvd,pay,pur,lc,oe,pe,ct,co};
+
+  const kpi=(icon,lbl,val,color,sub)=>`<div style="background:var(--s2);border:1px solid var(--brd);border-radius:10px;padding:14px 16px;position:relative;overflow:hidden"><div style="position:absolute;right:12px;top:10px;font-size:24px;opacity:.12">${icon}</div><div style="font-size:10px;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">${lbl}</div><div style="font-family:var(--font-m);font-size:18px;font-weight:700;color:${color}">${val}</div>${sub?'<div style="font-size:10px;color:var(--txm);margin-top:3px">'+sub+'</div>':''}</div>`;
+
+  const bar=(lbl,amt,total,color)=>{const pct=total>0?Math.round((amt/total)*100):0;return `<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:11px;color:var(--txd)">${lbl}</span><span style="font-family:var(--font-m);font-size:11px;color:${color}">${fAED(amt)} <span style="color:var(--txm)">(${pct}%)</span></span></div><div style="height:6px;background:var(--s3);border-radius:3px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${color};border-radius:3px"></div></div></div>`;};
+
+  const sec=(icon,title,count,inner)=>`<div class="rpt-section" style="margin-bottom:20px"><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--s2);border:1px solid var(--brd);border-radius:8px 8px 0 0;border-bottom:2px solid var(--gold)"><span style="font-size:12px;font-weight:700;color:var(--tx)">${icon} ${title}</span><span style="font-size:10px;color:var(--txd);font-family:var(--font-m)">${count} records</span></div>${inner}</div>`;
+
+  const tbl=(headers,rows,empty)=>rows.length?`<div class="tscroll" style="border:1px solid var(--brd);border-top:none;border-radius:0 0 8px 8px"><table><thead><tr>${headers.map(h=>'<th>'+h+'</th>').join('')}</tr></thead><tbody>${rows}</tbody></table></div>`:`<div style="padding:12px 16px;background:var(--s2);border:1px solid var(--brd);border-top:none;border-radius:0 0 8px 8px;color:var(--txm);font-size:12px">${empty}</div>`;
+
+  let html=`<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;padding:10px 14px;background:var(--s2);border:1px solid var(--brd2);border-radius:var(--r)"><span style="font-size:18px">📊</span><div><div style="font-size:13px;font-weight:700;color:var(--gold)">CTG Click Shop — Finance Report</div><div style="font-size:11px;color:var(--txd);font-family:var(--font-m)">${label}</div></div></div>`;
+
+  html+=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:20px" class="rpt-kpi-grid">
+    ${kpi('৳','BDT Received',fBDT(tBDT),'var(--gold)',pay.length+' transactions')}
+    ${kpi('◈','AED Received',fAED(tAED),'var(--bl)','')}
+    ${kpi('📦','Pcs Purchased',tPcs+' pcs','var(--pu)',pur.length+' lots')}
+    ${kpi('✈️','Courier Booked',tCouPcs+' pcs','var(--bl)','Received: '+tCouRcvd)}
+    ${kpi('💸','Total AED Spent',fAED(tSpent),'var(--rd)','')}
+    ${kpi('✅','Net Balance',fAED(tBal),tBal>=0?'var(--gn)':'var(--rd)',tBal>=0?'Balance OK':'⚠ Deficit')}
+  </div>`;
+
+  if(tSpent>0){html+=`<div style="background:var(--s2);border:1px solid var(--brd);border-radius:10px;padding:14px 16px;margin-bottom:20px"><div style="font-size:11px;font-weight:700;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">💸 AED Spending Breakdown</div>${bar('🛒 Purchase (Net)',tPur,tSpent,'var(--gold)')}${bar('🔧 Lot Prep',tLC,tSpent,'var(--rd)')}${bar('🏢 Office',tOE,tSpent,'var(--bl)')}${bar('👤 Personal',tPE,tSpent,'var(--pu)')}${bar('🏪 CTG Office',tCT,tSpent,'var(--gn)')}<div style="border-top:1px solid var(--brd);margin-top:10px;padding-top:8px;display:flex;justify-content:space-between"><span style="font-size:11px;color:var(--txd)">Total Spent</span><span style="font-family:var(--font-m);font-size:13px;font-weight:700;color:var(--rd)">${fAED(tSpent)}</span></div></div>`;}
+
+  html+=sec('💰','পেমেন্ট',pay.length,tbl(['তারিখ','BDT','AED','Sender','Slip'],pay.map(p=>`<tr><td>${fD(p.date)}</td><td class="ag">${fBDT(p.bdt)}</td><td class="abl">${fAED(p.aed)}</td><td class="bn">${p.sender||'—'}</td><td>${lnk(p.slip,'Slip')}</td></tr>`).join(''),'পেমেন্ট নেই'));
+  html+=sec('🛒','পার্চেজ লট',pur.length,tbl(['তারিখ','Lot','Model','Qty','Unit','Total','Net Pay'],pur.map(p=>`<tr><td>${fD(p.date)}</td><td>${tag('t-lt',p.lot)}</td><td class="bn">${p.model||'—'}</td><td>${p.qty}</td><td class="ag">${fAED(p.unitPrice)}</td><td class="abl">${fAED(p.totalAED)}</td><td class="agn" style="color:var(--gn);font-weight:700">${fAED(p.netPayable!==undefined?p.netPayable:p.totalAED)}</td></tr>`).join(''),'পার্চেজ নেই'));
+  html+=sec('🔧','লট প্রস্তুতি',lc.length,tbl(['তারিখ','Lot','Category','Qty','Unit','Total'],lc.map(c=>`<tr><td>${fD(c.date)}</td><td>${tag('t-lt',c.lot)}</td><td>${tag('t-pd',c.category)}</td><td>${c.qty}</td><td class="ag">${fAED(c.unitPrice)}</td><td class="ard">${fAED(c.totalAED)}</td></tr>`).join(''),'খরচ নেই'));
+  html+=sec('🏢','অফিস খরচ',oe.length,tbl(['তারিখ','Category','Description','Amount'],oe.map(e=>`<tr><td>${fD(e.date)}</td><td>${tag('t-pd',e.category)}</td><td class="bn">${e.description||'—'}</td><td class="ard">${fAED(e.amount)}</td></tr>`).join(''),'অফিস খরচ নেই'));
+  html+=sec('👤','পার্সোনাল',pe.length,tbl(['তারিখ','Person','Category','Amount'],pe.map(e=>`<tr><td>${fD(e.date)}</td><td>${tag(e.person==='rashed'?'t-lt':e.person==='both'?'t-vf':'t-pd',e.person==='rashed'?'রাশেদ':e.person==='both'?'রাশেদ+নেজাম':'নেজাম')}</td><td>${tag('t-pd',e.category)}</td><td class="ard">${fAED(e.amount)}</td></tr>`).join(''),'পার্সোনাল খরচ নেই'));
+  html+=sec('🏪','CTG অফিস পার্টস',ct.length,tbl(['তারিখ','Category','Model','Customer','Qty','Total'],ct.map(e=>`<tr><td>${fD(e.date)}</td><td>${tag('t-pd',e.category)}</td><td class="bn">${e.model||'—'}</td><td style="font-size:11px;color:var(--txd)">${e.customer||'—'}</td><td>${e.qty}</td><td class="ard">${fAED(e.totalAED)}</td></tr>`).join(''),'CTG পার্টস নেই'));
+  html+=sec('📦','কুরিয়ার',co.length,tbl(['Booking','Box','Sender','Lot(s)','Pcs','Flow','Pay'],co.map(c=>{const al=getLotEntries(c);const ld=al.length?al.map(l=>tag('t-lt',l.lotRef)+' <span style="font-size:10px;color:var(--txd)">'+l.lotQty+'p</span>').join(' '):'—';return `<tr><td>${fD(c.bookDate)}</td><td style="color:var(--gold)">${c.boxNumber||'—'}</td><td>${c.senderName==='nejam'?tag('t-pd','নেজাম'):tag('t-lt','রাশেদ')}</td><td>${ld}</td><td class="abl">${c.bookedQty}</td><td>${tag(c.status==='delivered'?'t-pk':'t-pd',c.status==='delivered'?'✅ Rcvd':'⏳ Transit')}</td><td>${tag(c.paymentStatus==='paid'?'t-pk':'t-up',c.paymentStatus==='paid'?'Paid':'Unpaid')}</td></tr>`;}).join(''),'কুরিয়ার নেই'));
+
+  g('rpt-output').innerHTML=html;
+  const wb=g('rpt-wa-btn'); if(wb)wb.style.display='';
+  const pb=g('rpt-print-btn'); if(pb)pb.style.display='';
+  showToast('রিপোর্ট তৈরি ✓','ok');
+}
+function copyReportWA() {
+  const d=_rptData; if(!d.label){showToast('আগে Generate করুন','err');return;}
+  let t='📊 *CTG Click Shop — Finance Report*\n📅 Period: '+d.label+'\n';
+  t+='─'.repeat(28)+'\n';
+  t+='\n💰 *Income*\n  BDT Received: '+fBDT(d.tBDT)+'\n  AED Received: '+fAED(d.tAED)+'\n';
+  t+='\n🛒 *Purchase*\n  Pcs: '+d.tPcs+' pcs ('+d.pur.length+' lots)\n  AED: '+fAED(d.tPur)+'\n';
+  t+='\n💸 *Expenses*\n';
+  if(d.tLC>0)t+='  🔧 Lot Prep: '+fAED(d.tLC)+'\n';
+  if(d.tOE>0)t+='  🏢 Office: '+fAED(d.tOE)+'\n';
+  if(d.tPE>0)t+='  👤 Personal: '+fAED(d.tPE)+'\n';
+  if(d.tCT>0)t+='  🏪 CTG Office: '+fAED(d.tCT)+'\n';
+  t+='  *Total Spent: '+fAED(d.tSpent)+'*\n';
+  t+='\n📦 *Courier*\n  Booked: '+d.tCouPcs+' pcs | Received: '+d.tCouRcvd+' pcs\n';
+  t+='\n'+'─'.repeat(28)+'\n';
+  t+=(d.tBal>=0?'✅':'⚠️')+' *Net Balance: '+fAED(d.tBal)+'*\n\n_CTG Click Shop — Dubai Finance Hub_';
+  navigator.clipboard.writeText(t).then(()=>showToast('WhatsApp text copied ✓','ok')).catch(()=>{const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);showToast('Copied ✓','ok');});
+}
+
+// ─── M9: CTG OFFICE ───
+function onCTGCatChange() {
+  const isOther = g('p9cat').value==='other';
+  g('p9cat-custom-wrap').style.display = isOther ? '' : 'none';
+}
+async function saveCTGOffice() {
+  const qty=nv('p9q'), unit=nv('p9u');
+  if(!qty||!unit){showToast('Qty ও Price দিন','err');return;}
+  const catSel=g('p9cat').value;
+  const category=catSel==='other'?(g('p9catc').value||'Other'):catSel;
+  const d={date:g('p9d').value,category,model:g('p9m').value,customer:g('p9cus').value,qty,unitPrice:unit,totalAED:qty*unit,notes:g('p9n').value,slip:g('p9sl').value};
+  await add(COLS.CT,d); clr(['p9d','p9m','p9cus','p9q','p9u','p9t','p9n','p9sl','p9catc']); tog('f-m9');
+  showToast('সেভ ✓ — AED Balance-এ বাদ হয়েছে','ok'); rCTGOffice(); updateHeader();
+}
+function rCTGOffice() {
+  const data=S.ctg_office.sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const total=data.reduce((s,e)=>s+(e.totalAED||0),0);
+  const now=new Date(); const mo=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const thisMonth=data.filter(e=>(e.date||'').startsWith(mo)).reduce((s,e)=>s+(e.totalAED||0),0);
+  g('m9ta').textContent=fAED(total); g('m9tm').textContent=fAED(thisMonth); g('m9tc').textContent=data.length;
+  const tb=g('tb-m9');
+  if(!data.length){tb.innerHTML=`<tr><td colspan="10"><div class="empty"><i class="fas fa-tools"></i><p>কোনো রেকর্ড নেই</p></div></td></tr>`;return;}
+  tb.innerHTML=data.map(e=>`<tr>
+    <td>${fD(e.date)}</td>
+    <td>${tag('t-pd',e.category||'—')}</td>
+    <td class="bn">${e.model||'—'}</td>
+    <td style="font-size:11px;color:var(--txd)">${e.customer||'—'}</td>
+    <td>${e.qty}</td>
+    <td class="ag">${fAED(e.unitPrice)}</td>
+    <td class="ard" style="font-weight:700">${fAED(e.totalAED)}</td>
+    <td class="bn" style="font-size:11px;color:var(--txd)">${e.notes||'—'}</td>
+    <td>${lnk(e.slip,'Slip')}</td>
+    <td><button class="btn btn-d" onclick="del('${COLS.CT}','${e.id}')">Del</button></td></tr>`).join('');
+}
+
+// ══════════════════════════════════════════
+//  UI HELPERS
+// ══════════════════════════════════════════
+function tab(id, el) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.ntab').forEach(t=>t.classList.remove('on'));
+  g('panel-'+id).classList.add('on'); el.classList.add('on');
+}
+function tog(id) { const el=g(id); if(el) el.style.display=el.style.display==='none'||!el.style.display?'block':'none'; }
+
+// Close modals on overlay click
+document.addEventListener('click', e=>{
+  ['ctgModal','lotModal'].forEach(mid=>{
+    const m=g(mid); if(m&&e.target===m) m.classList.remove('on');
+  });
+});
+
+let _tt;
+function showToast(msg,type='') {
+  const t=g('toast'); t.textContent=msg; t.className='toast on '+(type==='ok'?'ok':type==='err'?'err':'');
+  clearTimeout(_tt); _tt=setTimeout(()=>{t.classList.remove('on');},3200);
+}
+</script>
+</body>
+</html>
