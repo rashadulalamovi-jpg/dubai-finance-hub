@@ -8,6 +8,7 @@
 <!-- Firebase 9 Compat -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
 <!-- Fonts -->
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -812,7 +813,7 @@ function connectFirebase(cfgArg, silent) {
   }
   try {
     if (!firebase.apps.length) firebase.initializeApp(cfg);
-    db = firebase.firestore();
+    db = firebase.firestore(); firebase.auth().signInAnonymously().catch(e=>console.warn('anon auth:',e));;
     localStorage.setItem('fb_config', JSON.stringify(cfg));
     document.getElementById('cfgModal').classList.remove('on');
     if (!silent) showToast('Firebase Connected ✓','ok');
