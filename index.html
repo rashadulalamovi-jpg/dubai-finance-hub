@@ -798,7 +798,8 @@ let db = null;
 //  INIT
 // ══════════════════════════════════════════
 window.addEventListener('load', () => {
-  const saved = localStorage.getItem('fb_config');
+  const DEFAULT_CONFIG = {"apiKey":"AIzaSyB6BZuchGQ-i87jHhVHtgiS0bohsXXufhk","authDomain":"ctg-click-shop-crm.firebaseapp.com","projectId":"ctg-click-shop-crm","storageBucket":"ctg-click-shop-crm.firebasestorage.app","messagingSenderId":"418153694896","appId":"1:418153694896:web:9821e895e5f41d441ddd75","measurementId":"G-7ENFLSFF1W"};
+    const saved = localStorage.getItem('fb_config') || JSON.stringify(DEFAULT_CONFIG);
   if (saved) { try { connectFirebase(JSON.parse(saved), true); return; } catch(e){} }
   document.getElementById('cfgModal').classList.add('on');
   setRate(localStorage.getItem('rate') || '34.20');
