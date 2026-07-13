@@ -963,7 +963,7 @@ function updateHeader() {
   const tBDT  = S.payments.reduce((s,p)=>s+(p.bdt||0),0);
   const tAED  = S.payments.reduce((s,p)=>s+(p.aed||0),0);
   const spPur = S.purchases.reduce((s,p)=>s+(p.netPayable!==undefined?p.netPayable:p.totalAED||0),0);
-  const spAdv = S.advances.reduce((s,a)=>s+(a.status==='pending'?(a.advanceAmount||a.amount||0):0),0);
+  const spAdv = S.advances.reduce((s,a)=>s+(a.status!=='reversed'?(a.advanceAmount||a.amount||0):0),0);
   const spCst = S.lot_costs.reduce((s,c)=>s+(c.totalAED||0),0);
   const spOff = S.office_expenses.reduce((s,e)=>s+(e.amount||0),0);
   const spPer = S.personal_expenses.reduce((s,e)=>s+(e.amount||0),0);
