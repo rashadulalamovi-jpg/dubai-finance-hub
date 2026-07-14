@@ -2,8 +2,32 @@
 <html lang="bn">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>CTG Click Shop — Dubai Finance Hub</title>
+
+<!-- PWA Manifest -->
+<link rel="manifest" href="manifest.json">
+
+<!-- Theme & Colors -->
+<meta name="theme-color" content="#F5B731">
+<meta name="background-color" content="#070C14">
+<meta name="msapplication-TileColor" content="#070C14">
+<meta name="msapplication-TileImage" content="icon-192.png">
+
+<!-- iOS PWA (Safari) -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CTG Dubai">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="apple-touch-startup-image" href="icon-512.png">
+
+<!-- Android -->
+<meta name="mobile-web-app-capable" content="yes">
+
+<!-- SEO/Meta -->
+<meta name="description" content="CTG Click Shop — Dubai wholesale laptop finance & inventory management">
+<meta name="application-name" content="CTG Dubai Finance">
+<link rel="icon" type="image/png" href="icon-192.png">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -110,6 +134,136 @@ td.bn{font-family:var(--font-b);font-size:12.5px;}
 .cs-step.done{background:var(--gn2);border-color:var(--gn2);color:var(--gn);}
 .cs-step.live{background:#2A1F00;border-color:var(--gold2);color:var(--gold);}
 .cs-arr{color:var(--txm);font-size:10px;}
+/* ── PWA Mobile Enhancements ── */
+:root{--safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px);}
+body{padding-bottom:calc(56px + var(--safe-bottom));}
+
+/* Bottom navigation (PWA standalone mode) */
+.pwa-bottom-nav{
+  display:none;
+  position:fixed;bottom:0;left:0;right:0;
+  height:calc(56px + var(--safe-bottom));
+  padding-bottom:var(--safe-bottom);
+  background:var(--s1);
+  border-top:1px solid var(--brd);
+  z-index:200;
+  align-items:flex-start;
+  justify-content:space-around;
+  box-shadow:0 -4px 20px rgba(0,0,0,.4);
+}
+.pwa-bnav-item{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  flex:1;height:56px;cursor:pointer;
+  font:400 9px/1 var(--font-b);color:var(--txm);
+  transition:color .15s;gap:4px;
+  -webkit-tap-highlight-color:transparent;
+}
+.pwa-bnav-item:active{opacity:.7;}
+.pwa-bnav-item.on,.pwa-bnav-item:hover{color:var(--gold);}
+.pwa-bnav-item i{font-size:18px;}
+.pwa-bnav-item.on i{color:var(--gold);}
+
+/* Install banner */
+.pwa-install-banner{
+  display:none;position:fixed;bottom:calc(60px + var(--safe-bottom));left:12px;right:12px;
+  background:var(--s1);border:1px solid var(--gold2);border-radius:var(--rl);
+  padding:12px 16px;z-index:300;
+  box-shadow:0 8px 32px rgba(0,0,0,.5);
+  flex-direction:row;align-items:center;gap:12px;
+}
+.pwa-install-icon{width:40px;height:40px;background:linear-gradient(135deg,var(--gold),#E08000);border-radius:8px;display:flex;align-items:center;justify-content:center;font:700 16px/1 var(--font-m);color:var(--bg-deep);flex-shrink:0;}
+.pwa-install-text{flex:1;}
+.pwa-install-title{font:600 13px/1 var(--font-b);color:var(--tx);}
+.pwa-install-sub{font:400 11px/1 var(--font-b);color:var(--txd);margin-top:3px;}
+.pwa-install-btn{padding:7px 14px;background:var(--gold);color:var(--bg-deep);border:none;border-radius:var(--r);font:600 11px/1 var(--font-b);cursor:pointer;white-space:nowrap;flex-shrink:0;}
+
+/* Header safe area */
+.hdr{padding-top:calc(14px + var(--safe-top));}
+
+/* Standalone mode adjustments */
+@media (display-mode: standalone){
+  .pwa-bottom-nav{display:flex;}
+  .nav{display:none;}
+  .hdr{background:var(--bg-deep);}
+  body{padding-bottom:calc(56px + var(--safe-bottom));}
+}
+
+/* Mobile touch improvements */
+@media (max-width:768px){
+  .pwa-bottom-nav{display:flex;}
+  .ntab{display:none;}
+  .nav{display:none;}
+  input,select,textarea{font-size:16px!important;} /* Prevent zoom on focus */
+  .btn{padding:10px 20px;}
+  .btn-add{padding:9px 16px;}
+  .fwrap{padding:14px;}
+  td,th{padding:7px 10px;font-size:11px;}
+  .hdr{flex-direction:row;gap:8px;padding:10px 14px;}
+  .hkpis{display:none;} /* Hide header KPIs on small mobile — use dashboard */
+  .rate-badge{display:none;}
+  .btn-ico{display:none;}
+  .logo-s{display:block;}
+  /* Swipe-friendly panels */
+  .panel{animation:fadeIn .2s ease;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+  /* Dashboard cards on mobile */
+  .dash-hero-sub{gap:14px;}
+  .dash-hero-amount{font-size:24px;}
+  .loc-qty{font-size:22px;}
+}
+
+/* Splash screen */
+.pwa-splash{
+  display:none;position:fixed;inset:0;z-index:9999;
+  background:var(--bg-deep);flex-direction:column;
+  align-items:center;justify-content:center;gap:16px;
+}
+.pwa-splash.show{display:flex;}
+.pwa-splash-logo{width:80px;height:80px;background:linear-gradient(135deg,var(--gold),#E08000);border-radius:18px;display:flex;align-items:center;justify-content:center;font:700 28px/1 var(--font-m);color:var(--bg-deep);box-shadow:0 0 40px rgba(245,183,49,.3);}
+.pwa-splash-title{font:700 16px/1 var(--font-m);color:var(--gold);}
+.pwa-splash-sub{font:400 12px/1 var(--font-b);color:var(--txd);}
+.pwa-spinner{width:24px;height:24px;border:2px solid var(--brd);border-top-color:var(--gold);border-radius:50%;animation:sp .7s linear infinite;margin-top:8px;}
+.dash-hero{background:linear-gradient(135deg,#0A2A1A 0%,#0C1F2E 50%,#1A2A0A 100%);border:1px solid var(--gn2);border-radius:var(--rl);padding:24px 28px;margin-bottom:20px;position:relative;overflow:hidden;}
+.dash-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 70% 50%,rgba(0,217,126,.06) 0%,transparent 60%);pointer-events:none;}
+.dash-hero-title{font:400 10px/1 var(--font-m);color:var(--gn);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;}
+.dash-hero-amount{font:700 32px/1 var(--font-m);color:var(--gn);margin-bottom:4px;}
+.dash-hero-bdt{font:400 14px/1 var(--font-m);color:var(--txd);margin-bottom:16px;}
+.dash-hero-sub{display:flex;gap:20px;flex-wrap:wrap;}
+.dash-hero-kpi{text-align:left;}
+.dash-hero-kpi-l{font:400 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase;letter-spacing:.4px;}
+.dash-hero-kpi-v{font:600 13px/1 var(--font-m);margin-top:3px;}
+.dash-kpi{background:var(--s1);border:1px solid var(--brd);border-radius:var(--rl);padding:14px 16px;position:relative;overflow:hidden;cursor:pointer;transition:border-color .15s;}
+.dash-kpi:hover{border-color:var(--brd2);}
+.dash-kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.dash-kpi.green::before{background:var(--gn);}.dash-kpi.gold::before{background:var(--gold);}
+.dash-kpi.blue::before{background:var(--bl);}.dash-kpi.red::before{background:var(--rd);}
+.dash-kpi.purple::before{background:var(--pu);}.dash-kpi.amber::before{background:var(--gold);}
+.dk-label{font:400 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;}
+.dk-value{font:700 18px/1 var(--font-m);}
+.dk-value.green{color:var(--gn);}.dk-value.gold{color:var(--gold);}
+.dk-value.blue{color:var(--bl);}.dk-value.red{color:var(--rd);}
+.dk-value.purple{color:var(--pu);}
+.dk-sub{font:400 11px/1 var(--font-m);color:var(--txd);margin-top:4px;}
+.loc-card{background:var(--s1);border:1px solid var(--brd);border-radius:var(--rl);padding:18px 20px;text-align:center;cursor:pointer;transition:border-color .15s;}
+.loc-card:hover{border-color:var(--brd2);}
+.loc-title{font:600 11px/1 var(--font-m);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;}
+.loc-qty{font:700 28px/1 var(--font-m);}
+.loc-aed{font:400 13px/1 var(--font-m);margin-top:4px;}
+.loc-sub{font:400 10px/1 var(--font-m);color:var(--txm);margin-top:6px;}
+.dist-bar{height:18px;border-radius:9px;overflow:hidden;display:flex;margin:10px 0;background:var(--s2);}
+.dist-seg{height:100%;display:flex;align-items:center;justify-content:center;font:600 9px/1 var(--font-m);color:var(--bg-deep);transition:width .3s;}
+.dash-section{margin-bottom:24px;}
+.dash-section-title{font:600 12px/1 var(--font-m);color:var(--txd);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.dash-section-title::after{content:'';flex:1;height:1px;background:var(--brd);}
+.dash-today-card{background:var(--s2);border:1px solid var(--brd);border-radius:var(--r);padding:12px 14px;}
+.dtc-label{font:400 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px;}
+.dtc-value{font:700 16px/1 var(--font-m);}
+.dtc-sub{font:400 10px/1 var(--font-m);color:var(--txd);margin-top:3px;}
+.alert-box{padding:10px 14px;border-radius:var(--r);font-size:12px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start;}
+.alert-box.ok{background:var(--gn2);border:1px solid var(--gn2);color:var(--gn);}
+.alert-box.warn{background:#2A1F00;border:1px solid var(--gold2);color:var(--gold);}
+.alert-box.err{background:var(--rd2);border:1px solid var(--rd2);color:var(--rd);}
+.dash-last-updated{font:400 10px/1 var(--font-m);color:var(--txm);margin-bottom:16px;}
 /* M2 multi-model item row */
 .adv-item-row{display:grid;grid-template-columns:2fr 70px 100px 90px 30px;gap:5px;align-items:center;margin-bottom:6px;}
 .adv-item-row input{padding:6px 8px;font-size:12px;}
@@ -129,8 +283,56 @@ td.bn{font-family:var(--font-b);font-size:12.5px;}
 <button class="btn btn-p" onclick="connectFirebase()">Connect Firebase</button>
 <button class="btn btn-s" onclick="demoMode()">Demo Mode</button>
 </div></div></div>
+<!-- PWA Splash Screen -->
+<div class="pwa-splash" id="pwa-splash">
+  <div class="pwa-splash-logo">CC</div>
+  <div class="pwa-splash-title">CTG CLICK SHOP</div>
+  <div class="pwa-splash-sub">Dubai Finance Hub</div>
+  <div class="pwa-spinner"></div>
+</div>
+
+<!-- PWA Install Banner -->
+<div class="pwa-install-banner" id="pwa-install-banner">
+  <div class="pwa-install-icon">CC</div>
+  <div class="pwa-install-text">
+    <div class="pwa-install-title">App হিসেবে Install করুন</div>
+    <div class="pwa-install-sub">Home Screen-এ Add করলে faster কাজ করবে</div>
+  </div>
+  <button class="pwa-install-btn" onclick="installPWA()">📲 Install</button>
+  <button onclick="g('pwa-install-banner').style.display='none'" style="background:none;border:none;color:var(--txd);cursor:pointer;font-size:16px;padding:4px">✕</button>
+</div>
+
+<!-- Bottom Navigation (Mobile / PWA) -->
+<nav class="pwa-bottom-nav" id="pwa-bottom-nav">
+  <div class="pwa-bnav-item on" id="bnav-dash" onclick="pwaTab('dash')">
+    <i class="fas fa-chart-pie"></i>Dashboard
+  </div>
+  <div class="pwa-bnav-item" id="bnav-m2" onclick="pwaTab('m2')">
+    <i class="fas fa-forward"></i>Advance
+  </div>
+  <div class="pwa-bnav-item" id="bnav-m3" onclick="pwaTab('m3')">
+    <i class="fas fa-shopping-cart"></i>Purchase
+  </div>
+  <div class="pwa-bnav-item" id="bnav-m7" onclick="pwaTab('m7')">
+    <i class="fas fa-box"></i>Courier
+  </div>
+  <div class="pwa-bnav-item" id="bnav-more" onclick="toggleMoreMenu()">
+    <i class="fas fa-ellipsis-h"></i>More
+  </div>
+</nav>
+
+<!-- More Menu (mobile) -->
+<div id="more-menu" style="display:none;position:fixed;bottom:calc(60px + var(--safe-bottom));left:0;right:0;background:var(--s1);border-top:1px solid var(--brd);z-index:201;padding:8px;display:none">
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:8px">
+  <div onclick="pwaTab('m1');toggleMoreMenu()" style="padding:12px;text-align:center;cursor:pointer;border:1px solid var(--brd);border-radius:var(--r);font:400 11px/1.4 var(--font-b);color:var(--txd)"><i class="fas fa-money-bill" style="display:block;font-size:20px;color:var(--gn);margin-bottom:6px"></i>Payment</div>
+  <div onclick="pwaTab('m4');toggleMoreMenu()" style="padding:12px;text-align:center;cursor:pointer;border:1px solid var(--brd);border-radius:var(--r);font:400 11px/1.4 var(--font-b);color:var(--txd)"><i class="fas fa-wrench" style="display:block;font-size:20px;color:var(--gold);margin-bottom:6px"></i>Lot Cost</div>
+  <div onclick="pwaTab('m5');toggleMoreMenu()" style="padding:12px;text-align:center;cursor:pointer;border:1px solid var(--brd);border-radius:var(--r);font:400 11px/1.4 var(--font-b);color:var(--txd)"><i class="fas fa-building" style="display:block;font-size:20px;color:var(--bl);margin-bottom:6px"></i>Office</div>
+  <div onclick="pwaTab('m6');toggleMoreMenu()" style="padding:12px;text-align:center;cursor:pointer;border:1px solid var(--brd);border-radius:var(--r);font:400 11px/1.4 var(--font-b);color:var(--txd)"><i class="fas fa-user" style="display:block;font-size:20px;color:var(--pu);margin-bottom:6px"></i>Personal</div>
+  <div onclick="pwaTab('m8');toggleMoreMenu()" style="padding:12px;text-align:center;cursor:pointer;border:1px solid var(--brd);border-radius:var(--r);font:400 11px/1.4 var(--font-b);color:var(--txd)"><i class="fas fa-user-tie" style="display:block;font-size:20px;color:var(--bl);margin-bottom:6px"></i>Nezam</div>
+  <div onclick="pwaTab('m9');toggleMoreMenu()" style="padding:12px;text-align:center;cursor:pointer;border:1px solid var(--brd);border-radius:var(--r);font:400 11px/1.4 var(--font-b);color:var(--txd)"><i class="fas fa-store" style="display:block;font-size:20px;color:var(--rd);margin-bottom:6px"></i>CTG Office</div>
+  <div onclick="pwaTab('rpt');toggleMoreMenu()" style="padding:12px;text-align:center;cursor:pointer;border:1px solid var(--brd);border-radius:var(--r);font:400 11px/1.4 var(--font-b);color:var(--txd)"><i class="fas fa-chart-bar" style="display:block;font-size:20px;color:var(--gold);margin-bottom:6px"></i>Report</div>
+</div></div>
 <div class="toast" id="toast"></div>
-<!-- HEADER -->
 <div class="hdr">
 <div class="logo"><div class="logo-ico">CC</div><div><div class="logo-t">CTG CLICK SHOP</div><div class="logo-s">Dubai Finance Hub — v2.0</div></div></div>
 <div class="hkpis">
@@ -146,6 +348,7 @@ td.bn{font-family:var(--font-b);font-size:12.5px;}
 </div></div>
 <!-- NAV -->
 <div class="nav">
+<div class="ntab" onclick="tab('dash',this)"><span>📊</span> ড্যাশবোর্ড</div>
 <div class="ntab on" onclick="tab('m1',this)"><span>💸</span> পেমেন্ট</div>
 <div class="ntab" onclick="tab('m2',this)"><span>⏩</span> অ্যাডভান্স</div>
 <div class="ntab" onclick="tab('m3',this)"><span>🛒</span> পার্চেজ লট</div>
@@ -158,6 +361,122 @@ td.bn{font-family:var(--font-b);font-size:12.5px;}
 <div class="ntab" onclick="tab('rpt',this)"><span>📊</span> রিপোর্ট</div>
 </div>
 <div class="main">
+<!-- DASHBOARD -->
+<div class="panel" id="panel-dash">
+<div class="sh"><div><h2>📊 Dubai Capital Position <span class="mod-badge">Live</span></h2></div>
+<button class="btn-add" onclick="renderDashboard()">🔄 Refresh</button></div>
+<div class="dash-last-updated" id="dash-last-updated">Last updated: —</div>
+
+<!-- Hero Card -->
+<div class="dash-hero">
+<div class="dash-hero-title">🇦🇪 Total Dubai Assets</div>
+<div class="dash-hero-amount" id="d-total-assets">AED 0</div>
+<div class="dash-hero-bdt" id="d-total-bdt">≈ ৳0</div>
+<div class="dash-hero-sub">
+<div class="dash-hero-kpi"><div class="dash-hero-kpi-l">Available Cash</div><div class="dash-hero-kpi-v" id="d-avail-cash" style="color:var(--gn)">AED 0</div></div>
+<div class="dash-hero-kpi"><div class="dash-hero-kpi-l">Pipeline Value</div><div class="dash-hero-kpi-v" id="d-pipeline-v" style="color:var(--gold)">AED 0</div></div>
+<div class="dash-hero-kpi"><div class="dash-hero-kpi-l">Active Dubai PCs</div><div class="dash-hero-kpi-v" id="d-active-pcs" style="color:var(--bl)">0 pcs</div></div>
+<div class="dash-hero-kpi"><div class="dash-hero-kpi-l">Current Rate</div><div class="dash-hero-kpi-v" id="d-rate" style="color:var(--txd)">1 AED = ৳—</div></div>
+</div>
+</div>
+
+<!-- Section: Cash Position -->
+<div class="dash-section">
+<div class="dash-section-title">💰 Finance Position</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px">
+<div class="dash-kpi gold"><div class="dk-label">BDT Sent</div><div class="dk-value gold" id="d-bdt-sent">৳0</div></div>
+<div class="dash-kpi blue"><div class="dk-label">AED Received</div><div class="dk-value blue" id="d-aed-rcvd">AED 0</div></div>
+<div class="dash-kpi red"><div class="dk-label">AED Expense</div><div class="dk-value red" id="d-aed-exp">AED 0</div></div>
+<div class="dash-kpi green"><div class="dk-label">Available Cash</div><div class="dk-value green" id="d-cash">AED 0</div><div class="dk-sub" id="d-cash-bdt">≈ ৳0</div></div>
+</div>
+</div>
+
+<!-- Section: Operational -->
+<div class="dash-section">
+<div class="dash-section-title">📦 Operational Position</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px">
+<div class="dash-kpi amber"><div class="dk-label">Total Lots</div><div class="dk-value gold" id="d-total-lots">0</div></div>
+<div class="dash-kpi amber"><div class="dk-label">Active Dubai Lots</div><div class="dk-value gold" id="d-active-lots">0</div></div>
+<div class="dash-kpi blue"><div class="dk-label">Total Purchased PCs</div><div class="dk-value blue" id="d-total-pcs">0</div></div>
+<div class="dash-kpi blue"><div class="dk-label">Active Dubai PCs</div><div class="dk-value blue" id="d-dubai-pcs">0</div></div>
+</div>
+</div>
+
+<!-- Section: Capital Location -->
+<div class="dash-section">
+<div class="dash-section-title">🏪 Capital Location</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px">
+<div class="loc-card" style="border-color:var(--pu2)">
+<div class="loc-title" style="color:var(--pu)">🏢 Dubai Office</div>
+<div class="loc-qty" style="color:var(--pu)" id="d-office-qty">0 pcs</div>
+<div class="loc-aed" style="color:var(--txd)" id="d-office-aed">AED 0</div>
+<div class="loc-sub" id="d-office-models">0 models</div>
+</div>
+<div class="loc-card" style="border-color:var(--bl2)">
+<div class="loc-title" style="color:var(--bl)">🚚 In Transit</div>
+<div class="loc-qty" style="color:var(--bl)" id="d-transit-qty">0 pcs</div>
+<div class="loc-aed" style="color:var(--txd)" id="d-transit-aed">AED 0</div>
+<div class="loc-sub" id="d-transit-boxes">0 shipments</div>
+</div>
+<div class="loc-card" style="border-color:var(--gold2)">
+<div class="loc-title" style="color:var(--gold)">🎯 Dubai Pipeline</div>
+<div class="loc-qty" style="color:var(--gold)" id="d-pipeline-qty">0 pcs</div>
+<div class="loc-aed" style="color:var(--gold)" id="d-pipeline-aed">AED 0</div>
+<div class="loc-sub">Office + In Transit</div>
+</div>
+</div>
+
+<!-- Capital Distribution Bar -->
+<div style="margin-top:16px;padding:14px;background:var(--s2);border:1px solid var(--brd);border-radius:var(--r)">
+<div style="font:400 10px/1 var(--font-m);color:var(--txd);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Capital Distribution</div>
+<div class="dist-bar" id="d-dist-bar">
+<div class="dist-seg" style="background:var(--gn);width:91%" id="d-seg-cash" title="Available Cash">Cash</div>
+<div class="dist-seg" style="background:var(--pu);width:0%" id="d-seg-office" title="Dubai Office">Office</div>
+<div class="dist-seg" style="background:var(--bl);width:9%" id="d-seg-transit" title="In Transit">Transit</div>
+</div>
+<div id="d-dist-labels" style="display:flex;gap:16px;flex-wrap:wrap;margin-top:6px;font:400 10px/1.4 var(--font-m);color:var(--txd)">
+<span id="d-dist-l1">Cash: 0%</span><span id="d-dist-l2">Office: 0%</span><span id="d-dist-l3">Transit: 0%</span>
+</div>
+</div>
+</div>
+
+<!-- Section: Today's Movement -->
+<div class="dash-section">
+<div class="dash-section-title">📅 Today's Movement</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px" id="d-today-grid">
+<div class="dash-today-card"><div class="dtc-label">Today Purchased</div><div class="dtc-value" id="d-today-pur" style="color:var(--bl)">0 pcs</div><div class="dtc-sub" id="d-today-pur-aed">AED 0</div></div>
+<div class="dash-today-card"><div class="dtc-label">Today Courier Booked</div><div class="dtc-value" id="d-today-cour" style="color:var(--gold)">0 pcs</div><div class="dtc-sub" id="d-today-cour-v">0 shipments</div></div>
+<div class="dash-today-card"><div class="dtc-label">Today CTG Received</div><div class="dtc-value" id="d-today-rcvd" style="color:var(--gn)">0 pcs</div></div>
+<div class="dash-today-card"><div class="dtc-label">Today Advance Paid</div><div class="dtc-value" id="d-today-adv" style="color:var(--rd)">AED 0</div></div>
+<div class="dash-today-card"><div class="dtc-label">Today Remaining Paid</div><div class="dtc-value" id="d-today-rem" style="color:var(--rd)">AED 0</div></div>
+<div class="dash-today-card"><div class="dtc-label">Today Total Expense</div><div class="dtc-value" id="d-today-exp" style="color:var(--rd)">AED 0</div></div>
+</div>
+</div>
+
+<!-- Section: Model-wise Position -->
+<div class="dash-section">
+<div class="dash-section-title">📱 Model-wise Dubai Position</div>
+<div class="twrap"><div class="tscroll"><table>
+<thead><tr><th>Model</th><th>Purchased</th><th>In Transit</th><th>CTG Rcvd</th><th>Dubai Office</th><th>Purchase Cost</th><th>Avg Cost/PC</th></tr></thead>
+<tbody id="d-model-table"><tr><td colspan="7"><div class="empty"><i class="fas fa-laptop"></i><p>Data loading...</p></div></td></tr></tbody>
+</table></div></div>
+</div>
+
+<!-- Section: Active Lots -->
+<div class="dash-section">
+<div class="dash-section-title">🏷️ Active Lot Status</div>
+<div class="twrap"><div class="tscroll"><table>
+<thead><tr><th>Lot</th><th>Purchase Date</th><th>Total PCS</th><th>In Transit</th><th>CTG Rcvd</th><th>Dubai Remaining</th><th>Purchase Value</th><th>Prep Cost</th><th>Status</th></tr></thead>
+<tbody id="d-lot-table"><tr><td colspan="9"><div class="empty"><i class="fas fa-box"></i><p>Data loading...</p></div></td></tr></tbody>
+</table></div></div>
+</div>
+
+<!-- Section: Risk Alerts -->
+<div class="dash-section">
+<div class="dash-section-title">⚠️ Risk & Alerts</div>
+<div id="d-alerts"><div class="alert-box ok"><i class="fas fa-check-circle"></i> <span>সব data load হচ্ছে...</span></div></div>
+</div>
+</div>
 <!-- M1 -->
 <div class="panel on" id="panel-m1">
 <div class="sh"><div><h2>💸 পেমেন্ট রিসিভড <span class="mod-badge">M1</span></h2></div><button class="btn-add" onclick="tog('f-m1')">+ নতুন এন্ট্রি</button></div>
@@ -241,7 +560,7 @@ td.bn{font-family:var(--font-b);font-size:12.5px;}
 </table></div></div></div>
 <!-- M3 -->
 <div class="panel" id="panel-m3">
-<div class="sh"><div><h2>🛒 পার্চেজ লট <span class="mod-badge">M3</span></h2></div><button class="btn-add" onclick="tog('f-m3')">+ নতুন পার্চেজ</button></div>
+<div class="sh"><div><h2>🛒 পার্চেজ লট <span class="mod-badge">M3</span></h2></div><button class="btn-add" onclick="resetM3Form();tog('f-m3')">+ নতুন পার্চেজ</button></div>
 <div class="cards">
 <div class="card bl"><div class="cl">Total PCs</div><div class="cv" id="m3tq">0</div><div class="cs">মোট ল্যাপটপ</div></div>
 <div class="card g"><div class="cl">Total AED Spent</div><div class="cv" id="m3ta">—</div></div>
@@ -249,24 +568,67 @@ td.bn{font-family:var(--font-b);font-size:12.5px;}
 <div class="card pu"><div class="cl">Avg Cost/Pc</div><div class="cv" id="m3av">—</div></div>
 </div>
 <div id="m3-lot-status"></div>
-<div class="fwrap" id="f-m3"><div class="ftitle"><i class="fas fa-shopping-cart"></i> নতুন পার্চেজ</div>
+<div class="fwrap" id="f-m3"><div class="ftitle"><i class="fas fa-shopping-cart"></i> <span id="p3-form-title">নতুন পার্চেজ</span></div>
+<!-- Advance Ref Selector -->
+<div style="margin-bottom:12px;padding:10px 14px;background:var(--s2);border:1px solid var(--brd2);border-radius:var(--r)">
+<label style="font-size:10px;color:var(--txd);text-transform:uppercase;letter-spacing:.4px">Advance Invoice Link (Optional)</label>
+<select id="p3ar" onchange="onAdvRefChange()" style="width:100%;margin-top:6px;padding:8px 10px;background:var(--s3);border:1px solid var(--gold2);border-radius:var(--r);color:var(--tx);font-size:12px;font-family:var(--font-m)">
+<option value="">— Direct Purchase (No Advance) —</option>
+</select>
+</div>
+<!-- Advance Invoice Preview Panel -->
+<div id="adv-preview-panel" style="display:none;margin-bottom:14px;padding:12px 14px;background:var(--s2);border:1px solid var(--bl2);border-radius:var(--r)">
+<div style="font-size:11px;font-weight:700;color:var(--bl);margin-bottom:10px">📋 Advance Invoice Details</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+<div><div style="font-size:10px;color:var(--txd);text-transform:uppercase">Supplier</div><div id="ap-supplier" style="font-size:12px;color:var(--tx);margin-top:2px">—</div></div>
+<div><div style="font-size:10px;color:var(--txd);text-transform:uppercase">Invoice Total</div><div id="ap-total" style="font-size:12px;color:var(--gold);font-weight:700;margin-top:2px">—</div></div>
+<div><div style="font-size:10px;color:var(--txd);text-transform:uppercase">Advance Paid</div><div id="ap-paid" style="font-size:12px;color:var(--bl);font-weight:700;margin-top:2px">—</div></div>
+</div>
+<!-- Multi-model line items (editable) -->
+<div id="adv-m3-items" style="margin-bottom:10px"></div>
+<div style="display:flex;justify-content:flex-end;margin-bottom:8px">
+<button type="button" onclick="addM3AdvItem()" style="padding:4px 12px;background:var(--s2);border:1px solid var(--brd2);border-radius:var(--r);color:var(--bl);font-size:11px;cursor:pointer">+ Model যুক্ত করুন</button>
+</div>
+<!-- Remaining Balance -->
+<div id="ap-balance-box" style="padding:8px 12px;background:var(--s3);border-radius:var(--r);font-size:12px;font-family:var(--font-m)">
+<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px">
+<span style="color:var(--txd)">Final Invoice Total: <b id="ap-final-total" style="color:var(--gold)">dh0</b></span>
+<span style="color:var(--txd)">Advance: <b id="ap-adv-paid" style="color:var(--bl)">dh0</b></span>
+<span style="color:var(--txd)">Remaining: <b id="ap-remaining" style="color:var(--gn)">dh0</b></span>
+</div>
+<div id="ap-refund-warn" style="display:none;margin-top:6px;color:var(--rd);font-size:11px">⚠ Advance > Final Total — Supplier Refund/Credit Due: <b id="ap-refund-amt"></b></div>
+</div>
+</div>
+<!-- Regular M3 form fields -->
 <div class="fgrid">
 <div class="fg"><label>তারিখ</label><input type="date" id="p3d"></div>
 <div class="fg"><label>Lot No. (Auto)</label><input type="text" id="p3l" readonly style="color:var(--bl)"></div>
 <div class="fg"><label>Supplier</label><input type="text" id="p3su" placeholder="Supplier নাম"></div>
-<div class="fg full"><label>Model Description</label><input type="text" id="p3m" placeholder="HP 840 G7 i5 10th 8/256"></div>
-<div class="fg"><label>Qty</label><input type="number" id="p3q" placeholder="0"></div>
-<div class="fg"><label>Unit Price (AED)</label><input type="number" id="p3u" placeholder="0"></div>
-<div class="fg"><label>Total AED (Auto)</label><input type="number" id="p3t" readonly style="opacity:.55"></div>
-<div class="fg"><label>Advance Deduct (AED)</label><input type="number" id="p3ad" placeholder="0"></div>
-<div class="fg"><label>Advance Ref</label><select id="p3ar"><option value="">— Select Advance —</option></select></div>
-<div class="fg"><label>Invoice URL <span style="color:var(--rd);font-size:10px">★ বাধ্যতামূলক</span></label><input type="url" id="p3i" placeholder="https://prnt.sc/..." style="border-color:var(--gold2)"></div>
+<div class="fg full" id="p3-model-wrap"><label>Model Description</label><input type="text" id="p3m" placeholder="HP 840 G7 i5 10th 8/256"></div>
+<div class="fg" id="p3-qty-wrap"><label>Qty</label><input type="number" id="p3q" placeholder="0"></div>
+<div class="fg" id="p3-unit-wrap"><label>Unit Price (AED)</label><input type="number" id="p3u" placeholder="0"></div>
+<div class="fg" id="p3-total-wrap"><label>Total AED (Auto)</label><input type="number" id="p3t" readonly style="opacity:.55"></div>
+<div class="fg" id="p3-invoice-fg"><label>Invoice URL <span style="color:var(--rd);font-size:10px">★ বাধ্যতামূলক</span></label><input type="url" id="p3i" placeholder="https://prnt.sc/..." style="border-color:var(--gold2)"></div>
 </div>
-<div class="fbtns"><button class="btn btn-p" onclick="savePurchase()">Save Purchase</button><button class="btn btn-s" onclick="tog('f-m3')">Cancel</button></div>
+<div class="fbtns" id="p3-btns">
+<button class="btn btn-p" id="p3-save-btn" onclick="savePurchase()">Save Purchase</button>
+<button class="btn btn-p" id="p3-close-btn" onclick="payRemainingAndClose()" style="display:none;background:var(--gn);color:var(--bg-deep)">💸 Pay Remaining & Close Invoice</button>
+<button class="btn btn-s" onclick="tog('f-m3');resetM3Form()">Cancel</button>
 </div>
+</div>
+
+<!-- Pay Remaining Confirmation Modal -->
+<div class="moverlay" id="closeInvModal"><div class="modal" style="max-width:480px">
+<div class="mtitle">💸 Pay Remaining & Close Invoice</div>
+<div id="closeInvBody" style="font-size:13px;color:var(--txd);line-height:1.9;margin-bottom:18px"></div>
+<div class="fbtns">
+<button class="btn btn-p" id="closeInvConfirmBtn" onclick="confirmCloseInvoice()" style="background:var(--gn);color:var(--bg-deep)">✅ Confirm Payment</button>
+<button class="btn btn-s" onclick="g('closeInvModal').classList.remove('on')">Cancel</button>
+</div>
+</div></div>
 <div class="twrap"><div class="thead2"><span class="ttitle">পার্চেজ রেকর্ড (Lot-wise)</span></div>
 <div class="tscroll"><table>
-<thead><tr><th>তারিখ</th><th>Lot</th><th>Model</th><th>Qty</th><th>Unit(AED)</th><th>Total(AED)</th><th>Adv.Ded.</th><th style="color:var(--gn)">Net Payable</th><th>Invoice</th><th>Del</th></tr></thead>
+<thead><tr><th>তারিখ</th><th>Lot</th><th>Model</th><th>Qty</th><th>Unit(AED)</th><th>Total(AED)</th><th>Adv.Ded.</th><th style="color:var(--gn)">Remaining Paid</th><th>Advance Ref</th><th>Invoice</th><th>Del</th></tr></thead>
 <tbody id="tb-m3"><tr><td colspan="10"><div class="empty"><i class="fas fa-database"></i><p>কোনো রেকর্ড নেই</p></div></td></tr></tbody>
 </table></div></div></div>
 
@@ -589,9 +951,14 @@ function refreshSelectors(){
   const lots=[...new Set(S.purchases.map(p=>p.lot).filter(Boolean))].sort();
   const fill=id=>{const el=g(id);if(!el)return;const cur=el.value;el.innerHTML=`<option value="">— Lot —</option>`+lots.map(l=>`<option value="${l}">${l}</option>`).join('');el.value=cur;};
   fill('p2l');fill('p4l');fill('p7lot');
-  const adv=S.advances.filter(a=>a.status!=='cleared'&&a.status!=='reversed');
+  // Advance Ref dropdown: show full details, only Outstanding/pending advances
+  const advOpen=S.advances.filter(a=>a.status!=='closed'&&a.status!=='reversed');
   const ar=g('p3ar');if(!ar)return;const cur=ar.value;
-  ar.innerHTML=`<option value="">— Select Advance —</option>`+adv.map(a=>`<option value="${a.id}">${a.model||'Advance'} | dh${a.advanceAmount||a.amount||0}</option>`).join('');
+  ar.innerHTML=`<option value="">— Direct Purchase (No Advance) —</option>`+advOpen.map(a=>{
+    const dt=a.dealTotal||0,ap=a.advanceAmount||a.amount||0,rem=Math.max(0,dt-ap);
+    const sid=a.id.slice(-6).toUpperCase();
+    return `<option value="${a.id}">ADV-${sid} | ${a.supplier||'—'} | dh${dt||'?'} | Paid dh${ap} | Due dh${rem}</option>`;
+  }).join('');
   ar.value=cur;sv('p3l',nextLot());
 }
 
@@ -610,14 +977,14 @@ function refreshAll(){
   rLotCourierStatus();updateHeader();refreshSelectors();
 }
 
-// ══ HEADER — BUG FIX: spPur uses totalAED (not netPayable) ══
+// ══ HEADER: AED Balance = Advance Paid + Remaining Paid + other expenses ══
 function updateHeader(){
   const rate=getRate();
   const tBDT=S.payments.reduce((s,p)=>s+(p.bdt||0),0);
   const tAED=S.payments.reduce((s,p)=>s+(p.aed||0),0);
-  // BUG FIX: use totalAED — actual cash outflow per purchase
-  const spPur=S.purchases.reduce((s,p)=>s+(p.totalAED||0),0);
-  // All advances except reversed = actual cash paid (including cleared)
+  // spPur = netPayable (remaining payment only, advance already counted in spAdv)
+  const spPur=S.purchases.reduce((s,p)=>s+(p.netPayable!==undefined?p.netPayable:p.totalAED||0),0);
+  // All advances except reversed = actual cash paid (pending + cleared + closed)
   const spAdv=S.advances.reduce((s,a)=>s+(a.status!=='reversed'?(a.advanceAmount||a.amount||0):0),0);
   const spCst=S.lot_costs.reduce((s,c)=>s+(c.totalAED||0),0);
   const spOff=S.office_expenses.reduce((s,e)=>s+(e.amount||0),0);
@@ -809,7 +1176,7 @@ function rAdvances(){
     const modelDisplay=items.length>1?`<span class="tag t-lt" style="cursor:pointer" onclick="showAdvDetail('${a.id}')">${items.length} Models — ${a.totalQty||a.qty||0} pcs</span>`:
       `<span class="bn" style="cursor:pointer;color:var(--bl)" onclick="showAdvDetail('${a.id}')">${a.model||'—'}</span>`;
     const st=a.status;
-    const statusTag=st==='cleared'?tag('t-pk','✓ Cleared'):st==='reversed'?tag('t-up','↩ Reversed'):tag('t-pd','⏳ Outstanding');
+    const statusTag=st==='closed'?tag('t-vf','✅ Closed'):st==='cleared'?tag('t-pk','✓ Cleared'):st==='reversed'?tag('t-up','↩ Reversed'):tag('t-pd','⏳ Outstanding');
     const editBtn=`<button class="btn btn-v" style="font-size:10px;padding:3px 7px;background:var(--bl2);color:var(--bl);border-color:var(--bl2)" onclick="editAdvance('${a.id}')">✏️ Edit</button>`;
     const revBtn=st==='pending'?`<button class="btn btn-v" style="background:var(--pu2);color:var(--pu);font-size:10px;padding:3px 7px" onclick="reverseAdvance('${a.id}')">↩</button>`:'';
     return `<tr>
@@ -832,17 +1199,191 @@ async function reverseAdvance(id){
 }
 // ══ M3 ══
 async function savePurchase(){
+  // Direct purchase (no advance)
   const lot=g('p3l').value||nextLot();
-  const qty=nv('p3q'),unit=nv('p3u'),adDed=nv('p3ad'),advRef=g('p3ar').value;
+  const qty=nv('p3q'),unit=nv('p3u');
   const inv=g('p3i').value.trim();
   if(!qty||!unit){showToast('Qty ও Price দিন','err');return;}
   if(!inv){showToast('Invoice URL বাধ্যতামূলক ★','err');return;}
-  const totalAED=qty*unit,netPayable=totalAED-adDed;
-  const d={date:g('p3d').value,lot,supplier:g('p3su').value,model:g('p3m').value,qty,unitPrice:unit,totalAED,advanceDeducted:adDed,advRef,netPayable,invoice:inv};
+  const totalAED=qty*unit;
+  const d={date:g('p3d').value,lot,supplier:g('p3su').value,model:g('p3m').value,qty,unitPrice:unit,totalAED,advanceDeducted:0,advRef:'',netPayable:totalAED,invoice:inv};
   await add(COLS.PU,d);
-  if(advRef){await upd(COLS.AD,advRef,{status:'cleared',clearedAt:new Date().toISOString()});const adv=S.advances.find(x=>x.id===advRef);if(adv)adv.status='cleared';}
-  clr(['p3d','p3su','p3m','p3q','p3u','p3t','p3ad','p3i']);g('p3ar').value='';tog('f-m3');
+  clr(['p3d','p3su','p3m','p3q','p3u','p3t','p3i']);resetM3Form();tog('f-m3');
   showToast('পার্চেজ সেভ ✓','ok');rPurchases();rAdvances();updateHeader();refreshSelectors();
+}
+
+// ══ M3: Advance Workflow ══
+let _m3AdvItems=[],_m3AdvItemCount=0;
+
+function resetM3Form(){
+  _m3AdvItems=[];_m3AdvItemCount=0;
+  g('adv-preview-panel').style.display='none';
+  const mw=g('p3-model-wrap'),qw=g('p3-qty-wrap'),uw=g('p3-unit-wrap'),tw=g('p3-total-wrap');
+  if(mw)mw.style.display='';if(qw)qw.style.display='';if(uw)uw.style.display='';if(tw)tw.style.display='';
+  const sb=g('p3-save-btn'),cb=g('p3-close-btn');
+  if(sb)sb.style.display='';if(cb)cb.style.display='none';
+  const t=g('p3-form-title');if(t)t.textContent='নতুন পার্চেজ';
+  g('p3ar').value='';
+}
+
+function onAdvRefChange(){
+  const advId=g('p3ar').value;
+  if(!advId){resetM3Form();return;}
+  const adv=S.advances.find(x=>x.id===advId);
+  if(!adv){showToast('Advance record not found','err');return;}
+  // Check if already closed
+  if(adv.status==='closed'){
+    showToast('⚠ This advance invoice is already closed!','err');
+    g('p3ar').value='';return;
+  }
+  // Load advance details
+  const items=getAdvItemsFromRecord(adv);
+  _m3AdvItems=items.map(i=>({...i,id:uid()}));
+  _m3AdvItemCount=0;
+  // Show preview panel
+  g('adv-preview-panel').style.display='';
+  g('ap-supplier').textContent=adv.supplier||'—';
+  g('ap-paid').textContent=fAED(adv.advanceAmount||adv.amount||0);
+  // Auto-fill supplier
+  sv('p3su',adv.supplier||'');
+  // Hide single-model fields (using multi-model instead)
+  const mw=g('p3-model-wrap'),qw=g('p3-qty-wrap'),uw=g('p3-unit-wrap'),tw=g('p3-total-wrap');
+  if(mw)mw.style.display='none';if(qw)qw.style.display='none';if(uw)uw.style.display='none';if(tw)tw.style.display='none';
+  // Show close button
+  const sb=g('p3-save-btn'),cb=g('p3-close-btn');
+  if(sb)sb.style.display='none';if(cb)cb.style.display='';
+  const t=g('p3-form-title');if(t)t.textContent='✏️ Final Invoice & Close';
+  renderM3AdvItems();
+  updateM3AdvBalance();
+}
+
+function renderM3AdvItems(){
+  const cont=g('adv-m3-items');if(!cont)return;
+  cont.innerHTML=`<div style="display:grid;grid-template-columns:2fr 70px 100px 90px 28px;gap:5px;margin-bottom:4px">
+    <span style="font-size:10px;color:var(--txm);padding:0 4px">Model</span>
+    <span style="font-size:10px;color:var(--txm);padding:0 4px">Qty</span>
+    <span style="font-size:10px;color:var(--txm);padding:0 4px">Unit(AED)</span>
+    <span style="font-size:10px;color:var(--txm);padding:0 4px">Total</span>
+    <span></span>
+  </div>`;
+  _m3AdvItems.forEach((item,idx)=>{
+    const row=document.createElement('div');
+    row.style.cssText='display:grid;grid-template-columns:2fr 70px 100px 90px 28px;gap:5px;margin-bottom:5px;align-items:center';
+    row.innerHTML=`
+      <input value="${item.model||''}" placeholder="Model name" style="padding:6px 8px;background:var(--s2);border:1px solid var(--brd);border-radius:var(--r);color:var(--tx);font-size:12px;font-family:var(--font-b)"
+        oninput="_m3AdvItems[${idx}].model=this.value">
+      <input type="number" value="${item.qty||''}" placeholder="Qty" min="1" style="padding:6px 8px;background:var(--s2);border:1px solid var(--brd);border-radius:var(--r);color:var(--tx);font-family:var(--font-m);font-size:12px"
+        oninput="_m3AdvItems[${idx}].qty=parseFloat(this.value)||0;calcM3Item(${idx},this.parentElement)">
+      <input type="number" value="${item.unitPrice||''}" placeholder="Unit" step="0.5" style="padding:6px 8px;background:var(--s2);border:1px solid var(--brd);border-radius:var(--r);color:var(--tx);font-family:var(--font-m);font-size:12px"
+        oninput="_m3AdvItems[${idx}].unitPrice=parseFloat(this.value)||0;calcM3Item(${idx},this.parentElement)">
+      <input type="number" id="m3t-${idx}" value="${item.totalPrice||''}" readonly style="padding:6px 8px;background:var(--s3);border:1px solid var(--brd);border-radius:var(--r);color:var(--gold);font-family:var(--font-m);font-size:12px">
+      <button type="button" onclick="removeM3AdvItem(${idx})" style="width:26px;height:26px;background:var(--rd2);border:1px solid var(--rd);border-radius:var(--r);color:var(--rd);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center">×</button>`;
+    cont.appendChild(row);
+  });
+  updateM3AdvBalance();
+}
+
+function calcM3Item(idx,row){
+  const q=_m3AdvItems[idx]?.qty||0,u=_m3AdvItems[idx]?.unitPrice||0,t=q*u;
+  _m3AdvItems[idx].totalPrice=t;
+  const tEl=g(`m3t-${idx}`);if(tEl)tEl.value=t>0?t.toFixed(2):'';
+  updateM3AdvBalance();
+}
+
+function removeM3AdvItem(idx){
+  if(_m3AdvItems.length<=1){showToast('কমপক্ষে একটি Model থাকতে হবে','err');return;}
+  _m3AdvItems.splice(idx,1);renderM3AdvItems();
+}
+
+function addM3AdvItem(){
+  _m3AdvItems.push({id:uid(),model:'',qty:0,unitPrice:0,totalPrice:0});
+  renderM3AdvItems();
+}
+
+function updateM3AdvBalance(){
+  const finalTotal=_m3AdvItems.reduce((s,i)=>s+(i.totalPrice||0),0);
+  const advId=g('p3ar').value;
+  const adv=advId?S.advances.find(x=>x.id===advId):null;
+  const advPaid=adv?(adv.advanceAmount||adv.amount||0):0;
+  const remaining=finalTotal-advPaid;
+  const tEl=g('ap-total');if(tEl)tEl.textContent=fAED(finalTotal);
+  const aEl=g('ap-final-total');if(aEl)aEl.textContent=fAED(finalTotal);
+  const apEl=g('ap-adv-paid');if(apEl)apEl.textContent=fAED(advPaid);
+  const rEl=g('ap-remaining');const refWarn=g('ap-refund-warn');
+  if(remaining>=0){
+    if(rEl){rEl.textContent=fAED(remaining);rEl.style.color='var(--gn)';}
+    if(refWarn)refWarn.style.display='none';
+  }else{
+    if(rEl){rEl.textContent='dh0 (Over-paid)';rEl.style.color='var(--rd)';}
+    if(refWarn){refWarn.style.display='';const ra=g('ap-refund-amt');if(ra)ra.textContent=fAED(-remaining);}
+  }
+}
+
+function payRemainingAndClose(){
+  const advId=g('p3ar').value;if(!advId){showToast('Advance Ref select করুন','err');return;}
+  const adv=S.advances.find(x=>x.id===advId);if(!adv){return;}
+  if(adv.status==='closed'){showToast('This advance invoice is already closed.','err');return;}
+  const inv=g('p3i').value.trim();if(!inv){showToast('Invoice URL দিন ★','err');return;}
+  const finalTotal=_m3AdvItems.reduce((s,i)=>s+(i.totalPrice||0),0);
+  const advPaid=adv.advanceAmount||adv.amount||0;
+  const remaining=Math.max(0,finalTotal-advPaid);
+  const totalQty=_m3AdvItems.reduce((s,i)=>s+(i.qty||0),0);
+  // Validation
+  if(!totalQty){showToast('Total Qty 0 হতে পারে না','err');return;}
+  const modelSummary=_m3AdvItems.length===1?_m3AdvItems[0].model:`${_m3AdvItems.length} Models`;
+  // Show confirmation
+  const curBal=S.payments.reduce((s,p)=>s+(p.aed||0),0)
+    -(S.purchases.reduce((s,p)=>s+(p.netPayable!==undefined?p.netPayable:p.totalAED||0),0))
+    -(S.advances.reduce((s,a)=>s+(a.status!=='reversed'?(a.advanceAmount||a.amount||0):0),0))
+    -(S.lot_costs.reduce((s,c)=>s+(c.totalAED||0),0))
+    -(S.office_expenses.reduce((s,e)=>s+(e.amount||0),0))
+    -(S.personal_expenses.reduce((s,e)=>s+(e.amount||0),0))
+    -(S.ctg_office.reduce((s,e)=>s+(e.totalAED||0),0));
+  const balAfter=curBal-remaining;
+  const refundDue=advPaid>finalTotal?advPaid-finalTotal:0;
+  g('closeInvBody').innerHTML=`
+    <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <tr><td style="padding:5px 0;color:var(--txd)">Supplier</td><td style="padding:5px 0;color:var(--tx);font-weight:600">${adv.supplier||'—'}</td></tr>
+      <tr><td style="padding:5px 0;color:var(--txd)">Models</td><td style="padding:5px 0;color:var(--bl)">${modelSummary} (${totalQty} pcs)</td></tr>
+      <tr><td style="padding:5px 0;color:var(--txd)">Final Invoice Total</td><td style="padding:5px 0;color:var(--gold);font-weight:700">${fAED(finalTotal)}</td></tr>
+      <tr><td style="padding:5px 0;color:var(--txd)">Advance Already Paid</td><td style="padding:5px 0;color:var(--bl)">${fAED(advPaid)}</td></tr>
+      <tr style="border-top:1px solid var(--brd)"><td style="padding:8px 0 2px;color:var(--txd)">Remaining Payment</td><td style="padding:8px 0 2px;color:var(--gn);font-size:15px;font-weight:700">${fAED(remaining)}</td></tr>
+      <tr><td style="padding:5px 0;color:var(--txd)">Current Balance</td><td style="padding:5px 0;color:var(--tx)">${fAED(curBal)}</td></tr>
+      <tr><td style="padding:5px 0;color:var(--txd)">Balance After Payment</td><td style="padding:5px 0;color:${balAfter>=0?'var(--gn)':'var(--rd)'};font-weight:700">${fAED(balAfter)}</td></tr>
+      ${refundDue>0?`<tr><td colspan="2" style="padding:8px 0;color:var(--rd)">⚠ Supplier Refund/Credit Due: ${fAED(refundDue)}</td></tr>`:''}
+    </table>`;
+  // Store pending close data
+  window._pendingClose={advId,inv,finalTotal,remaining,advPaid,totalQty,modelSummary,items:[..._m3AdvItems]};
+  g('closeInvModal').classList.add('on');
+}
+
+let _closingInProgress=false;
+async function confirmCloseInvoice(){
+  if(_closingInProgress){showToast('Processing...','ok');return;}
+  const p=window._pendingClose;if(!p){return;}
+  const adv=S.advances.find(x=>x.id===p.advId);
+  if(!adv||adv.status==='closed'){showToast('Invoice is already closed!','err');g('closeInvModal').classList.remove('on');return;}
+  _closingInProgress=true;
+  const btn=g('closeInvConfirmBtn');if(btn)btn.disabled=true;
+  try{
+    const lot=g('p3l').value||nextLot();
+    const date=g('p3d').value;
+    const txId=uid();
+    // Save purchase with netPayable = remaining (advance already counted separately)
+    const pur={date,lot,supplier:adv.supplier||'',model:p.modelSummary,qty:p.totalQty,
+      items:p.items,totalAED:p.finalTotal,advanceDeducted:p.advPaid,
+      advRef:p.advId,netPayable:p.remaining,invoice:g('p3i').value.trim(),
+      advanceInvoiceId:p.advId,remainingPaymentTxId:txId};
+    const purDoc=await add(COLS.PU,pur);
+    // Close advance invoice
+    await upd(COLS.AD,p.advId,{status:'closed',closedAt:new Date().toISOString(),purchaseLotId:lot,remainingPaymentTxId:txId,linkedPurchaseId:purDoc.id});
+    if(adv){adv.status='closed';adv.purchaseLotId=lot;}
+    g('closeInvModal').classList.remove('on');
+    tog('f-m3');resetM3Form();
+    showToast(`✅ Invoice Closed! Lot: ${lot} | Remaining: ${fAED(p.remaining)} deducted`,'ok');
+    rPurchases();rAdvances();updateHeader();refreshSelectors();
+  }catch(e){showToast('Error: '+e.message,'err');}
+  finally{_closingInProgress=false;if(btn)btn.disabled=false;}
 }
 function rPurchases(){
   const data=S.purchases.sort((a,b)=>new Date(b.date)-new Date(a.date));
@@ -851,15 +1392,19 @@ function rPurchases(){
   g('m3tq').textContent=tq;g('m3ta').textContent=fAED(ta);g('m3tl').textContent=lots;g('m3av').textContent=fAED(av);
   const tb=g('tb-m3');
   if(!data.length){tb.innerHTML=`<tr><td colspan="10"><div class="empty"><i class="fas fa-database"></i><p>কোনো রেকর্ড নেই</p></div></td></tr>`;return;}
-  tb.innerHTML=data.map(p=>`<tr>
+  tb.innerHTML=data.map(p=>{
+    const advInfo=p.advRef?`<span class="tag t-pd" style="font-size:10px">ADV-${p.advRef.slice(-6).toUpperCase()}</span>`:'—';
+    return `<tr>
     <td>${fD(p.date)}</td>
     <td><span class="tag t-lt" style="cursor:pointer" onclick="showLotDetail('${p.lot}')">${p.lot} ▶</span></td>
     <td class="bn">${p.model||'—'}</td><td>${p.qty}</td>
     <td class="ag">${fAED(p.unitPrice)}</td><td class="abl">${fAED(p.totalAED)}</td>
     <td class="agn">${fAED(p.advanceDeducted||0)}</td>
     <td class="agn" style="color:var(--gn);font-weight:700">${fAED(p.netPayable!==undefined?p.netPayable:p.totalAED)}</td>
+    <td>${advInfo}</td>
     <td>${lnk(p.invoice,'Invoice')}</td>
-    <td><button class="btn btn-d" onclick="del('${COLS.PU}','${p.id}')">Del</button></td></tr>`).join('');
+    <td><button class="btn btn-d" onclick="del('${COLS.PU}','${p.id}')">Del</button></td></tr>`;
+  }).join('');
 }
 
 // ══ M4 ══
@@ -1289,10 +1834,272 @@ function copyReportWA(){
 }
 
 // ══ UI HELPERS ══
-function tab(id,el){document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));document.querySelectorAll('.ntab').forEach(t=>t.classList.remove('on'));const panel=g('panel-'+id);if(panel)panel.classList.add('on');el.classList.add('on');}
+function tab(id,el){document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));document.querySelectorAll('.ntab').forEach(t=>t.classList.remove('on'));const panel=g('panel-'+id);if(panel)panel.classList.add('on');el.classList.add('on');if(id==='dash')renderDashboard();}
+
+// ══ DUBAI DASHBOARD ══
+function renderDashboard(){
+  try{
+  const rate=getRate();
+  const today=new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Dubai'}); // YYYY-MM-DD Dubai time
+
+  // ── Cash ──
+  const tBDT=S.payments.reduce((s,p)=>s+(p.bdt||0),0);
+  const tAED=S.payments.reduce((s,p)=>s+(p.aed||0),0);
+  const spPur=S.purchases.reduce((s,p)=>s+(p.netPayable!==undefined?p.netPayable:p.totalAED||0),0);
+  const spAdv=S.advances.reduce((s,a)=>s+(a.status!=='reversed'?(a.advanceAmount||a.amount||0):0),0);
+  const spCst=S.lot_costs.reduce((s,c)=>s+(c.totalAED||0),0);
+  const spOff=S.office_expenses.reduce((s,e)=>s+(e.amount||0),0);
+  const spPer=S.personal_expenses.reduce((s,e)=>s+(e.amount||0),0);
+  const spCTG=S.ctg_office.reduce((s,e)=>s+(e.totalAED||0),0);
+  const availCash=tAED-(spPur+spAdv+spCst+spOff+spPer+spCTG);
+  const totalExp=spPur+spAdv+spCst+spOff+spPer+spCTG;
+
+  // ── Inventory ──
+  const purItems=S.purchases;
+  const totalPurchasedPcs=purItems.reduce((s,p)=>s+(p.qty||0),0);
+  const purValue=purItems.reduce((s,p)=>s+(p.totalAED||0),0);
+  const prepTotal=spCst; // lot_costs = prep expenses
+
+  // Lot-wise prep costs
+  const lotPrepMap={};
+  S.lot_costs.forEach(c=>{lotPrepMap[c.lot]=(lotPrepMap[c.lot]||0)+(c.totalAED||0);});
+
+  // Lot-wise purchase data
+  const lotMap={};
+  purItems.forEach(p=>{
+    if(!lotMap[p.lot])lotMap[p.lot]={lot:p.lot,date:p.date,pcs:0,value:0,items:[],supplier:p.supplier||'—'};
+    lotMap[p.lot].pcs+=(p.qty||0);
+    lotMap[p.lot].value+=(p.totalAED||0);
+    if(p.items&&p.items.length){p.items.forEach(it=>lotMap[p.lot].items.push({...it,lotId:p.lot}));}
+    else if(p.model){lotMap[p.lot].items.push({model:p.model,qty:p.qty||0,unitPrice:p.unitPrice||0,totalPrice:p.totalAED||0,lotId:p.lot});}
+  });
+
+  // ── Courier Tracking ──
+  let totalBooked=0,totalCTGRcvd=0,activeShipments=0;
+  const lotTransitMap={},lotRcvdMap={};
+  S.courier.forEach(c=>{
+    const bq=c.bookedQty||0;
+    const rq=c.receivedQty||0;
+    totalBooked+=bq;
+    totalCTGRcvd+=rq;
+    const notDone=bq-rq;
+    if(notDone>0)activeShipments++;
+    // Lot tracking
+    const lots=c.lots||[{lotRef:c.lotRef||'',lotQty:bq}];
+    lots.forEach(l=>{
+      const lot=l.lotRef||'';if(!lot)return;
+      lotTransitMap[lot]=(lotTransitMap[lot]||0)+(l.lotQty||0);
+      lotRcvdMap[lot]=(lotRcvdMap[lot]||0)+Math.min(rq,l.lotQty||0);
+    });
+  });
+  const totalInTransit=Math.max(0,totalBooked-totalCTGRcvd);
+  const dubaiOfficePcs=Math.max(0,totalPurchasedPcs-totalBooked);
+
+  // ── Inventory Value (with prep cost) ──
+  const invValue=purValue+prepTotal;
+  const perPcCost=totalPurchasedPcs>0?invValue/totalPurchasedPcs:0;
+  const transitValue=totalInTransit*perPcCost;
+  const officeValue=dubaiOfficePcs*perPcCost;
+  const pipelineValue=transitValue+officeValue;
+  const totalAssets=availCash+pipelineValue;
+
+  // ── Lots ──
+  const allLots=Object.keys(lotMap);
+  const totalLots=allLots.length;
+  let activeLots=0;
+  allLots.forEach(lot=>{
+    const transit=(lotTransitMap[lot]||0)-(lotRcvdMap[lot]||0);
+    const office=Math.max(0,(lotMap[lot]?.pcs||0)-(lotTransitMap[lot]||0));
+    if(transit+office>0)activeLots++;
+  });
+
+  // ── Today's Movement ──
+  const todayPur=purItems.filter(p=>(p.date||'')===today);
+  const todayPurPcs=todayPur.reduce((s,p)=>s+(p.qty||0),0);
+  const todayPurAED=todayPur.reduce((s,p)=>s+(p.totalAED||0),0);
+  const todayCour=S.courier.filter(c=>(c.bookDate||'')===today);
+  const todayCourPcs=todayCour.reduce((s,c)=>s+(c.bookedQty||0),0);
+  const todayRcvd=S.courier.filter(c=>(c.ctgReceiveDate||'')===today);
+  const todayRcvdPcs=todayRcvd.reduce((s,c)=>s+(c.receivedQty||0),0);
+  const todayAdv=S.advances.filter(a=>(a.date||'')===today&&a.status!=='reversed').reduce((s,a)=>s+(a.advanceAmount||a.amount||0),0);
+  const todayRem=purItems.filter(p=>(p.date||'')===today&&p.advRef).reduce((s,p)=>s+(p.netPayable||0),0);
+  const todayExp=todayAdv+todayPur.reduce((s,p)=>s+(p.netPayable!==undefined?p.netPayable:p.totalAED||0),0);
+
+  // ── Distribution %% ──
+  const total=Math.max(1,totalAssets);
+  const cashPct=Math.round(availCash/total*100);
+  const officePct=Math.round(officeValue/total*100);
+  const transitPct=Math.max(0,100-cashPct-officePct);
+
+  // ── MODEL TABLE ──
+  const modelMap={};
+  purItems.forEach(p=>{
+    const items=p.items&&p.items.length?p.items:[{model:p.model,qty:p.qty||0,unitPrice:p.unitPrice||0,totalPrice:p.totalAED||0}];
+    items.forEach(it=>{
+      const m=it.model||'Unknown';
+      if(!modelMap[m])modelMap[m]={model:m,purPcs:0,purVal:0};
+      modelMap[m].purPcs+=(it.qty||0);
+      modelMap[m].purVal+=(it.totalPrice||it.qty*(it.unitPrice||0)||0);
+    });
+  });
+  // Courier model tracking (simplified - use lot proportional)
+  const allModels=Object.values(modelMap).sort((a,b)=>b.purVal-a.purVal);
+  const modelTableHTML=allModels.length?allModels.map(m=>{
+    const transit=totalPurchasedPcs>0?Math.round(totalInTransit*(m.purPcs/totalPurchasedPcs)):0;
+    const rcvd=totalPurchasedPcs>0?Math.round(totalCTGRcvd*(m.purPcs/totalPurchasedPcs)):0;
+    const office=Math.max(0,m.purPcs-transit-rcvd);
+    const avgCost=m.purPcs>0?(m.purVal/m.purPcs):0;
+    return `<tr>
+      <td class="bn">${m.model}</td>
+      <td class="abl">${m.purPcs}</td>
+      <td class="agn" style="color:var(--bl)">${transit}</td>
+      <td class="agn" style="color:var(--gn)">${rcvd}</td>
+      <td class="agn" style="color:var(--pu)">${office}</td>
+      <td class="ag">${fAED(m.purVal)}</td>
+      <td class="ag">${fAED(avgCost)}</td>
+    </tr>`;
+  }).join(''):`<tr><td colspan="7"><div class="empty"><i class="fas fa-laptop"></i><p>কোনো purchase নেই</p></div></td></tr>`;
+
+  // ── LOT TABLE ──
+  const lotTableHTML=allLots.length?allLots.map(lot=>{
+    const ld=lotMap[lot];
+    const prep=lotPrepMap[lot]||0;
+    const transit=Math.max(0,(lotTransitMap[lot]||0)-(lotRcvdMap[lot]||0));
+    const rcvd=lotRcvdMap[lot]||0;
+    const office=Math.max(0,(ld.pcs||0)-(lotTransitMap[lot]||0));
+    const dubaiLeft=transit+office;
+    const status=dubaiLeft===0?'<span class="tag t-vf">✅ CTG</span>':(transit>0?'<span class="tag t-pd">🚚 In Transit</span>':'<span class="tag t-lt">🏢 Dubai</span>');
+    return `<tr>
+      <td><span class="tag t-lt" style="cursor:pointer" onclick="showLotDetail('${lot}')">${lot} ▶</span></td>
+      <td>${fD(ld.date)}</td><td class="abl">${ld.pcs}</td>
+      <td style="color:var(--bl)">${transit}</td>
+      <td style="color:var(--gn)">${rcvd}</td>
+      <td style="color:var(--pu);font-weight:700">${dubaiLeft}</td>
+      <td class="ag">${fAED(ld.value)}</td>
+      <td class="ard">${fAED(prep)}</td>
+      <td>${status}</td>
+    </tr>`;
+  }).join(''):`<tr><td colspan="9"><div class="empty"><i class="fas fa-box"></i><p>কোনো Lot নেই</p></div></td></tr>`;
+
+  // ── ALERTS ──
+  const alerts=[];
+  if(availCash<0)alerts.push({type:'err',msg:`⚠️ AED Balance negative! AED ${availCash.toFixed(2)}`});
+  const openAdv=S.advances.filter(a=>a.status!=='closed'&&a.status!=='reversed');
+  if(openAdv.length>0)alerts.push({type:'warn',msg:`${openAdv.length}টি Advance Invoice এখনো Open/Unclosed`});
+  if(totalInTransit<0)alerts.push({type:'err',msg:'In Transit Qty negative — data mismatch'});
+  const alertsHTML=alerts.length?alerts.map(a=>`<div class="alert-box ${a.type}"><i class="fas fa-exclamation-triangle"></i><span>${a.msg}</span></div>`).join(''):'<div class="alert-box ok"><i class="fas fa-check-circle"></i><span>All Dubai finance and inventory records are reconciled. ✓</span></div>';
+
+  // ── RENDER ──
+  sv2('d-total-assets',`AED ${fmtN(totalAssets)}`);
+  sv2('d-total-bdt',`≈ ৳${fmtN(totalAssets*rate)}`);
+  sv2('d-avail-cash',`AED ${fmtN(availCash)}`);
+  sv2('d-pipeline-v',`AED ${fmtN(pipelineValue)}`);
+  sv2('d-active-pcs',`${totalInTransit+dubaiOfficePcs} pcs`);
+  sv2('d-rate',`1 AED = ৳${rate}`);
+  sv2('d-bdt-sent',`৳${fmtN(tBDT)}`);
+  sv2('d-aed-rcvd',`AED ${fmtN(tAED)}`);
+  sv2('d-aed-exp',`AED ${fmtN(totalExp)}`);
+  sv2('d-cash',`AED ${fmtN(availCash)}`);
+  sv2('d-cash-bdt',`≈ ৳${fmtN(availCash*rate)}`);
+  sv2('d-total-lots',totalLots);
+  sv2('d-active-lots',activeLots);
+  sv2('d-total-pcs',totalPurchasedPcs);
+  sv2('d-dubai-pcs',(dubaiOfficePcs+totalInTransit));
+  sv2('d-office-qty',`${dubaiOfficePcs} pcs`);
+  sv2('d-office-aed',`AED ${fmtN(officeValue)}`);
+  sv2('d-office-models',`${allModels.length} models`);
+  sv2('d-transit-qty',`${totalInTransit} pcs`);
+  sv2('d-transit-aed',`AED ${fmtN(transitValue)}`);
+  sv2('d-transit-boxes',`${activeShipments} active shipments`);
+  sv2('d-pipeline-qty',`${dubaiOfficePcs+totalInTransit} pcs`);
+  sv2('d-pipeline-aed',`AED ${fmtN(pipelineValue)}`);
+  // Distribution bar
+  const cs=g('d-seg-cash'),os=g('d-seg-office'),ts=g('d-seg-transit');
+  if(cs){cs.style.width=cashPct+'%';cs.title=`Cash: AED ${fmtN(availCash)} (${cashPct}%)`;}
+  if(os){os.style.width=officePct+'%';os.title=`Dubai Office: AED ${fmtN(officeValue)} (${officePct}%)`;}
+  if(ts){ts.style.width=transitPct+'%';ts.title=`In Transit: AED ${fmtN(transitValue)} (${transitPct}%)`;}
+  sv2('d-dist-l1',`💵 Cash: ${cashPct}% (AED ${fmtN(availCash)})`);
+  sv2('d-dist-l2',`🏢 Office: ${officePct}% (AED ${fmtN(officeValue)})`);
+  sv2('d-dist-l3',`🚚 Transit: ${transitPct}% (AED ${fmtN(transitValue)})`);
+  // Today
+  sv2('d-today-pur',`${todayPurPcs} pcs`);
+  sv2('d-today-pur-aed',`AED ${fmtN(todayPurAED)}`);
+  sv2('d-today-cour',`${todayCourPcs} pcs`);
+  sv2('d-today-cour-v',`${todayCour.length} shipments`);
+  sv2('d-today-rcvd',`${todayRcvdPcs} pcs`);
+  sv2('d-today-adv',`AED ${fmtN(todayAdv)}`);
+  sv2('d-today-rem',`AED ${fmtN(todayRem)}`);
+  sv2('d-today-exp',`AED ${fmtN(todayExp)}`);
+  // Tables
+  const mt=g('d-model-table');if(mt)mt.innerHTML=modelTableHTML;
+  const lt=g('d-lot-table');if(lt)lt.innerHTML=lotTableHTML;
+  // Alerts
+  const al=g('d-alerts');if(al)al.innerHTML=alertsHTML;
+  // Last updated
+  const lu=g('dash-last-updated');if(lu)lu.textContent=`Last updated: ${new Date().toLocaleString('en-BD',{timeZone:'Asia/Dubai'})} (Dubai Time)`;
+  }catch(e){console.error('Dashboard error:',e);}
+}
+function sv2(id,val){const el=g(id);if(el)el.textContent=val;}
+function fmtN(n){if(isNaN(n)||n===undefined||n===null)return '0.00';return Math.abs(n)>=1000?n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):n.toFixed(2);}
 function tog(id){const el=g(id);if(el)el.style.display=el.style.display==='none'||!el.style.display?'block':'none';}
 document.addEventListener('click',e=>{['ctgModal','lotModal','advDetailModal'].forEach(mid=>{const m=g(mid);if(m&&e.target===m)m.classList.remove('on');});});
 let _tt;
+
+// ══ PWA FUNCTIONS ══
+let _deferredInstall=null,_moreOpen=false;
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('./sw.js',{scope:'/dubai-finance-hub/'})
+      .then(r=>console.log('[PWA] SW registered ✓'))
+      .catch(e=>console.log('[PWA] SW failed:',e));
+  });
+}
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault();_deferredInstall=e;
+  const b=g('pwa-install-banner');if(b)b.style.display='flex';
+});
+window.addEventListener('appinstalled',()=>{
+  _deferredInstall=null;
+  const b=g('pwa-install-banner');if(b)b.style.display='none';
+  showToast('✅ App installed!','ok');
+});
+function installPWA(){
+  if(!_deferredInstall){showToast('iOS: Safari → Share → "Add to Home Screen"','ok');return;}
+  _deferredInstall.prompt();
+  _deferredInstall.userChoice.then(c=>{if(c.outcome==='accepted')showToast('Installing...','ok');_deferredInstall=null;});
+}
+function pwaTab(id){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.ntab').forEach(t=>t.classList.remove('on'));
+  const panel=g('panel-'+id);if(panel)panel.classList.add('on');
+  ['dash','m1','m2','m3','m4','m5','m6','m7','m8','m9','rpt'].forEach(t=>{const el=g('bnav-'+t);if(el)el.classList.remove('on');});
+  const map={dash:'dash',m1:'m1',m2:'m2',m3:'m3',m4:'more',m5:'more',m6:'more',m7:'m7',m8:'more',m9:'more',rpt:'more'};
+  const bEl=g('bnav-'+(map[id]||'more'));if(bEl)bEl.classList.add('on');
+  if(id==='dash')renderDashboard();
+  if(_moreOpen){const mm=g('more-menu');if(mm)mm.style.display='none';_moreOpen=false;}
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function toggleMoreMenu(){
+  const mm=g('more-menu');if(!mm)return;
+  _moreOpen=!_moreOpen;mm.style.display=_moreOpen?'block':'none';
+  const btn=g('bnav-more');if(btn)btn.classList.toggle('on',_moreOpen);
+}
+document.addEventListener('click',e=>{
+  if(_moreOpen&&!e.target.closest('#more-menu')&&!e.target.closest('#bnav-more')){
+    const mm=g('more-menu');if(mm)mm.style.display='none';_moreOpen=false;
+    const btn=g('bnav-more');if(btn)btn.classList.remove('on');
+  }
+},{passive:true});
+window.addEventListener('hashchange',()=>{
+  const h=window.location.hash.replace('#','');
+  if(['dash','m1','m2','m3','m4','m5','m6','m7','m8','m9','rpt'].includes(h))pwaTab(h);
+});
+window.addEventListener('online',()=>showToast('🌐 Online ✓','ok'));
+window.addEventListener('offline',()=>showToast('📴 Offline mode','ok'));
+// Splash on PWA launch
+if(window.matchMedia('(display-mode: standalone)').matches){
+  const sp=g('pwa-splash');if(sp){sp.classList.add('show');setTimeout(()=>sp.classList.remove('show'),1800);}
+}
 function showToast(msg,type){
   const t=g('toast');if(!t)return;t.textContent=msg;t.className='toast on '+(type||'');
   clearTimeout(_tt);_tt=setTimeout(()=>{t.classList.remove('on');},3200);
