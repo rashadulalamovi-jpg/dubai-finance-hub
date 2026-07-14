@@ -2104,6 +2104,94 @@ function showToast(msg,type){
   const t=g('toast');if(!t)return;t.textContent=msg;t.className='toast on '+(type||'');
   clearTimeout(_tt);_tt=setTimeout(()=>{t.classList.remove('on');},3200);
 }
+
+// ═══════════════════════════════════════════════════
+// MODEL-WISE FEATURES v3.0 — Phase 11,12,14 Override
+// ═══════════════════════════════════════════════════
+
+// Override showLotDetail with full model-wise breakdown
+window.showLotDetail = function(lot){
+  const purItems=(window.S?.purchases||[]).filter(p=>p.lot===lot);
+  const costItems=(window.S?.lot_costs||[]).filter(c=>c.lot===lot);
+  const couriers=(window.S?.courier||[]).filter(c=>(c.lots||[]).some(l=>l.lotRef===lot)||c.lotRef===lot);
+  const fA=n=>isNaN(n)||n==null?'dh0':'dh'+((+n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}));
+  const fD=d=>{if(!d)return'—';try{const p=d.split('-');return new Date(+p[0],+p[1]-1,+p[2]).toLocaleDateString('en-BD',{day:'2-digit',month:'short',year:'2-digit'});}catch{return d;}};
+  const g2=id=>document.getElementById(id);
+  
+  const modelItems=[];
+  purItems.forEach(p=>{
+    if(p.items&&p.items.length){p.items.forEach(it=>modelItems.push({model:it.model||'?',qty:it.qty||0,unitPrice:it.unitPrice||0,totalPrice:it.totalPrice||0}));}
+    else if(p.model&&p.model!=='2 Models'){modelItems.push({model:p.model,qty:p.qty||0,unitPrice:p.unitPrice||0,totalPrice:p.totalAED||0});}
+    else{modelItems.push({model:'(Needs Model Mapping)',qty:p.qty||0,unitPrice:0,totalPrice:p.totalAED||0});}
+  });
+  
+  const pcs=modelItems.reduce((s,m)=>s+(m.qty||0),0);
+  const purTotal=modelItems.reduce((s,m)=>s+(m.totalPrice||0),0);
+  const costTotal=costItems.reduce((s,c)=>s+(c.totalAED||0),0);
+  const grandTotal=purTotal+costTotal;
+  const grandPP=pcs>0?grandTotal/pcs:0;
+  const prepPP=pcs>0?costTotal/pcs:0;
+  const totalBooked=couriers.reduce((s,c)=>s+(c.bookedQty||0),0);
+  const totalRcvd=couriers.reduce((s,c)=>s+(c.receivedQty||0),0);
+  const inTransit=Math.max(0,totalBooked-totalRcvd);
+  const purDate=purItems[0]?.date||'—';
+  
+  let modelFinalRows='';let allocSoFar=0;
+  modelItems.forEach((m,i)=>{
+    const isLast=i===modelItems.length-1;
+    const ap=isLast?(costTotal-allocSoFar):parseFloat((prepPP*(m.qty||0)).toFixed(2));
+    if(!isLast)allocSoFar+=ap;
+    const ft=(m.totalPrice||0)+ap;const fpp=(m.qty||0)>0?ft/(m.qty||0):0;
+    modelFinalRows+=`<tr><td class="bn" style="padding:8px 10px;color:var(--tx);white-space:nowrap">${m.model}</td><td style="padding:8px 10px;color:var(--bl);text-align:center;font-family:var(--font-m)">${m.qty}</td><td style="padding:8px 10px;color:var(--gold);font-family:var(--font-m)">${fA(m.unitPrice)}</td><td style="padding:8px 10px;color:var(--gold);font-family:var(--font-m)">${fA(m.totalPrice)}</td><td style="padding:8px 10px;color:var(--pu);font-family:var(--font-m)">${fA(ap)}</td><td style="padding:8px 10px;color:var(--gn);font-weight:700;font-family:var(--font-m)">${fA(ft)}</td><td style="padding:8px 10px;color:var(--gn);font-family:var(--font-m)">${fA(fpp)}</td></tr>`;
+  });
+  
+  if(g2('lotModalTitle'))g2('lotModalTitle').textContent=`📋 ${lot} — Full Cost Breakdown`;
+  const html=`
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px">
+    ${[['Purchase Date',fD(purDate),'var(--tx)'],['Models',modelItems.length,'var(--bl)'],['Total PCS',pcs,'var(--bl)'],['Purchase Cost',fA(purTotal),'var(--gold)'],['Prep Cost',fA(costTotal),'var(--pu)'],['Grand Total',fA(grandTotal),'var(--gn)'],['Avg Cost/PC',fA(grandPP),'var(--gold)'],['In Transit',inTransit+' pcs','var(--bl)']].map(([l,v,c])=>`<div style="background:var(--s2);border:1px solid var(--brd);border-radius:var(--r);padding:12px"><div style="font:400 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase;margin-bottom:6px">${l}</div><div style="font:700 14px/1 var(--font-m);color:${c}">${v}</div></div>`).join('')}
+  </div>
+  <div style="margin-bottom:16px">
+    <div style="font:600 11px/1 var(--font-m);color:var(--gold);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--brd)">📦 Purchase Items — Model-wise</div>
+    <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">
+      <thead><tr style="background:var(--s2)"><th style="padding:8px 10px;text-align:left;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Model</th><th style="padding:8px 10px;text-align:center;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Qty</th><th style="padding:8px 10px;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Unit(AED)</th><th style="padding:8px 10px;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Total(AED)</th></tr></thead>
+      <tbody>${modelItems.map(m=>`<tr style="border-bottom:1px solid var(--brd)"><td class="bn" style="padding:8px 10px;color:var(--tx);white-space:nowrap">${m.model}</td><td style="padding:8px 10px;color:var(--bl);text-align:center;font-family:var(--font-m)">${m.qty}</td><td style="padding:8px 10px;color:var(--gold);font-family:var(--font-m)">${fA(m.unitPrice)}</td><td style="padding:8px 10px;color:var(--gold);font-weight:700;font-family:var(--font-m)">${fA(m.totalPrice)}</td></tr>`).join('')}
+      <tr style="background:var(--s2)"><td style="padding:6px 10px;font:600 11px/1 var(--font-m);color:var(--txd)">Total</td><td style="padding:6px 10px;color:var(--bl);text-align:center;font-weight:700;font-family:var(--font-m)">${pcs}</td><td></td><td style="padding:6px 10px;color:var(--gold);font-weight:700;font-family:var(--font-m)">${fA(purTotal)}</td></tr>
+      </tbody></table></div></div>
+  ${costItems.length?`<div style="margin-bottom:16px"><div style="font:600 11px/1 var(--font-m);color:var(--pu);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--brd)">🔧 Preparation Costs</div><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead><tr style="background:var(--s2)"><th style="padding:7px 10px;text-align:left;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Category</th><th style="padding:7px 10px;text-align:left;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Description</th><th style="padding:7px 10px;text-align:center;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Qty</th><th style="padding:7px 10px;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Unit</th><th style="padding:7px 10px;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Total</th></tr></thead><tbody>${costItems.map(c=>`<tr style="border-bottom:1px solid var(--brd)"><td style="padding:7px 10px"><span style="background:var(--s3);border:1px solid var(--gold2);border-radius:4px;padding:2px 7px;font:600 10px/1 var(--font-m);color:var(--gold)">${c.category||'—'}</span></td><td style="padding:7px 10px;color:var(--tx)">${c.description||'—'}</td><td style="padding:7px 10px;color:var(--bl);text-align:center;font-family:var(--font-m)">${c.qty||1}</td><td style="padding:7px 10px;color:var(--txd);font-family:var(--font-m)">${fA(c.unitPrice)}</td><td style="padding:7px 10px;color:var(--pu);font-weight:700;font-family:var(--font-m)">${fA(c.totalAED)}</td></tr>`).join('')}<tr style="background:var(--s2)"><td colspan="4" style="padding:6px 10px;font:600 11px/1 var(--font-m);color:var(--txd)">Total Prep Cost</td><td style="padding:6px 10px;color:var(--pu);font-weight:700;font-family:var(--font-m)">${fA(costTotal)}</td></tr></tbody></table></div><div style="font:400 11px/1 var(--font-m);color:var(--txd);margin-top:6px">📐 Prep Cost/PC: ${fA(prepPP)} (${fA(costTotal)} ÷ ${pcs} pcs)</div></div>`:`<div style="padding:10px;background:var(--s2);border-radius:var(--r);font:400 11px/1 var(--font-b);color:var(--txd);margin-bottom:16px">🔧 No Preparation Costs for this lot yet</div>`}
+  ${modelItems.length?`<div style="margin-bottom:16px"><div style="font:600 11px/1 var(--font-m);color:var(--gn);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--brd)">✅ Model-wise Final Cost</div><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead><tr style="background:var(--s2)"><th style="padding:8px 10px;text-align:left;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase;white-space:nowrap">Model</th><th style="padding:8px 10px;text-align:center;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Qty</th><th style="padding:8px 10px;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Unit</th><th style="padding:8px 10px;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Pur.Total</th><th style="padding:8px 10px;font:500 10px/1 var(--font-m);color:var(--pu);text-transform:uppercase">AllocPrep</th><th style="padding:8px 10px;font:500 10px/1 var(--font-m);color:var(--gn);text-transform:uppercase">FinalTotal</th><th style="padding:8px 10px;font:500 10px/1 var(--font-m);color:var(--gn);text-transform:uppercase">Final/PC</th></tr></thead><tbody>${modelFinalRows}<tr style="background:var(--gn2);border-top:2px solid var(--gn)"><td style="padding:8px 10px;font:700 12px/1 var(--font-m);color:var(--gn)">GRAND TOTAL</td><td style="padding:8px 10px;text-align:center;font:700 12px/1 var(--font-m);color:var(--bl)">${pcs}</td><td></td><td style="padding:8px 10px;font:700 12px/1 var(--font-m);color:var(--gold)">${fA(purTotal)}</td><td style="padding:8px 10px;font:700 12px/1 var(--font-m);color:var(--pu)">${fA(costTotal)}</td><td style="padding:8px 10px;font:700 14px/1 var(--font-m);color:var(--gn)">${fA(grandTotal)}</td><td style="padding:8px 10px;font:700 12px/1 var(--font-m);color:var(--gn)">${fA(grandPP)}</td></tr></tbody></table></div></div>`:''}
+  `;
+  if(g2('lotModalBody'))g2('lotModalBody').innerHTML=html;
+  if(g2('lotModal'))g2('lotModal').classList.add('on');
+};
+
+// Override to add model KPI to lot status
+const _origRP=window.rPurchases;
+window.rPurchases=async function(){
+  if(_origRP)await _origRP();
+  const purchases=window.S?.purchases||[];const couriers=window.S?.courier||[];const lotCosts=window.S?.lot_costs||[];
+  const fA=n=>isNaN(n)||n==null?'dh0':'dh'+((+n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}));
+  const lots=[...new Set(purchases.map(p=>p.lot).filter(Boolean))];
+  if(!lots.length)return;
+  let html='';
+  lots.forEach(lot=>{
+    const purItems=purchases.filter(p=>p.lot===lot);const costs=lotCosts.filter(c=>c.lot===lot);
+    const modelItems=[];
+    purItems.forEach(p=>{if(p.items&&p.items.length){p.items.forEach(it=>modelItems.push({model:it.model||'?',qty:it.qty||0}));}else if(p.model){modelItems.push({model:p.model,qty:p.qty||0});}});
+    const totalP=modelItems.reduce((s,m)=>s+(m.qty||0),0);
+    const lotCouriers=couriers.filter(c=>(c.lots||[]).some(l=>l.lotRef===lot)||c.lotRef===lot);
+    const totBk=lotCouriers.reduce((s,c)=>s+(c.bookedQty||0),0);const totRcvd=lotCouriers.reduce((s,c)=>s+(c.receivedQty||0),0);
+    const inT=Math.max(0,totBk-totRcvd);const rem=Math.max(0,totalP-totBk);const dPct=totalP>0?Math.round(totRcvd/totalP*100):0;
+    const purTotal=purItems.reduce((s,p)=>s+(p.totalAED||0),0);const costTotal=costs.reduce((s,c)=>s+(c.totalAED||0),0);
+    const mRows=modelItems.map(m=>{
+      const pct=totalP>0?(m.qty/totalP):0;
+      const mt=totalP>0?Math.round(inT*pct):0;const mr=totalP>0?Math.round(totRcvd*pct):0;const mrem=Math.max(0,m.qty-mt-mr);
+      return `<div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:4px;padding:4px 8px;border-bottom:1px solid var(--brd)"><div style="font:400 11px/1.4 var(--font-b);color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${m.model}">${m.model}</div><div style="font:600 11px/1 var(--font-m);color:var(--bl);text-align:center">${m.qty}</div><div style="font:600 11px/1 var(--font-m);color:var(--gold);text-align:center">${mt}</div><div style="font:600 11px/1 var(--font-m);color:var(--gn);text-align:center">${mr}</div><div style="font:600 11px/1 var(--font-m);color:var(--pu);text-align:center">${mrem}</div></div>`;
+    }).join('');
+    html+=`<div style="background:var(--s1);border:1px solid var(--brd);border-radius:var(--rl);margin-bottom:14px;overflow:hidden"><div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--s2);border-bottom:1px solid var(--brd)"><div style="display:flex;align-items:center;gap:10px"><span style="background:var(--bl2);border:1px solid var(--bl);border-radius:4px;padding:3px 10px;font:700 12px/1 var(--font-m);color:var(--bl);cursor:pointer" onclick="showLotDetail('${lot}')">${lot} ▶</span><span style="font:400 12px/1 var(--font-b);color:var(--txd)">${purItems[0]?.supplier||''}</span></div><span style="font:400 11px/1 var(--font-m);color:${dPct===100?'var(--gn)':'var(--txd)'}">Delivered: ${dPct}%</span></div><div style="display:grid;grid-template-columns:repeat(4,1fr)"><div style="padding:12px 8px;text-align:center;border-right:1px solid var(--brd)"><div style="font:400 9px/1 var(--font-m);color:var(--txm);text-transform:uppercase;margin-bottom:6px">Purchased</div><div style="font:700 22px/1 var(--font-m);color:var(--bl)">${totalP}</div><div style="font:400 10px/1 var(--font-m);color:var(--txm)">pcs</div></div><div style="padding:12px 8px;text-align:center;border-right:1px solid var(--brd)"><div style="font:400 9px/1 var(--font-m);color:var(--txm);text-transform:uppercase;margin-bottom:6px">In Transit</div><div style="font:700 22px/1 var(--font-m);color:var(--gold)">${inT}</div><div style="font:400 10px/1 var(--font-m);color:var(--txm)">pcs</div></div><div style="padding:12px 8px;text-align:center;border-right:1px solid var(--brd)"><div style="font:400 9px/1 var(--font-m);color:var(--txm);text-transform:uppercase;margin-bottom:6px">CTG Rcvd</div><div style="font:700 22px/1 var(--font-m);color:var(--gn)">${totRcvd}</div><div style="font:400 10px/1 var(--font-m);color:var(--txm)">pcs</div></div><div style="padding:12px 8px;text-align:center"><div style="font:400 9px/1 var(--font-m);color:var(--txm);text-transform:uppercase;margin-bottom:6px">Remaining</div><div style="font:700 22px/1 var(--font-m);color:var(--pu)">${rem}</div><div style="font:400 10px/1 var(--font-m);color:var(--txm)">pcs</div></div></div>${modelItems.length?`<div><div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:4px;padding:5px 8px;background:var(--s3);border-top:1px solid var(--brd);border-bottom:1px solid var(--brd)"><div style="font:500 9px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Model</div><div style="font:500 9px/1 var(--font-m);color:var(--bl);text-transform:uppercase;text-align:center">Bought</div><div style="font:500 9px/1 var(--font-m);color:var(--gold);text-transform:uppercase;text-align:center">Transit</div><div style="font:500 9px/1 var(--font-m);color:var(--gn);text-transform:uppercase;text-align:center">Rcvd</div><div style="font:500 9px/1 var(--font-m);color:var(--pu);text-transform:uppercase;text-align:center">Left</div></div>${mRows}</div>`:''}<div style="display:flex;gap:16px;padding:8px 14px;background:var(--s2);font:400 11px/1 var(--font-m);color:var(--txd);border-top:1px solid var(--brd);flex-wrap:wrap"><span>Purchase: <b style="color:var(--gold)">${fA(purTotal)}</b></span>${costTotal>`0?`<span>Prep: <b style="color:var(--pu)">${fA(costTotal)}</b></span><span>Grand: <b style="color:var(--gn)">${fA(purTotal+costTotal)}</b></span>`:``}</div></div>`;
+  });
+  const sd=document.getElementById('m3-lot-status');if(sd)sd.innerHTML=html;
+};
+console.log('[v3.0] Model-wise features loaded ✓');
 </script>
 </body>
 </html>
