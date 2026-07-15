@@ -2207,6 +2207,89 @@ window.rPurchases=function(){
   return r;
 };
 
+
+// ══ Feature 4: Courier form — Lot select → Model auto-load ══
+var _origOLRC = window.onLotRowChange;
+window.onLotRowChange = function(idx) {
+  // Call original first (shows basic Purchased/Booked/Available)
+  if (_origOLRC) _origOLRC.call(this, idx);
+
+  var lot = document.getElementById('p7lot-' + idx) ? document.getElementById('p7lot-' + idx).value : '';
+  if (!lot) return;
+
+  var DS = getS();
+  var purItems = (DS.purchases || []).filter(function(p) { return p.lot === lot; });
+
+  // Get model items from items array
+  var mi = [];
+  purItems.forEach(function(p) {
+    if (p.items && p.items.length) {
+      p.items.forEach(function(it) { mi.push({m: it.model || '?', q: it.qty || 0}); });
+    } else if (p.model && p.model !== '2 Models') {
+      mi.push({m: p.model, q: p.qty || 0});
+    }
+  });
+  if (!mi.length) return;
+
+  // Courier booking totals
+  var totalPcs = mi.reduce(function(s, x) { return s + x.q; }, 0);
+  var couriers = (DS.courier || []).filter(function(c) {
+    return (c.lots || []).some(function(l) { return l.lotRef === lot; }) || c.lotRef === lot;
+  });
+  var totalBooked = couriers.reduce(function(s, c) {
+    var lots = c.lots || [];
+    if (lots.length) {
+      return s + lots.filter(function(l) { return l.lotRef === lot; }).reduce(function(ss, l) { return ss + (l.lotQty || 0); }, 0);
+    }
+    return s + (c.bookedQty || 0);
+  }, 0);
+  var totalAvail = Math.max(0, totalPcs - totalBooked);
+
+  // Build model-wise rows
+  var modelRows = '';
+  mi.forEach(function(x) {
+    var pct = totalPcs > 0 ? (x.q / totalPcs) : 0;
+    var booked = Math.round(totalBooked * pct);
+    var avail = Math.max(0, x.q - booked);
+    modelRows += '<div style="display:grid;grid-template-columns:2fr 50px 55px 55px;gap:4px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.06)">'
+      + '<div style="font:400 11px/1.4 var(--font-b);color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + x.m + '">' + x.m + '</div>'
+      + '<div style="text-align:center;font:600 11px/1 var(--font-m);color:var(--bl)">' + x.q + '</div>'
+      + '<div style="text-align:center;font:600 11px/1 var(--font-m);color:var(--gold)">' + booked + '</div>'
+      + '<div style="text-align:center;font:700 11px/1 var(--font-m);color:var(--gn)">' + avail + '</div>'
+      + '</div>';
+  });
+
+  // Update the lot-info div with model breakdown (replaces basic info)
+  var infoEl = document.getElementById('lot-info-' + idx);
+  if (infoEl) {
+    infoEl.style.display = 'block';
+    infoEl.style.padding = '8px 10px';
+    infoEl.style.borderLeft = '2px solid var(--bl)';
+    infoEl.innerHTML =
+      '<div style="font:600 10px/1 var(--font-m);color:var(--bl);text-transform:uppercase;margin-bottom:6px">📦 ' + lot + ' — Model Availability</div>'
+      + '<div style="display:grid;grid-template-columns:2fr 50px 55px 55px;gap:4px;padding:3px 0;margin-bottom:3px">'
+      + '<div style="font:500 9px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Model</div>'
+      + '<div style="text-align:center;font:500 9px/1 var(--font-m);color:var(--bl);text-transform:uppercase">Total</div>'
+      + '<div style="text-align:center;font:500 9px/1 var(--font-m);color:var(--gold);text-transform:uppercase">Booked</div>'
+      + '<div style="text-align:center;font:500 9px/1 var(--font-m);color:var(--gn);text-transform:uppercase">Avail</div>'
+      + '</div>'
+      + modelRows
+      + '<div style="margin-top:6px;padding-top:5px;border-top:1px solid var(--brd);font:400 10px/1 var(--font-m)">'
+      + '<span style="color:var(--txd)">Total: <b style="color:var(--bl)">' + totalPcs + '</b></span>  '
+      + '<span style="color:var(--txd)">Booked: <b style="color:var(--gold)">' + totalBooked + '</b></span>  '
+      + '<span style="color:var(--txd)">Available: <b style="color:var(--gn)">' + totalAvail + '</b></span>'
+      + '</div>';
+  }
+
+  // Auto-fill Model Description field with lot models
+  var modelField = document.getElementById('p7m');
+  if (modelField && !modelField.value) {
+    modelField.value = mi.map(function(x) { return x.m + ' (' + x.q + 'pcs)'; }).join(', ');
+  }
+};
+
+console.log('[CTG Dubai v3.2] Feature 4: Courier model auto-load active');
+
 console.log('[CTG Dubai v3.2 FIXED] refreshAll hook active — works on ALL browsers');
 })();
 
