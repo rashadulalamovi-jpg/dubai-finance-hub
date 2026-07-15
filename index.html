@@ -2213,10 +2213,7 @@ window.rPurchases=function(){
 
 
 // ══ Feature 4: Courier form — Lot select → Model auto-load ══
-var _origOLRC = window.onLotRowChange;
-window.onLotRowChange = function(idx) {
-  // Call original first (shows basic Purchased/Booked/Available)
-  if (_origOLRC) _origOLRC.call(this, idx);
+
 
   var lot = document.getElementById('p7lot-' + idx) ? document.getElementById('p7lot-' + idx).value : '';
   if (!lot) return;
@@ -2293,6 +2290,305 @@ window.onLotRowChange = function(idx) {
 };
 
 console.log('[CTG Dubai v3.2] Feature 4: Courier model auto-load active');
+
+
+// ══════════════════════════════════════════════════════
+// FEATURE 4 COMPLETE: Model-wise Courier Booking + Tracking
+// ══════════════════════════════════════════════════════
+
+// ── 4A: Model-wise booking inputs in courier form ──
+var _origOLRC4 = window.onLotRowChange;
+window.onLotRowChange = function(idx) {
+  var lot = document.getElementById('p7lot-' + idx) ? document.getElementById('p7lot-' + idx).value : '';
+  var infoEl = document.getElementById('lot-info-' + idx);
+  
+  if (!lot) {
+    if (infoEl) infoEl.style.display = 'none';
+    var qEl = document.getElementById('p7lq-' + idx);
+    if (qEl) qEl.value = '';
+    if (typeof syncLotTotal === 'function') syncLotTotal();
+    return;
+  }
+
+  // Get app data
+  var DS = (window._ctgGetS ? window._ctgGetS() : (typeof S !== 'undefined' ? S : {}));
+  var purItems = (DS.purchases || []).filter(function(p) { return p.lot === lot; });
+  var mi = [];
+  purItems.forEach(function(p) {
+    if (p.items && p.items.length) {
+      p.items.forEach(function(it) { mi.push({m: it.model || '?', q: it.qty || 0}); });
+    } else if (p.model && p.model !== '2 Models') {
+      mi.push({m: p.model, q: p.qty || 0});
+    }
+  });
+
+  // If no model breakdown, fallback to original
+  if (!mi.length) {
+    if (_origOLRC4) _origOLRC4.call(this, idx);
+    return;
+  }
+
+  // Calculate already booked per model from existing couriers
+  var couriers = (DS.courier || []).filter(function(c) {
+    return (c.lots || []).some(function(l) { return l.lotRef === lot; }) || c.lotRef === lot;
+  });
+
+  var totalPcs = mi.reduce(function(s, x) { return s + x.q; }, 0);
+
+  // Per-model booked calculation (exact if items available, else proportional)
+  function getModelBooked(modelName) {
+    var booked = 0;
+    couriers.forEach(function(c) {
+      var lotEntries = c.lots ? c.lots.filter(function(l) { return l.lotRef === lot; }) : (c.lotRef === lot ? [{lotRef: lot, lotQty: c.bookedQty || 0}] : []);
+      lotEntries.forEach(function(le) {
+        if (le.items) {
+          var mItem = le.items.filter(function(it) { return it.model === modelName; })[0];
+          if (mItem) booked += (mItem.qty || 0);
+        } else {
+          // Proportional estimate for old data
+          var thisModel = mi.filter(function(x) { return x.m === modelName; })[0];
+          if (thisModel && totalPcs > 0) {
+            booked += Math.round((le.lotQty || c.bookedQty || 0) * (thisModel.q / totalPcs));
+          }
+        }
+      });
+    });
+    return booked;
+  }
+
+  // Build model input rows
+  var modelRows = '';
+  mi.forEach(function(x, i) {
+    var alreadyBooked = getModelBooked(x.m);
+    var avail = Math.max(0, x.q - alreadyBooked);
+    modelRows += '<div style="display:grid;grid-template-columns:2fr 55px 55px 90px;gap:6px;align-items:center;padding:7px 0;border-bottom:1px solid var(--brd)">'
+      + '<div style="font:400 12px/1.3 var(--font-b);color:var(--tx)">' + x.m + '</div>'
+      + '<div style="text-align:center;font:600 12px/1 var(--font-m);color:var(--bl)">' + x.q + '</div>'
+      + '<div style="text-align:center;font:600 12px/1 var(--font-m);color:var(--gn)">' + avail + '</div>'
+      + '<input type="number" id="cm-' + idx + '-' + i + '" data-model="' + x.m + '" data-max="' + avail + '" data-lot="' + lot + '" placeholder="0 pcs" min="0" max="' + avail + '" oninput="syncCourierModelTotal(' + idx + ')" style="padding:7px 8px;background:var(--s2);border:2px solid var(--gold2);border-radius:var(--r);color:var(--gold);font:700 12px/1 var(--font-m);width:100%;text-align:center">'
+      + '</div>';
+  });
+
+  if (infoEl) {
+    infoEl.style.display = 'block';
+    infoEl.style.padding = '10px 12px';
+    infoEl.style.borderLeft = '3px solid var(--gold)';
+    infoEl.style.marginTop = '8px';
+    infoEl.innerHTML = '<div style="font:700 10px/1 var(--font-m);color:var(--gold);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">📦 ' + lot + ' — Model-wise Booking</div>'
+      + '<div style="display:grid;grid-template-columns:2fr 55px 55px 90px;gap:6px;padding:4px 0;margin-bottom:4px;border-bottom:1px solid var(--brd)">'
+      + '<div style="font:500 9px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Model</div>'
+      + '<div style="text-align:center;font:500 9px/1 var(--font-m);color:var(--bl);text-transform:uppercase">Purchased</div>'
+      + '<div style="text-align:center;font:500 9px/1 var(--font-m);color:var(--gn);text-transform:uppercase">Available</div>'
+      + '<div style="text-align:center;font:500 9px/1 var(--font-m);color:var(--gold);text-transform:uppercase">Book Now</div>'
+      + '</div>'
+      + modelRows
+      + '<div id="cm-total-' + idx + '" style="margin-top:8px;padding:6px 10px;background:var(--s3);border-radius:var(--r);font:600 12px/1 var(--font-b);color:var(--txd)">Total Booking: <b style="color:var(--gold)">0 pcs</b></div>';
+    infoEl.dataset.modelCount = mi.length;
+  }
+
+  // Reset the lot qty input
+  var qEl = document.getElementById('p7lq-' + idx);
+  if (qEl) qEl.value = '';
+
+  // Also update model description field
+  var mf = document.getElementById('p7m');
+  if (mf && !mf.value) {
+    mf.value = mi.map(function(x) { return x.m + ' (' + x.q + 'pcs)'; }).join(', ');
+  }
+};
+
+// ── 4B: Sync model totals when input changes ──
+window.syncCourierModelTotal = function(idx) {
+  var total = 0;
+  var i = 0;
+  while (true) {
+    var el = document.getElementById('cm-' + idx + '-' + i);
+    if (!el) break;
+    var val = parseFloat(el.value) || 0;
+    var max = parseFloat(el.dataset.max) || 0;
+    if (max > 0 && val > max) { el.value = max; val = max; el.style.borderColor = 'var(--rd)'; }
+    else { el.style.borderColor = val > 0 ? 'var(--gn)' : 'var(--gold2)'; }
+    total += val;
+    i++;
+  }
+  var totalEl = document.getElementById('cm-total-' + idx);
+  if (totalEl) totalEl.innerHTML = 'Total Booking: <b style="color:' + (total > 0 ? 'var(--gn)' : 'var(--gold)') + '">' + total + ' pcs</b>';
+  var qEl = document.getElementById('p7lq-' + idx);
+  if (qEl) { qEl.value = total > 0 ? total : ''; }
+  if (typeof syncLotTotal === 'function') syncLotTotal();
+};
+
+// ── 4C: Override getLotRows to include model items ──
+window.getLotRows = function() {
+  var rows = (document.getElementById('p7-lot-rows') || {}).children || [];
+  var res = [];
+  for (var ri = 0; ri < rows.length; ri++) {
+    var row = rows[ri];
+    var idx = row.id.replace('lot-row-', '');
+    var lotEl = document.getElementById('p7lot-' + idx);
+    var lotRef = lotEl ? lotEl.value : '';
+    var qEl = document.getElementById('p7lq-' + idx);
+    var lotQty = parseFloat(qEl ? qEl.value : 0) || 0;
+    if (!lotRef) continue;
+
+    // Collect model items from inputs
+    var items = [];
+    var i = 0;
+    while (true) {
+      var el = document.getElementById('cm-' + idx + '-' + i);
+      if (!el) break;
+      var qty = parseFloat(el.value) || 0;
+      if (qty > 0) items.push({model: el.dataset.model || '?', qty: qty});
+      i++;
+    }
+
+    if (items.length > 0) {
+      var itemTotal = items.reduce(function(s, it) { return s + it.qty; }, 0);
+      res.push({lotRef: lotRef, lotQty: itemTotal, items: items});
+    } else if (lotQty > 0) {
+      res.push({lotRef: lotRef, lotQty: lotQty});
+    }
+  }
+  return res;
+};
+
+// ── 4D: Update runModelKPI with EXACT model tracking ──
+function runModelKPIExact() {
+  var DS = (window._ctgGetS ? window._ctgGetS() : (typeof S !== 'undefined' ? S : {}));
+  var pu = DS.purchases || [];
+  var co = DS.courier || [];
+  var lc = DS.lot_costs || [];
+  var lots = [];
+  pu.forEach(function(p) { if (p.lot && lots.indexOf(p.lot) === -1) lots.push(p.lot); });
+  if (!lots.length) return;
+
+  var html = '';
+  lots.forEach(function(lot) {
+    var pi = pu.filter(function(p) { return p.lot === lot; });
+    var ci = lc.filter(function(c) { return c.lot === lot; });
+    var mi = [];
+    pi.forEach(function(p) {
+      if (p.items && p.items.length) {
+        p.items.forEach(function(it) { mi.push({m: it.model || '?', q: it.qty || 0}); });
+      } else if (p.model) { mi.push({m: p.model, q: p.qty || 0}); }
+    });
+    var tp = mi.reduce(function(s, x) { return s + x.q; }, 0);
+
+    // Couriers for this lot
+    var lotCouriers = co.filter(function(c) {
+      return (c.lots || []).some(function(l) { return l.lotRef === lot; }) || c.lotRef === lot;
+    });
+
+    // Calculate per-model booked and received (EXACT)
+    function getModelStats(modelName) {
+      var booked = 0, rcvd = 0;
+      lotCouriers.forEach(function(c) {
+        var les = c.lots ? c.lots.filter(function(l) { return l.lotRef === lot; }) : (c.lotRef === lot ? [{lotRef: lot, lotQty: c.bookedQty || 0}] : []);
+        les.forEach(function(le) {
+          if (le.items) {
+            var mItem = le.items.filter(function(it) { return it.model === modelName; })[0];
+            if (mItem) {
+              booked += (mItem.qty || 0);
+              if (c.ctgReceiveDate) rcvd += (mItem.qty || 0);
+            }
+          } else {
+            // Proportional for old courier data without items
+            var thisM = mi.filter(function(x) { return x.m === modelName; })[0];
+            if (thisM && tp > 0) {
+              var prop = Math.round((le.lotQty || c.bookedQty || 0) * (thisM.q / tp));
+              booked += prop;
+              if (c.ctgReceiveDate) rcvd += prop;
+            }
+          }
+        });
+      });
+      return {booked: booked, rcvd: rcvd};
+    }
+
+    // Totals
+    var totalBooked = 0, totalRcvd = 0;
+    mi.forEach(function(x) {
+      var st = getModelStats(x.m);
+      totalBooked += st.booked;
+      totalRcvd += st.rcvd;
+    });
+    var totalInTransit = Math.max(0, totalBooked - totalRcvd);
+    var totalLeft = Math.max(0, tp - totalBooked);
+    var dp = tp > 0 ? Math.round(totalRcvd / tp * 100) : 0;
+
+    var pv = pi.reduce(function(s, p) { return s + (p.totalAED || 0); }, 0);
+    var cv = ci.reduce(function(s, c) { return s + (c.totalAED || 0); }, 0);
+    var sup = pi[0] ? pi[0].supplier || '' : '';
+    var fA = function(n) { return isNaN(n) || n == null ? 'dh0' : 'dh' + (+n).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}); };
+
+    // Model rows with EXACT data
+    var mr = '';
+    mi.forEach(function(x) {
+      var st = getModelStats(x.m);
+      var inT = Math.max(0, st.booked - st.rcvd);
+      var left = Math.max(0, x.q - st.booked);
+      mr += '<div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:4px;padding:5px 8px;border-bottom:1px solid var(--brd)">'
+        + '<div style="font:400 11px/1.3 var(--font-b);color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + x.m + '">' + x.m + '</div>'
+        + '<div style="font:600 11px/1 var(--font-m);color:var(--bl);text-align:center">' + x.q + '</div>'
+        + '<div style="font:600 11px/1 var(--font-m);color:var(--gold);text-align:center">' + inT + '</div>'
+        + '<div style="font:600 11px/1 var(--font-m);color:var(--gn);text-align:center">' + st.rcvd + '</div>'
+        + '<div style="font:700 11px/1 var(--font-m);color:' + (left > 0 ? 'var(--pu)' : 'var(--gn)') + ';text-align:center">' + left + '</div>'
+        + '</div>';
+    });
+
+    var lb = '<span style="background:var(--bl2);border:1px solid var(--bl);border-radius:4px;padding:3px 10px;font:700 12px/1 var(--font-m);color:var(--bl);cursor:pointer" onclick="showLotDetail(' + JSON.stringify(lot) + ')">' + lot + ' &#9658;</span>';
+
+    html += '<div style="background:var(--s1);border:1px solid var(--brd);border-radius:var(--rl);margin-bottom:14px;overflow:hidden">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--s2);border-bottom:1px solid var(--brd)">'
+      + '<div style="display:flex;align-items:center;gap:10px">' + lb + '<span style="font:400 12px/1 var(--font-b);color:var(--txd)">' + sup + '</span></div>'
+      + '<span style="font:400 11px/1 var(--font-m);color:' + (dp >= 100 ? 'var(--gn)' : 'var(--txd)') + '">Delivered: ' + dp + '%</span></div>'
+      + '<div style="display:grid;grid-template-columns:repeat(4,1fr)">'
+      + '<div style="padding:12px 8px;text-align:center;border-right:1px solid var(--brd)"><div style="font:400 9px/1 var(--font-m);color:var(--txm);text-transform:uppercase;margin-bottom:6px">Purchased</div><div style="font:700 22px/1 var(--font-m);color:var(--bl)">' + tp + '</div><div style="font:400 10px/1 var(--font-m);color:var(--txm)">pcs</div></div>'
+      + '<div style="padding:12px 8px;text-align:center;border-right:1px solid var(--brd)"><div style="font:400 9px/1 var(--font-m);color:var(--txm);text-transform:uppercase;margin-bottom:6px">In Transit</div><div style="font:700 22px/1 var(--font-m);color:var(--gold)">' + totalInTransit + '</div><div style="font:400 10px/1 var(--font-m);color:var(--txm)">pcs</div></div>'
+      + '<div style="padding:12px 8px;text-align:center;border-right:1px solid var(--brd)"><div style="font:400 9px/1 var(--font-m);color:var(--txm);text-transform:uppercase;margin-bottom:6px">CTG Rcvd</div><div style="font:700 22px/1 var(--font-m);color:var(--gn)">' + totalRcvd + '</div><div style="font:400 10px/1 var(--font-m);color:var(--txm)">pcs</div></div>'
+      + '<div style="padding:12px 8px;text-align:center"><div style="font:400 9px/1 var(--font-m);color:var(--txm);text-transform:uppercase;margin-bottom:6px">Remaining</div><div style="font:700 22px/1 var(--font-m);color:var(--pu)">' + totalLeft + '</div><div style="font:400 10px/1 var(--font-m);color:var(--txm)">pcs</div></div></div>'
+      + (mi.length ? '<div>'
+        + '<div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:4px;padding:5px 8px;background:var(--s3);border-top:1px solid var(--brd)">'
+        + '<div style="font:500 9px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Model</div>'
+        + '<div style="font:500 9px/1 var(--font-m);color:var(--bl);text-transform:uppercase;text-align:center">Purchased</div>'
+        + '<div style="font:500 9px/1 var(--font-m);color:var(--gold);text-transform:uppercase;text-align:center">Transit</div>'
+        + '<div style="font:500 9px/1 var(--font-m);color:var(--gn);text-transform:uppercase;text-align:center">CTG Rcvd</div>'
+        + '<div style="font:500 9px/1 var(--font-m);color:var(--pu);text-transform:uppercase;text-align:center">Left</div></div>'
+        + mr + '</div>' : '')
+      + '<div style="padding:8px 14px;background:var(--s2);border-top:1px solid var(--brd);font:400 11px/1 var(--font-m);color:var(--txd)">Purchase: <b style="color:var(--gold)">' + fA(pv) + '</b>'
+      + (cv > 0 ? ' | Prep: <b style="color:var(--pu)">' + fA(cv) + '</b> | Grand: <b style="color:var(--gn)">' + fA(pv + cv) + '</b>' : '') + '</div></div>';
+  });
+
+  var sd = document.getElementById('m3-lot-status');
+  if (sd) sd.innerHTML = html;
+}
+
+// Override rPurchases to use exact tracking
+var _rp1 = window.rPurchases;
+window.rPurchases = function() {
+  var r = _rp1 ? _rp1.apply(this, arguments) : Promise.resolve();
+  Promise.resolve(r).then(function() {
+    try { runModelKPIExact(); } catch(e) { console.warn('KPI error:', e); }
+  });
+  return r;
+};
+
+// Override refreshAll hook to use exact tracking
+var _origRA4 = window.refreshAll;
+window.refreshAll = function() {
+  if (_origRA4) _origRA4.apply(this, arguments);
+  setTimeout(function() { try { runModelKPIExact(); } catch(e) {} }, 50);
+};
+
+// Tab hook
+var _ot4 = window.tab;
+window.tab = function(id, el) {
+  if (_ot4) _ot4.call(this, id, el);
+  if (id === 'm3') { setTimeout(function() { try { runModelKPIExact(); } catch(e) {} }, 200); }
+};
+
+console.log('[CTG Dubai] Feature 4 COMPLETE: Model-wise courier booking + exact tracking');
+
 
 console.log('[CTG Dubai v3.2 FIXED] refreshAll hook active — works on ALL browsers');
 })();
