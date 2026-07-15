@@ -2117,6 +2117,10 @@ function gel(id){return document.getElementById(id);}
 
 // Get app's S — the app uses 'S' directly (const S at global scope)
 function getS(){
+  try{ if(typeof S!=='undefined'&&S&&S.purchases)return S; }catch(e){}
+  return window.S||{purchases:[],lot_costs:[],courier:[],advances:[]};
+}
+window._ctgGetS = getS; // expose for courier feature
   try{
     // Try app's S first (accessible since same page scope)
     if(typeof S!=='undefined'&&S&&S.purchases)return S;
@@ -2217,7 +2221,7 @@ window.onLotRowChange = function(idx) {
   var lot = document.getElementById('p7lot-' + idx) ? document.getElementById('p7lot-' + idx).value : '';
   if (!lot) return;
 
-  var DS = getS();
+  var DS = (window._ctgGetS ? window._ctgGetS() : (typeof S!=='undefined'?S:{}));
   var purItems = (DS.purchases || []).filter(function(p) { return p.lot === lot; });
 
   // Get model items from items array
