@@ -1,12 +1,13 @@
 // CTG Click Shop — Dubai Finance Hub
 // Service Worker v2.0
 
-const CACHE_NAME = 'ctg-dubai-v2';
+const CACHE_NAME = 'ctg-dubai-v3.2';
 const OFFLINE_URL = '/dubai-finance-hub/';
 
 const CACHE_ASSETS = [
   '/dubai-finance-hub/',
   '/dubai-finance-hub/index.html',
+  '/dubai-finance-hub/v3.js',
   '/dubai-finance-hub/manifest.json',
   '/dubai-finance-hub/icon-192.png',
   '/dubai-finance-hub/icon-512.png',
