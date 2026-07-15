@@ -2106,32 +2106,25 @@ function showToast(msg,type){
 }
 
 </script>
-
 <script>
-// CTG Dubai v3.2 FIXED — Uses app's S variable directly, hooks refreshAll
-(function(){
+// CTG Dubai Finance Hub — v3 FINAL (All Features, No Duplicates)
+// Features: 1) Lot Detail Model-wise  2) KPI Model breakdown
+//           3) Prep Cost Detail  4) Courier Model-wise Booking + Exact Tracking
+//           Auto-trigger on ALL browsers via refreshAll hook
 
-function fA(n){if(isNaN(n)||n==null)return'dh0';return'dh'+(+n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
-function fDt(d){if(!d)return'—';try{var p=d.split('-');return new Date(+p[0],+p[1]-1,+p[2]).toLocaleDateString('en-BD',{day:'2-digit',month:'short',year:'2-digit'});}catch(e){return d;}}
-function gel(id){return document.getElementById(id);}
-
-// Get app's S — the app uses 'S' directly (const S at global scope)
-function getS(){
-  try{ if(typeof S!=='undefined'&&S&&S.purchases)return S; }catch(e){}
+// ── Data Access ──
+function ctgGetS(){
+  try{if(typeof S!=='undefined'&&S&&S.purchases)return S;}catch(e){}
   return window.S||{purchases:[],lot_costs:[],courier:[],advances:[]};
 }
-window._ctgGetS = getS; // expose for courier feature
-  try{
-    // Try app's S first (accessible since same page scope)
-    if(typeof S!=='undefined'&&S&&S.purchases)return S;
-  }catch(e){}
-  // Fallback to window.S
-  return window.S||{purchases:[],lot_costs:[],courier:[],advances:[]};
-}
+window._ctgGetS=ctgGetS;
 
-// ══ showLotDetail with full breakdown ══
+function _fA(n){if(isNaN(n)||n==null)return'dh0';return'dh'+(+n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function _fDt(d){if(!d)return'—';try{var p=d.split('-');return new Date(+p[0],+p[1]-1,+p[2]).toLocaleDateString('en-BD',{day:'2-digit',month:'short',year:'2-digit'});}catch(e){return d;}}
+
+// ── Feature 1+3: Lot Detail with Model breakdown + Prep cost detail ──
 window.showLotDetail=function(lot){
-  var DS=getS();
+  var DS=ctgGetS();
   var pi=(DS.purchases||[]).filter(function(p){return p.lot===lot;});
   var ci=(DS.lot_costs||[]).filter(function(c){return c.lot===lot;});
   var cr=(DS.courier||[]).filter(function(c){return(c.lots||[]).some(function(l){return l.lotRef===lot;})||c.lotRef===lot;});
@@ -2140,28 +2133,27 @@ window.showLotDetail=function(lot){
   var pcs=mi.reduce(function(s,x){return s+x.q;},0);
   var pt=mi.reduce(function(s,x){return s+x.t;},0);
   var ct=ci.reduce(function(s,c){return s+(c.totalAED||0);},0);
-  var gt=pt+ct;var gpp=pcs>0?gt/pcs:0;var pp=pcs>0?ct/pcs:0;
+  var gt=pt+ct,gpp=pcs>0?gt/pcs:0,pp=pcs>0?ct/pcs:0;
   var tb=cr.reduce(function(s,c){return s+(c.bookedQty||0);},0);
   var tr2=cr.reduce(function(s,c){return s+(c.receivedQty||0);},0);
   var intrans=Math.max(0,tb-tr2);
   var sc='';
-  [['Purchase Date',fDt(pi[0]?pi[0].date:''),'var(--tx)'],['Models',mi.length,'var(--bl)'],['Total PCS',pcs,'var(--bl)'],['Purchase Cost',fA(pt),'var(--gold)'],['Prep Cost',fA(ct),'var(--pu)'],['Grand Total',fA(gt),'var(--gn)'],['Avg Cost/PC',fA(gpp),'var(--gold)'],['In Transit',intrans+' pcs','var(--bl)']].forEach(function(c){sc+='<div style="background:var(--s2);border:1px solid var(--brd);border-radius:var(--r);padding:12px"><div style="font:400 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase;margin-bottom:6px">'+c[0]+'</div><div style="font:700 14px/1 var(--font-m);color:'+c[2]+'">'+c[1]+'</div></div>';});
-  var pr='';mi.forEach(function(x){pr+='<tr style="border-bottom:1px solid var(--brd)"><td style="padding:8px 10px;font-family:var(--font-b);color:var(--tx)">'+x.m+'</td><td style="padding:8px 10px;color:var(--bl);text-align:center;font-family:var(--font-m)">'+x.q+'</td><td style="padding:8px 10px;color:var(--gold);font-family:var(--font-m)">'+fA(x.u)+'</td><td style="padding:8px 10px;color:var(--gold);font-weight:700;font-family:var(--font-m)">'+fA(x.t)+'</td></tr>';});
-  var cR='';ci.forEach(function(c){cR+='<tr style="border-bottom:1px solid var(--brd)"><td style="padding:7px 10px"><span style="background:var(--s3);border:1px solid var(--gold2);border-radius:4px;padding:2px 7px;font:600 10px/1 var(--font-m);color:var(--gold)">'+(c.category||'—')+'</span></td><td style="padding:7px 10px;color:var(--tx)">'+(c.description||'—')+'</td><td style="padding:7px 10px;color:var(--bl);text-align:center;font-family:var(--font-m)">'+(c.qty||1)+'</td><td style="padding:7px 10px;color:var(--gold);font-family:var(--font-m)">'+fA(c.unitPrice)+'</td><td style="padding:7px 10px;color:var(--pu);font-weight:700;font-family:var(--font-m)">'+fA(c.totalAED)+'</td></tr>';});
-  var fr='';var as=0;mi.forEach(function(x,i){var last=i===mi.length-1;var ap=last?(ct-as):parseFloat((pp*x.q).toFixed(2));if(!last)as+=ap;var ft=x.t+ap;var fp=x.q>0?ft/x.q:0;fr+='<tr><td style="padding:8px 10px;font-family:var(--font-b);color:var(--tx)">'+x.m+'</td><td style="padding:8px 10px;color:var(--bl);text-align:center;font-family:var(--font-m)">'+x.q+'</td><td style="padding:8px 10px;color:var(--gold);font-family:var(--font-m)">'+fA(x.u)+'</td><td style="padding:8px 10px;color:var(--gold);font-family:var(--font-m)">'+fA(x.t)+'</td><td style="padding:8px 10px;color:var(--pu);font-family:var(--font-m)">'+fA(ap)+'</td><td style="padding:8px 10px;color:var(--gn);font-weight:700;font-family:var(--font-m)">'+fA(ft)+'</td><td style="padding:8px 10px;color:var(--gn);font-family:var(--font-m)">'+fA(fp)+'</td></tr>';});
+  [['Purchase Date',_fDt(pi[0]?pi[0].date:''),'var(--tx)'],['Models',mi.length,'var(--bl)'],['Total PCS',pcs,'var(--bl)'],['Purchase Cost',_fA(pt),'var(--gold)'],['Prep Cost',_fA(ct),'var(--pu)'],['Grand Total',_fA(gt),'var(--gn)'],['Avg Cost/PC',_fA(gpp),'var(--gold)'],['In Transit',intrans+' pcs','var(--bl)']].forEach(function(c){sc+='<div style="background:var(--s2);border:1px solid var(--brd);border-radius:var(--r);padding:12px"><div style="font:400 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase;margin-bottom:6px">'+c[0]+'</div><div style="font:700 14px/1 var(--font-m);color:'+c[2]+'">'+c[1]+'</div></div>';});
+  var pr='';mi.forEach(function(x){pr+='<tr style="border-bottom:1px solid var(--brd)"><td style="padding:8px 10px;font-family:var(--font-b);color:var(--tx)">'+x.m+'</td><td style="padding:8px 10px;color:var(--bl);text-align:center;font-family:var(--font-m)">'+x.q+'</td><td style="padding:8px 10px;color:var(--gold);font-family:var(--font-m)">'+_fA(x.u)+'</td><td style="padding:8px 10px;color:var(--gold);font-weight:700;font-family:var(--font-m)">'+_fA(x.t)+'</td></tr>';});
+  var cR='';ci.forEach(function(c){cR+='<tr style="border-bottom:1px solid var(--brd)"><td style="padding:7px 10px"><span style="background:var(--s3);border:1px solid var(--gold2);border-radius:4px;padding:2px 7px;font:600 10px/1 var(--font-m);color:var(--gold)">'+(c.category||'—')+'</span></td><td style="padding:7px 10px;color:var(--tx)">'+(c.description||'—')+'</td><td style="padding:7px 10px;color:var(--bl);text-align:center;font-family:var(--font-m)">'+(c.qty||1)+'</td><td style="padding:7px 10px;color:var(--gold);font-family:var(--font-m)">'+_fA(c.unitPrice)+'</td><td style="padding:7px 10px;color:var(--pu);font-weight:700;font-family:var(--font-m)">'+_fA(c.totalAED)+'</td></tr>';});
+  var fr='',as2=0;mi.forEach(function(x,i){var last=i===mi.length-1;var ap=last?(ct-as2):parseFloat((pp*x.q).toFixed(2));if(!last)as2+=ap;var ft=x.t+ap,fp2=x.q>0?ft/x.q:0;fr+='<tr><td style="padding:8px 10px;font-family:var(--font-b);color:var(--tx)">'+x.m+'</td><td style="padding:8px 10px;color:var(--bl);text-align:center;font-family:var(--font-m)">'+x.q+'</td><td style="padding:8px 10px;color:var(--gold);font-family:var(--font-m)">'+_fA(x.u)+'</td><td style="padding:8px 10px;color:var(--gold);font-family:var(--font-m)">'+_fA(x.t)+'</td><td style="padding:8px 10px;color:var(--pu);font-family:var(--font-m)">'+_fA(ap)+'</td><td style="padding:8px 10px;color:var(--gn);font-weight:700;font-family:var(--font-m)">'+_fA(ft)+'</td><td style="padding:8px 10px;color:var(--gn);font-family:var(--font-m)">'+_fA(fp2)+'</td></tr>';});
   var h='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px">'+sc+'</div>';
-  h+='<div style="margin-bottom:16px"><div style="font:600 11px/1 var(--font-m);color:var(--gold);text-transform:uppercase;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--brd)">📦 Purchase Items — Model-wise</div><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead><tr style="background:var(--s2)"><th style="padding:8px 10px;text-align:left;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Model</th><th style="padding:8px 10px;text-align:center;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Qty</th><th style="padding:8px 10px;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Unit(AED)</th><th style="padding:8px 10px;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Total(AED)</th></tr></thead><tbody>'+pr+'<tr style="background:var(--s2)"><td style="padding:6px 10px;font:600 11px/1 var(--font-m);color:var(--txd)">Total</td><td style="padding:6px 10px;color:var(--bl);text-align:center;font-weight:700;font-family:var(--font-m)">'+pcs+'</td><td></td><td style="padding:6px 10px;color:var(--gold);font-weight:700;font-family:var(--font-m)">'+fA(pt)+'</td></tr></tbody></table></div></div>';
-  if(ci.length){h+='<div style="margin-bottom:14px"><div style="font:600 11px/1 var(--font-m);color:var(--pu);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--brd)">🔧 Preparation Costs — Breakdown</div><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead><tr style="background:var(--s2)"><th style="padding:7px 10px;text-align:left;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Category</th><th style="padding:7px 10px;text-align:left;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Description</th><th style="padding:7px 10px;text-align:center;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Qty</th><th style="padding:7px 10px;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Unit</th><th style="padding:7px 10px;font:500 10px/1 var(--font-m);color:var(--pu);text-transform:uppercase">Total</th></tr></thead><tbody>'+cR+'<tr style="background:var(--s2)"><td colspan="4" style="padding:6px 10px;font:600 11px/1 var(--font-m);color:var(--txd)">মোট Preparation Cost</td><td style="padding:6px 10px;color:var(--pu);font-weight:700;font-family:var(--font-m)">'+fA(ct)+'</td></tr></tbody></table></div><div style="padding:7px 12px;background:var(--s3);border-radius:0 0 var(--r) var(--r);font:400 11px/1 var(--font-b);color:var(--txd)">Avg Prep/PC: <b style="color:var(--pu)">'+fA(pp)+'</b> ('+fA(ct)+' ÷ '+pcs+' pcs)</div></div>';}else{h+='<div style="padding:10px 12px;background:var(--s2);border-radius:var(--r);font:400 11px/1 var(--font-b);color:var(--txd);margin-bottom:12px">🔧 No Preparation Costs yet</div>';}
-  if(mi.length){h+='<div><div style="font:600 11px/1 var(--font-m);color:var(--gn);text-transform:uppercase;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--brd)">✅ Model-wise Final Cost</div><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead><tr style="background:var(--s2)"><th style="padding:8px 10px;text-align:left;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Model</th><th style="padding:8px 10px;text-align:center;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Qty</th><th style="padding:8px 10px;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Unit</th><th style="padding:8px 10px;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Pur.Total</th><th style="padding:8px 10px;font:500 10px/1 var(--font-m);color:var(--pu);text-transform:uppercase">AllocPrep</th><th style="padding:8px 10px;font:500 10px/1 var(--font-m);color:var(--gn);text-transform:uppercase">FinalTotal</th><th style="padding:8px 10px;font:500 10px/1 var(--font-m);color:var(--gn);text-transform:uppercase">Final/PC</th></tr></thead><tbody>'+fr+'<tr style="background:var(--gn2);border-top:2px solid var(--gn)"><td style="padding:8px 10px;font:700 12px/1 var(--font-m);color:var(--gn)">GRAND TOTAL</td><td style="padding:8px 10px;text-align:center;font:700 12px/1 var(--font-m);color:var(--bl)">'+pcs+'</td><td></td><td style="padding:8px 10px;font:700 12px/1 var(--font-m);color:var(--gold)">'+fA(pt)+'</td><td style="padding:8px 10px;font:700 12px/1 var(--font-m);color:var(--pu)">'+fA(ct)+'</td><td style="padding:8px 10px;font:700 14px/1 var(--font-m);color:var(--gn)">'+fA(gt)+'</td><td style="padding:8px 10px;font:700 12px/1 var(--font-m);color:var(--gn)">'+fA(gpp)+'</td></tr></tbody></table></div></div>';}
-  if(gel('lotModalTitle'))gel('lotModalTitle').textContent='📋 '+lot+' — Full Cost Breakdown';
-  if(gel('lotModalBody'))gel('lotModalBody').innerHTML=h;
-  if(gel('lotModal'))gel('lotModal').classList.add('on');
+  h+='<div style="margin-bottom:16px"><div style="font:600 11px/1 var(--font-m);color:var(--gold);text-transform:uppercase;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--brd)">\u{1F4E6} Purchase Items \u2014 Model-wise</div><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead><tr style="background:var(--s2)"><th style="padding:8px 10px;text-align:left;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Model</th><th style="padding:8px 10px;text-align:center;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Qty</th><th style="padding:8px 10px;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Unit(AED)</th><th style="padding:8px 10px;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Total(AED)</th></tr></thead><tbody>'+pr+'<tr style="background:var(--s2)"><td style="padding:6px 10px;font:600 11px/1 var(--font-m);color:var(--txd)">Total</td><td style="padding:6px 10px;color:var(--bl);text-align:center;font-weight:700;font-family:var(--font-m)">'+pcs+'</td><td></td><td style="padding:6px 10px;color:var(--gold);font-weight:700;font-family:var(--font-m)">'+_fA(pt)+'</td></tr></tbody></table></div></div>';
+  if(ci.length){h+='<div style="margin-bottom:14px"><div style="font:600 11px/1 var(--font-m);color:var(--pu);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--brd)">\u{1F527} Preparation Costs \u2014 Breakdown</div><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead><tr style="background:var(--s2)"><th style="padding:7px 10px;text-align:left;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Category</th><th style="padding:7px 10px;text-align:left;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Description</th><th style="padding:7px 10px;text-align:center;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Qty</th><th style="padding:7px 10px;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Unit</th><th style="padding:7px 10px;font:500 10px/1 var(--font-m);color:var(--pu);text-transform:uppercase">Total</th></tr></thead><tbody>'+cR+'<tr style="background:var(--s2)"><td colspan="4" style="padding:6px 10px;font:600 11px/1 var(--font-m);color:var(--txd)">\u09AE\u09CB\u099F Preparation Cost</td><td style="padding:6px 10px;color:var(--pu);font-weight:700;font-family:var(--font-m)">'+_fA(ct)+'</td></tr></tbody></table></div><div style="padding:7px 12px;background:var(--s3);border-radius:0 0 var(--r) var(--r);font:400 11px/1 var(--font-b);color:var(--txd)">Avg Prep/PC: <b style="color:var(--pu)">'+_fA(pp)+'</b> ('+_fA(ct)+' \u00F7 '+pcs+' pcs)</div></div>';}else{h+='<div style="padding:10px 12px;background:var(--s2);border-radius:var(--r);font:400 11px/1 var(--font-b);color:var(--txd);margin-bottom:12px">\u{1F527} No Preparation Costs yet</div>';}
+  if(mi.length){h+='<div><div style="font:600 11px/1 var(--font-m);color:var(--gn);text-transform:uppercase;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--brd)">\u2705 Model-wise Final Cost</div><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead><tr style="background:var(--s2)"><th style="padding:8px 10px;text-align:left;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Model</th><th style="padding:8px 10px;text-align:center;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Qty</th><th style="padding:8px 10px;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Unit</th><th style="padding:8px 10px;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Pur.Total</th><th style="padding:8px 10px;font:500 10px/1 var(--font-m);color:var(--pu);text-transform:uppercase">AllocPrep</th><th style="padding:8px 10px;font:500 10px/1 var(--font-m);color:var(--gn);text-transform:uppercase">FinalTotal</th><th style="padding:8px 10px;font:500 10px/1 var(--font-m);color:var(--gn);text-transform:uppercase">Final/PC</th></tr></thead><tbody>'+fr+'<tr style="background:var(--gn2);border-top:2px solid var(--gn)"><td style="padding:8px 10px;font:700 12px/1 var(--font-m);color:var(--gn)">GRAND TOTAL</td><td style="padding:8px 10px;text-align:center;font:700 12px/1 var(--font-m);color:var(--bl)">'+pcs+'</td><td></td><td style="padding:8px 10px;font:700 12px/1 var(--font-m);color:var(--gold)">'+_fA(pt)+'</td><td style="padding:8px 10px;font:700 12px/1 var(--font-m);color:var(--pu)">'+_fA(ct)+'</td><td style="padding:8px 10px;font:700 14px/1 var(--font-m);color:var(--gn)">'+_fA(gt)+'</td><td style="padding:8px 10px;font:700 12px/1 var(--font-m);color:var(--gn)">'+_fA(gpp)+'</td></tr></tbody></table></div></div>';}
+  if(document.getElementById('lotModalTitle'))document.getElementById('lotModalTitle').textContent='\uD83D\uDCCB '+lot+' \u2014 Full Cost Breakdown';
+  if(document.getElementById('lotModalBody'))document.getElementById('lotModalBody').innerHTML=h;
+  if(document.getElementById('lotModal'))document.getElementById('lotModal').classList.add('on');
 };
 
-// ══ Model KPI — reads from app's S directly ══
-function runModelKPI(){
-  var DS=getS();
-  var pu=DS.purchases||[];var co=DS.courier||[];var lc=DS.lot_costs||[];
+// ── Feature 2: Model KPI (Exact tracking) ──
+function ctgRunKPI(){
+  var DS=ctgGetS(),pu=DS.purchases||[],co=DS.courier||[],lc=DS.lot_costs||[];
   var lots=[];pu.forEach(function(p){if(p.lot&&lots.indexOf(p.lot)===-1)lots.push(p.lot);});
   if(!lots.length)return;
   var html='';
@@ -2170,428 +2162,112 @@ function runModelKPI(){
     var ci=lc.filter(function(c){return c.lot===lot;});
     var mi=[];pi.forEach(function(p){if(p.items&&p.items.length){p.items.forEach(function(it){mi.push({m:it.model||'?',q:it.qty||0});});}else if(p.model){mi.push({m:p.model,q:p.qty||0});}});
     var tp=mi.reduce(function(s,x){return s+x.q;},0);
-    var lco=co.filter(function(c){return(c.lots||[]).some(function(l){return l.lotRef===lot;})||c.lotRef===lot;});
-    var tb=lco.reduce(function(s,c){return s+(c.bookedQty||0);},0),tr2=lco.reduce(function(s,c){return s+(c.receivedQty||0);},0);
-    var itr=Math.max(0,tb-tr2),rm=Math.max(0,tp-tb),dp=tp>0?Math.round(tr2/tp*100):0;
-    var pv=pi.reduce(function(s,p){return s+(p.totalAED||0);},0),cv=ci.reduce(function(s,c){return s+(c.totalAED||0);},0);
-    var sup=pi[0]?pi[0].supplier||'':'';var mr='';
-    mi.forEach(function(x){var pct=tp>0?(x.q/tp):0,xt=tp>0?Math.round(itr*pct):0,xr=tp>0?Math.round(tr2*pct):0,xl=Math.max(0,x.q-xt-xr);mr+='<div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:4px;padding:4px 8px;border-bottom:1px solid var(--brd)"><div style="font:400 11px/1.4 var(--font-b);color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+x.m+'</div><div style="font:600 11px/1 var(--font-m);color:var(--bl);text-align:center">'+x.q+'</div><div style="font:600 11px/1 var(--font-m);color:var(--gold);text-align:center">'+xt+'</div><div style="font:600 11px/1 var(--font-m);color:var(--gn);text-align:center">'+xr+'</div><div style="font:600 11px/1 var(--font-m);color:var(--pu);text-align:center">'+xl+'</div></div>';});
+    var lotCr=co.filter(function(c){return(c.lots||[]).some(function(l){return l.lotRef===lot;})||c.lotRef===lot;});
+    function getMSt(mn){
+      var b=0,r=0;
+      lotCr.forEach(function(c){
+        var les=c.lots?c.lots.filter(function(l){return l.lotRef===lot;}):(c.lotRef===lot?[{lotRef:lot,lotQty:c.bookedQty||0}]:[]);
+        les.forEach(function(le){
+          if(le.items){var mi2=le.items.filter(function(it){return it.model===mn;})[0];if(mi2){b+=(mi2.qty||0);if(c.ctgReceiveDate)r+=(mi2.qty||0);}}
+          else{var tm=mi.filter(function(x){return x.m===mn;})[0];if(tm&&tp>0){var pr=Math.round((le.lotQty||c.bookedQty||0)*(tm.q/tp));b+=pr;if(c.ctgReceiveDate)r+=pr;}}
+        });
+      });
+      return{b:b,r:r};
+    }
+    var totB=0,totR=0;mi.forEach(function(x){var st=getMSt(x.m);totB+=st.b;totR+=st.r;});
+    var totT=Math.max(0,totB-totR),totL=Math.max(0,tp-totB),dp=tp>0?Math.round(totR/tp*100):0;
+    var pv=pi.reduce(function(s,p){return s+(p.totalAED||0);},0);
+    var cv=ci.reduce(function(s,c){return s+(c.totalAED||0);},0);
+    var sup=pi[0]?pi[0].supplier||'':'';
+    var mr='';mi.forEach(function(x){
+      var st=getMSt(x.m),iT=Math.max(0,st.b-st.r),lft=Math.max(0,x.q-st.b);
+      mr+='<div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:4px;padding:5px 8px;border-bottom:1px solid var(--brd)"><div style="font:400 11px/1.3 var(--font-b);color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+x.m+'">'+x.m+'</div><div style="font:600 11px/1 var(--font-m);color:var(--bl);text-align:center">'+x.q+'</div><div style="font:600 11px/1 var(--font-m);color:var(--gold);text-align:center">'+iT+'</div><div style="font:600 11px/1 var(--font-m);color:var(--gn);text-align:center">'+st.r+'</div><div style="font:700 11px/1 var(--font-m);color:'+(lft>0?'var(--pu)':'var(--gn)')+';text-align:center">'+lft+'</div></div>';
+    });
     var lb='<span style="background:var(--bl2);border:1px solid var(--bl);border-radius:4px;padding:3px 10px;font:700 12px/1 var(--font-m);color:var(--bl);cursor:pointer" onclick="showLotDetail('+JSON.stringify(lot)+')">'+lot+' &#9658;</span>';
-    html+='<div style="background:var(--s1);border:1px solid var(--brd);border-radius:var(--rl);margin-bottom:14px;overflow:hidden"><div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--s2);border-bottom:1px solid var(--brd)"><div style="display:flex;align-items:center;gap:10px">'+lb+'<span style="font:400 12px/1 var(--font-b);color:var(--txd)">'+sup+'</span></div><span style="font:400 11px/1 var(--font-m);color:'+(dp===100?'var(--gn)':'var(--txd)')+'">Delivered: '+dp+'%</span></div><div style="display:grid;grid-template-columns:repeat(4,1fr)"><div style="padding:12px 8px;text-align:center;border-right:1px solid var(--brd)"><div style="font:400 9px/1 var(--font-m);color:var(--txm);text-transform:uppercase;margin-bottom:6px">Purchased</div><div style="font:700 22px/1 var(--font-m);color:var(--bl)">'+tp+'</div><div style="font:400 10px/1 var(--font-m);color:var(--txm)">pcs</div></div><div style="padding:12px 8px;text-align:center;border-right:1px solid var(--brd)"><div style="font:400 9px/1 var(--font-m);color:var(--txm);text-transform:uppercase;margin-bottom:6px">In Transit</div><div style="font:700 22px/1 var(--font-m);color:var(--gold)">'+itr+'</div><div style="font:400 10px/1 var(--font-m);color:var(--txm)">pcs</div></div><div style="padding:12px 8px;text-align:center;border-right:1px solid var(--brd)"><div style="font:400 9px/1 var(--font-m);color:var(--txm);text-transform:uppercase;margin-bottom:6px">CTG Rcvd</div><div style="font:700 22px/1 var(--font-m);color:var(--gn)">'+tr2+'</div><div style="font:400 10px/1 var(--font-m);color:var(--txm)">pcs</div></div><div style="padding:12px 8px;text-align:center"><div style="font:400 9px/1 var(--font-m);color:var(--txm);text-transform:uppercase;margin-bottom:6px">Remaining</div><div style="font:700 22px/1 var(--font-m);color:var(--pu)">'+rm+'</div><div style="font:400 10px/1 var(--font-m);color:var(--txm)">pcs</div></div></div>'+(mi.length?'<div><div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:4px;padding:5px 8px;background:var(--s3);border-top:1px solid var(--brd)"><div style="font:500 9px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Model</div><div style="font:500 9px/1 var(--font-m);color:var(--bl);text-transform:uppercase;text-align:center">Bought</div><div style="font:500 9px/1 var(--font-m);color:var(--gold);text-transform:uppercase;text-align:center">Transit</div><div style="font:500 9px/1 var(--font-m);color:var(--gn);text-transform:uppercase;text-align:center">Rcvd</div><div style="font:500 9px/1 var(--font-m);color:var(--pu);text-transform:uppercase;text-align:center">Left</div></div>'+mr+'</div>':'')+
-    '<div style="padding:8px 14px;background:var(--s2);border-top:1px solid var(--brd);font:400 11px/1 var(--font-m);color:var(--txd)">Purchase: <b style="color:var(--gold)">'+fA(pv)+'</b>'+(cv>0?' | Prep: <b style="color:var(--pu)">'+fA(cv)+'</b> | Grand: <b style="color:var(--gn)">'+fA(pv+cv)+'</b>':'')+
-    '</div></div>';
+    html+='<div style="background:var(--s1);border:1px solid var(--brd);border-radius:var(--rl);margin-bottom:14px;overflow:hidden"><div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--s2);border-bottom:1px solid var(--brd)"><div style="display:flex;align-items:center;gap:10px">'+lb+'<span style="font:400 12px/1 var(--font-b);color:var(--txd)">'+sup+'</span></div><span style="font:400 11px/1 var(--font-m);color:'+(dp>=100?'var(--gn)':'var(--txd)')+'">Delivered: '+dp+'%</span></div>'
+      +'<div style="display:grid;grid-template-columns:repeat(4,1fr)"><div style="padding:12px 8px;text-align:center;border-right:1px solid var(--brd)"><div style="font:400 9px/1 var(--font-m);color:var(--txm);text-transform:uppercase;margin-bottom:6px">Purchased</div><div style="font:700 22px/1 var(--font-m);color:var(--bl)">'+tp+'</div><div style="font:400 10px/1 var(--font-m);color:var(--txm)">pcs</div></div><div style="padding:12px 8px;text-align:center;border-right:1px solid var(--brd)"><div style="font:400 9px/1 var(--font-m);color:var(--txm);text-transform:uppercase;margin-bottom:6px">In Transit</div><div style="font:700 22px/1 var(--font-m);color:var(--gold)">'+totT+'</div><div style="font:400 10px/1 var(--font-m);color:var(--txm)">pcs</div></div><div style="padding:12px 8px;text-align:center;border-right:1px solid var(--brd)"><div style="font:400 9px/1 var(--font-m);color:var(--txm);text-transform:uppercase;margin-bottom:6px">CTG Rcvd</div><div style="font:700 22px/1 var(--font-m);color:var(--gn)">'+totR+'</div><div style="font:400 10px/1 var(--font-m);color:var(--txm)">pcs</div></div><div style="padding:12px 8px;text-align:center"><div style="font:400 9px/1 var(--font-m);color:var(--txm);text-transform:uppercase;margin-bottom:6px">Remaining</div><div style="font:700 22px/1 var(--font-m);color:var(--pu)">'+totL+'</div><div style="font:400 10px/1 var(--font-m);color:var(--txm)">pcs</div></div></div>'
+      +(mi.length?'<div><div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:4px;padding:5px 8px;background:var(--s3);border-top:1px solid var(--brd)"><div style="font:500 9px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Model</div><div style="font:500 9px/1 var(--font-m);color:var(--bl);text-transform:uppercase;text-align:center">Purchased</div><div style="font:500 9px/1 var(--font-m);color:var(--gold);text-transform:uppercase;text-align:center">Transit</div><div style="font:500 9px/1 var(--font-m);color:var(--gn);text-transform:uppercase;text-align:center">CTG Rcvd</div><div style="font:500 9px/1 var(--font-m);color:var(--pu);text-transform:uppercase;text-align:center">Left</div></div>'+mr+'</div>':'')
+      +'<div style="padding:8px 14px;background:var(--s2);border-top:1px solid var(--brd);font:400 11px/1 var(--font-m);color:var(--txd)">Purchase: <b style="color:var(--gold)">'+_fA(pv)+'</b>'+(cv>0?' | Prep: <b style="color:var(--pu)">'+_fA(cv)+'</b> | Grand: <b style="color:var(--gn)">'+_fA(pv+cv)+'</b>':'')+'</div></div>';
   });
   var sd=document.getElementById('m3-lot-status');if(sd)sd.innerHTML=html;
 }
 
-// ══ THE KEY FIX: Hook into refreshAll() — called EVERY time Firebase data changes ══
-// This is the proper trigger point, not connectFirebase
-var _origRefreshAll=window.refreshAll;
-window.refreshAll=function(){
-  // Call original refreshAll first
-  if(_origRefreshAll)_origRefreshAll.apply(this,arguments);
-  // Then run our model KPI
-  setTimeout(function(){
-    try{runModelKPI();}catch(e){}
-  },50);
+// ── Feature 4: Courier form — Model-wise Booking ──
+var _ctgOLRC=window.onLotRowChange;
+window.onLotRowChange=function(idx){
+  var lot=document.getElementById('p7lot-'+idx)?document.getElementById('p7lot-'+idx).value:'';
+  var infoEl=document.getElementById('lot-info-'+idx);
+  if(!lot){if(infoEl)infoEl.style.display='none';return;}
+  var DS=ctgGetS();
+  var purItems=(DS.purchases||[]).filter(function(p){return p.lot===lot;});
+  var mi=[];purItems.forEach(function(p){if(p.items&&p.items.length){p.items.forEach(function(it){mi.push({m:it.model||'?',q:it.qty||0});});}else if(p.model&&p.model!=='2 Models'){mi.push({m:p.model,q:p.qty||0});}});
+  if(!mi.length){if(_ctgOLRC)_ctgOLRC.call(this,idx);return;}
+  var couriers=(DS.courier||[]).filter(function(c){return(c.lots||[]).some(function(l){return l.lotRef===lot;})||c.lotRef===lot;});
+  var tp=mi.reduce(function(s,x){return s+x.q;},0);
+  function getB(mn){var b=0;couriers.forEach(function(c){var les=c.lots?c.lots.filter(function(l){return l.lotRef===lot;}):(c.lotRef===lot?[{lotRef:lot,lotQty:c.bookedQty||0}]:[]);les.forEach(function(le){if(le.items){var mi2=le.items.filter(function(it){return it.model===mn;})[0];if(mi2)b+=(mi2.qty||0);}else{var tm=mi.filter(function(x){return x.m===mn;})[0];if(tm&&tp>0)b+=Math.round((le.lotQty||c.bookedQty||0)*(tm.q/tp));}});});return b;}
+  var rows='';mi.forEach(function(x,i){var alB=getB(x.m),avail=Math.max(0,x.q-alB);rows+='<div style="display:grid;grid-template-columns:2fr 55px 55px 90px;gap:6px;align-items:center;padding:7px 0;border-bottom:1px solid var(--brd)"><div style="font:400 12px/1.3 var(--font-b);color:var(--tx)">'+x.m+'</div><div style="text-align:center;font:600 12px/1 var(--font-m);color:var(--bl)">'+x.q+'</div><div style="text-align:center;font:600 12px/1 var(--font-m);color:var(--gn)">'+avail+'</div><input type="number" id="cm-'+idx+'-'+i+'" data-model="'+x.m+'" data-max="'+avail+'" placeholder="0 pcs" min="0" max="'+avail+'" oninput="ctgSyncTotal('+idx+')" style="padding:7px 8px;background:var(--s2);border:2px solid var(--gold2);border-radius:var(--r);color:var(--gold);font:700 12px/1 var(--font-m);width:100%;text-align:center"></div>';});
+  if(infoEl){infoEl.style.display='block';infoEl.style.padding='10px 12px';infoEl.style.borderLeft='3px solid var(--gold)';infoEl.style.marginTop='8px';infoEl.innerHTML='<div style="font:700 10px/1 var(--font-m);color:var(--gold);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">\uD83D\uDCE6 '+lot+' \u2014 Model-wise Booking</div><div style="display:grid;grid-template-columns:2fr 55px 55px 90px;gap:6px;padding:4px 0;margin-bottom:4px;border-bottom:1px solid var(--brd)"><div style="font:500 9px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Model</div><div style="text-align:center;font:500 9px/1 var(--font-m);color:var(--bl);text-transform:uppercase">Purchased</div><div style="text-align:center;font:500 9px/1 var(--font-m);color:var(--gn);text-transform:uppercase">Available</div><div style="text-align:center;font:500 9px/1 var(--font-m);color:var(--gold);text-transform:uppercase">Book Now</div></div>'+rows+'<div id="cm-total-'+idx+'" style="margin-top:8px;padding:6px 10px;background:var(--s3);border-radius:var(--r);font:600 12px/1 var(--font-b);color:var(--txd)">Total Booking: <b style="color:var(--gold)">0 pcs</b></div>';}
+  var qEl=document.getElementById('p7lq-'+idx);if(qEl)qEl.value='';
+  var mf=document.getElementById('p7m');if(mf&&!mf.value)mf.value=mi.map(function(x){return x.m+' ('+x.q+'pcs)';}).join(', ');
 };
 
-// Also hook tab switching
-var _ot=window.tab;
-window.tab=function(id,el){
-  if(_ot)_ot.call(this,id,el);
-  if(id==='m3'){setTimeout(function(){try{runModelKPI();}catch(e){}},200);}
+window.ctgSyncTotal=function(idx){
+  var total=0,i=0;
+  while(true){var el=document.getElementById('cm-'+idx+'-'+i);if(!el)break;var val=parseFloat(el.value)||0,max=parseFloat(el.dataset.max)||0;if(max>0&&val>max){el.value=max;val=max;el.style.borderColor='var(--rd)';}else{el.style.borderColor=val>0?'var(--gn)':'var(--gold2)';}total+=val;i++;}
+  var te=document.getElementById('cm-total-'+idx);if(te)te.innerHTML='Total Booking: <b style="color:'+(total>0?'var(--gn)':'var(--gold)')+'">'+total+' pcs</b>';
+  var qEl=document.getElementById('p7lq-'+idx);if(qEl)qEl.value=total>0?total:'';
+  if(typeof syncLotTotal==='function')syncLotTotal();
 };
 
-// Also hook the original rPurchases for extra safety
-var _rp0=window.rPurchases;
-window.rPurchases=function(){
-  var r=_rp0?_rp0.apply(this,arguments):undefined;
-  Promise.resolve(r).then(function(){try{runModelKPI();}catch(e){}});
-  return r;
-};
-
-
-// ══ Feature 4: Courier form — Lot select → Model auto-load ══
-
-
-  var lot = document.getElementById('p7lot-' + idx) ? document.getElementById('p7lot-' + idx).value : '';
-  if (!lot) return;
-
-  var DS = (window._ctgGetS ? window._ctgGetS() : (typeof S!=='undefined'?S:{}));
-  var purItems = (DS.purchases || []).filter(function(p) { return p.lot === lot; });
-
-  // Get model items from items array
-  var mi = [];
-  purItems.forEach(function(p) {
-    if (p.items && p.items.length) {
-      p.items.forEach(function(it) { mi.push({m: it.model || '?', q: it.qty || 0}); });
-    } else if (p.model && p.model !== '2 Models') {
-      mi.push({m: p.model, q: p.qty || 0});
-    }
-  });
-  if (!mi.length) return;
-
-  // Courier booking totals
-  var totalPcs = mi.reduce(function(s, x) { return s + x.q; }, 0);
-  var couriers = (DS.courier || []).filter(function(c) {
-    return (c.lots || []).some(function(l) { return l.lotRef === lot; }) || c.lotRef === lot;
-  });
-  var totalBooked = couriers.reduce(function(s, c) {
-    var lots = c.lots || [];
-    if (lots.length) {
-      return s + lots.filter(function(l) { return l.lotRef === lot; }).reduce(function(ss, l) { return ss + (l.lotQty || 0); }, 0);
-    }
-    return s + (c.bookedQty || 0);
-  }, 0);
-  var totalAvail = Math.max(0, totalPcs - totalBooked);
-
-  // Build model-wise rows
-  var modelRows = '';
-  mi.forEach(function(x) {
-    var pct = totalPcs > 0 ? (x.q / totalPcs) : 0;
-    var booked = Math.round(totalBooked * pct);
-    var avail = Math.max(0, x.q - booked);
-    modelRows += '<div style="display:grid;grid-template-columns:2fr 50px 55px 55px;gap:4px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.06)">'
-      + '<div style="font:400 11px/1.4 var(--font-b);color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + x.m + '">' + x.m + '</div>'
-      + '<div style="text-align:center;font:600 11px/1 var(--font-m);color:var(--bl)">' + x.q + '</div>'
-      + '<div style="text-align:center;font:600 11px/1 var(--font-m);color:var(--gold)">' + booked + '</div>'
-      + '<div style="text-align:center;font:700 11px/1 var(--font-m);color:var(--gn)">' + avail + '</div>'
-      + '</div>';
-  });
-
-  // Update the lot-info div with model breakdown (replaces basic info)
-  var infoEl = document.getElementById('lot-info-' + idx);
-  if (infoEl) {
-    infoEl.style.display = 'block';
-    infoEl.style.padding = '8px 10px';
-    infoEl.style.borderLeft = '2px solid var(--bl)';
-    infoEl.innerHTML =
-      '<div style="font:600 10px/1 var(--font-m);color:var(--bl);text-transform:uppercase;margin-bottom:6px">📦 ' + lot + ' — Model Availability</div>'
-      + '<div style="display:grid;grid-template-columns:2fr 50px 55px 55px;gap:4px;padding:3px 0;margin-bottom:3px">'
-      + '<div style="font:500 9px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Model</div>'
-      + '<div style="text-align:center;font:500 9px/1 var(--font-m);color:var(--bl);text-transform:uppercase">Total</div>'
-      + '<div style="text-align:center;font:500 9px/1 var(--font-m);color:var(--gold);text-transform:uppercase">Booked</div>'
-      + '<div style="text-align:center;font:500 9px/1 var(--font-m);color:var(--gn);text-transform:uppercase">Avail</div>'
-      + '</div>'
-      + modelRows
-      + '<div style="margin-top:6px;padding-top:5px;border-top:1px solid var(--brd);font:400 10px/1 var(--font-m)">'
-      + '<span style="color:var(--txd)">Total: <b style="color:var(--bl)">' + totalPcs + '</b></span>  '
-      + '<span style="color:var(--txd)">Booked: <b style="color:var(--gold)">' + totalBooked + '</b></span>  '
-      + '<span style="color:var(--txd)">Available: <b style="color:var(--gn)">' + totalAvail + '</b></span>'
-      + '</div>';
-  }
-
-  // Auto-fill Model Description field with lot models
-  var modelField = document.getElementById('p7m');
-  if (modelField && !modelField.value) {
-    modelField.value = mi.map(function(x) { return x.m + ' (' + x.q + 'pcs)'; }).join(', ');
-  }
-};
-
-console.log('[CTG Dubai v3.2] Feature 4: Courier model auto-load active');
-
-
-// ══════════════════════════════════════════════════════
-// FEATURE 4 COMPLETE: Model-wise Courier Booking + Tracking
-// ══════════════════════════════════════════════════════
-
-// ── 4A: Model-wise booking inputs in courier form ──
-var _origOLRC4 = window.onLotRowChange;
-window.onLotRowChange = function(idx) {
-  var lot = document.getElementById('p7lot-' + idx) ? document.getElementById('p7lot-' + idx).value : '';
-  var infoEl = document.getElementById('lot-info-' + idx);
-  
-  if (!lot) {
-    if (infoEl) infoEl.style.display = 'none';
-    var qEl = document.getElementById('p7lq-' + idx);
-    if (qEl) qEl.value = '';
-    if (typeof syncLotTotal === 'function') syncLotTotal();
-    return;
-  }
-
-  // Get app data
-  var DS = (window._ctgGetS ? window._ctgGetS() : (typeof S !== 'undefined' ? S : {}));
-  var purItems = (DS.purchases || []).filter(function(p) { return p.lot === lot; });
-  var mi = [];
-  purItems.forEach(function(p) {
-    if (p.items && p.items.length) {
-      p.items.forEach(function(it) { mi.push({m: it.model || '?', q: it.qty || 0}); });
-    } else if (p.model && p.model !== '2 Models') {
-      mi.push({m: p.model, q: p.qty || 0});
-    }
-  });
-
-  // If no model breakdown, fallback to original
-  if (!mi.length) {
-    if (_origOLRC4) _origOLRC4.call(this, idx);
-    return;
-  }
-
-  // Calculate already booked per model from existing couriers
-  var couriers = (DS.courier || []).filter(function(c) {
-    return (c.lots || []).some(function(l) { return l.lotRef === lot; }) || c.lotRef === lot;
-  });
-
-  var totalPcs = mi.reduce(function(s, x) { return s + x.q; }, 0);
-
-  // Per-model booked calculation (exact if items available, else proportional)
-  function getModelBooked(modelName) {
-    var booked = 0;
-    couriers.forEach(function(c) {
-      var lotEntries = c.lots ? c.lots.filter(function(l) { return l.lotRef === lot; }) : (c.lotRef === lot ? [{lotRef: lot, lotQty: c.bookedQty || 0}] : []);
-      lotEntries.forEach(function(le) {
-        if (le.items) {
-          var mItem = le.items.filter(function(it) { return it.model === modelName; })[0];
-          if (mItem) booked += (mItem.qty || 0);
-        } else {
-          // Proportional estimate for old data
-          var thisModel = mi.filter(function(x) { return x.m === modelName; })[0];
-          if (thisModel && totalPcs > 0) {
-            booked += Math.round((le.lotQty || c.bookedQty || 0) * (thisModel.q / totalPcs));
-          }
-        }
-      });
-    });
-    return booked;
-  }
-
-  // Build model input rows
-  var modelRows = '';
-  mi.forEach(function(x, i) {
-    var alreadyBooked = getModelBooked(x.m);
-    var avail = Math.max(0, x.q - alreadyBooked);
-    modelRows += '<div style="display:grid;grid-template-columns:2fr 55px 55px 90px;gap:6px;align-items:center;padding:7px 0;border-bottom:1px solid var(--brd)">'
-      + '<div style="font:400 12px/1.3 var(--font-b);color:var(--tx)">' + x.m + '</div>'
-      + '<div style="text-align:center;font:600 12px/1 var(--font-m);color:var(--bl)">' + x.q + '</div>'
-      + '<div style="text-align:center;font:600 12px/1 var(--font-m);color:var(--gn)">' + avail + '</div>'
-      + '<input type="number" id="cm-' + idx + '-' + i + '" data-model="' + x.m + '" data-max="' + avail + '" data-lot="' + lot + '" placeholder="0 pcs" min="0" max="' + avail + '" oninput="syncCourierModelTotal(' + idx + ')" style="padding:7px 8px;background:var(--s2);border:2px solid var(--gold2);border-radius:var(--r);color:var(--gold);font:700 12px/1 var(--font-m);width:100%;text-align:center">'
-      + '</div>';
-  });
-
-  if (infoEl) {
-    infoEl.style.display = 'block';
-    infoEl.style.padding = '10px 12px';
-    infoEl.style.borderLeft = '3px solid var(--gold)';
-    infoEl.style.marginTop = '8px';
-    infoEl.innerHTML = '<div style="font:700 10px/1 var(--font-m);color:var(--gold);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">📦 ' + lot + ' — Model-wise Booking</div>'
-      + '<div style="display:grid;grid-template-columns:2fr 55px 55px 90px;gap:6px;padding:4px 0;margin-bottom:4px;border-bottom:1px solid var(--brd)">'
-      + '<div style="font:500 9px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Model</div>'
-      + '<div style="text-align:center;font:500 9px/1 var(--font-m);color:var(--bl);text-transform:uppercase">Purchased</div>'
-      + '<div style="text-align:center;font:500 9px/1 var(--font-m);color:var(--gn);text-transform:uppercase">Available</div>'
-      + '<div style="text-align:center;font:500 9px/1 var(--font-m);color:var(--gold);text-transform:uppercase">Book Now</div>'
-      + '</div>'
-      + modelRows
-      + '<div id="cm-total-' + idx + '" style="margin-top:8px;padding:6px 10px;background:var(--s3);border-radius:var(--r);font:600 12px/1 var(--font-b);color:var(--txd)">Total Booking: <b style="color:var(--gold)">0 pcs</b></div>';
-    infoEl.dataset.modelCount = mi.length;
-  }
-
-  // Reset the lot qty input
-  var qEl = document.getElementById('p7lq-' + idx);
-  if (qEl) qEl.value = '';
-
-  // Also update model description field
-  var mf = document.getElementById('p7m');
-  if (mf && !mf.value) {
-    mf.value = mi.map(function(x) { return x.m + ' (' + x.q + 'pcs)'; }).join(', ');
-  }
-};
-
-// ── 4B: Sync model totals when input changes ──
-window.syncCourierModelTotal = function(idx) {
-  var total = 0;
-  var i = 0;
-  while (true) {
-    var el = document.getElementById('cm-' + idx + '-' + i);
-    if (!el) break;
-    var val = parseFloat(el.value) || 0;
-    var max = parseFloat(el.dataset.max) || 0;
-    if (max > 0 && val > max) { el.value = max; val = max; el.style.borderColor = 'var(--rd)'; }
-    else { el.style.borderColor = val > 0 ? 'var(--gn)' : 'var(--gold2)'; }
-    total += val;
-    i++;
-  }
-  var totalEl = document.getElementById('cm-total-' + idx);
-  if (totalEl) totalEl.innerHTML = 'Total Booking: <b style="color:' + (total > 0 ? 'var(--gn)' : 'var(--gold)') + '">' + total + ' pcs</b>';
-  var qEl = document.getElementById('p7lq-' + idx);
-  if (qEl) { qEl.value = total > 0 ? total : ''; }
-  if (typeof syncLotTotal === 'function') syncLotTotal();
-};
-
-// ── 4C: Override getLotRows to include model items ──
-window.getLotRows = function() {
-  var rows = (document.getElementById('p7-lot-rows') || {}).children || [];
-  var res = [];
-  for (var ri = 0; ri < rows.length; ri++) {
-    var row = rows[ri];
-    var idx = row.id.replace('lot-row-', '');
-    var lotEl = document.getElementById('p7lot-' + idx);
-    var lotRef = lotEl ? lotEl.value : '';
-    var qEl = document.getElementById('p7lq-' + idx);
-    var lotQty = parseFloat(qEl ? qEl.value : 0) || 0;
-    if (!lotRef) continue;
-
-    // Collect model items from inputs
-    var items = [];
-    var i = 0;
-    while (true) {
-      var el = document.getElementById('cm-' + idx + '-' + i);
-      if (!el) break;
-      var qty = parseFloat(el.value) || 0;
-      if (qty > 0) items.push({model: el.dataset.model || '?', qty: qty});
-      i++;
-    }
-
-    if (items.length > 0) {
-      var itemTotal = items.reduce(function(s, it) { return s + it.qty; }, 0);
-      res.push({lotRef: lotRef, lotQty: itemTotal, items: items});
-    } else if (lotQty > 0) {
-      res.push({lotRef: lotRef, lotQty: lotQty});
-    }
+window.getLotRows=function(){
+  var rows=(document.getElementById('p7-lot-rows')||{}).children||[];var res=[];
+  for(var ri=0;ri<rows.length;ri++){
+    var row=rows[ri],idx=row.id.replace('lot-row-','');
+    var lotEl=document.getElementById('p7lot-'+idx);if(!lotEl||!lotEl.value)continue;
+    var lotRef=lotEl.value;var qEl=document.getElementById('p7lq-'+idx);var lotQty=parseFloat(qEl?qEl.value:0)||0;
+    var items=[],i=0;
+    while(true){var el=document.getElementById('cm-'+idx+'-'+i);if(!el)break;var qty=parseFloat(el.value)||0;if(qty>0)items.push({model:el.dataset.model||'?',qty:qty});i++;}
+    if(items.length>0){var iqt=items.reduce(function(s,it){return s+it.qty;},0);res.push({lotRef:lotRef,lotQty:iqt,items:items});}
+    else if(lotQty>0)res.push({lotRef:lotRef,lotQty:lotQty});
   }
   return res;
 };
 
-// ── 4D: Update runModelKPI with EXACT model tracking ──
-function runModelKPIExact() {
-  var DS = (window._ctgGetS ? window._ctgGetS() : (typeof S !== 'undefined' ? S : {}));
-  var pu = DS.purchases || [];
-  var co = DS.courier || [];
-  var lc = DS.lot_costs || [];
-  var lots = [];
-  pu.forEach(function(p) { if (p.lot && lots.indexOf(p.lot) === -1) lots.push(p.lot); });
-  if (!lots.length) return;
+// ── Auto-trigger: hook into refreshAll (called on every Firebase update) ──
+var _ctgRA=window.refreshAll;
+window.refreshAll=function(){
+  if(_ctgRA)_ctgRA.apply(this,arguments);
+  setTimeout(function(){try{ctgRunKPI();}catch(e){}},50);
+};
 
-  var html = '';
-  lots.forEach(function(lot) {
-    var pi = pu.filter(function(p) { return p.lot === lot; });
-    var ci = lc.filter(function(c) { return c.lot === lot; });
-    var mi = [];
-    pi.forEach(function(p) {
-      if (p.items && p.items.length) {
-        p.items.forEach(function(it) { mi.push({m: it.model || '?', q: it.qty || 0}); });
-      } else if (p.model) { mi.push({m: p.model, q: p.qty || 0}); }
-    });
-    var tp = mi.reduce(function(s, x) { return s + x.q; }, 0);
+// Tab hook for M3
+var _ctgTab=window.tab;
+window.tab=function(id,el){
+  if(_ctgTab)_ctgTab.call(this,id,el);
+  if(id==='m3'){setTimeout(function(){try{ctgRunKPI();}catch(e){}},200);}
+};
 
-    // Couriers for this lot
-    var lotCouriers = co.filter(function(c) {
-      return (c.lots || []).some(function(l) { return l.lotRef === lot; }) || c.lotRef === lot;
-    });
-
-    // Calculate per-model booked and received (EXACT)
-    function getModelStats(modelName) {
-      var booked = 0, rcvd = 0;
-      lotCouriers.forEach(function(c) {
-        var les = c.lots ? c.lots.filter(function(l) { return l.lotRef === lot; }) : (c.lotRef === lot ? [{lotRef: lot, lotQty: c.bookedQty || 0}] : []);
-        les.forEach(function(le) {
-          if (le.items) {
-            var mItem = le.items.filter(function(it) { return it.model === modelName; })[0];
-            if (mItem) {
-              booked += (mItem.qty || 0);
-              if (c.ctgReceiveDate) rcvd += (mItem.qty || 0);
-            }
-          } else {
-            // Proportional for old courier data without items
-            var thisM = mi.filter(function(x) { return x.m === modelName; })[0];
-            if (thisM && tp > 0) {
-              var prop = Math.round((le.lotQty || c.bookedQty || 0) * (thisM.q / tp));
-              booked += prop;
-              if (c.ctgReceiveDate) rcvd += prop;
-            }
-          }
-        });
-      });
-      return {booked: booked, rcvd: rcvd};
-    }
-
-    // Totals
-    var totalBooked = 0, totalRcvd = 0;
-    mi.forEach(function(x) {
-      var st = getModelStats(x.m);
-      totalBooked += st.booked;
-      totalRcvd += st.rcvd;
-    });
-    var totalInTransit = Math.max(0, totalBooked - totalRcvd);
-    var totalLeft = Math.max(0, tp - totalBooked);
-    var dp = tp > 0 ? Math.round(totalRcvd / tp * 100) : 0;
-
-    var pv = pi.reduce(function(s, p) { return s + (p.totalAED || 0); }, 0);
-    var cv = ci.reduce(function(s, c) { return s + (c.totalAED || 0); }, 0);
-    var sup = pi[0] ? pi[0].supplier || '' : '';
-    var fA = function(n) { return isNaN(n) || n == null ? 'dh0' : 'dh' + (+n).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}); };
-
-    // Model rows with EXACT data
-    var mr = '';
-    mi.forEach(function(x) {
-      var st = getModelStats(x.m);
-      var inT = Math.max(0, st.booked - st.rcvd);
-      var left = Math.max(0, x.q - st.booked);
-      mr += '<div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:4px;padding:5px 8px;border-bottom:1px solid var(--brd)">'
-        + '<div style="font:400 11px/1.3 var(--font-b);color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + x.m + '">' + x.m + '</div>'
-        + '<div style="font:600 11px/1 var(--font-m);color:var(--bl);text-align:center">' + x.q + '</div>'
-        + '<div style="font:600 11px/1 var(--font-m);color:var(--gold);text-align:center">' + inT + '</div>'
-        + '<div style="font:600 11px/1 var(--font-m);color:var(--gn);text-align:center">' + st.rcvd + '</div>'
-        + '<div style="font:700 11px/1 var(--font-m);color:' + (left > 0 ? 'var(--pu)' : 'var(--gn)') + ';text-align:center">' + left + '</div>'
-        + '</div>';
-    });
-
-    var lb = '<span style="background:var(--bl2);border:1px solid var(--bl);border-radius:4px;padding:3px 10px;font:700 12px/1 var(--font-m);color:var(--bl);cursor:pointer" onclick="showLotDetail(' + JSON.stringify(lot) + ')">' + lot + ' &#9658;</span>';
-
-    html += '<div style="background:var(--s1);border:1px solid var(--brd);border-radius:var(--rl);margin-bottom:14px;overflow:hidden">'
-      + '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--s2);border-bottom:1px solid var(--brd)">'
-      + '<div style="display:flex;align-items:center;gap:10px">' + lb + '<span style="font:400 12px/1 var(--font-b);color:var(--txd)">' + sup + '</span></div>'
-      + '<span style="font:400 11px/1 var(--font-m);color:' + (dp >= 100 ? 'var(--gn)' : 'var(--txd)') + '">Delivered: ' + dp + '%</span></div>'
-      + '<div style="display:grid;grid-template-columns:repeat(4,1fr)">'
-      + '<div style="padding:12px 8px;text-align:center;border-right:1px solid var(--brd)"><div style="font:400 9px/1 var(--font-m);color:var(--txm);text-transform:uppercase;margin-bottom:6px">Purchased</div><div style="font:700 22px/1 var(--font-m);color:var(--bl)">' + tp + '</div><div style="font:400 10px/1 var(--font-m);color:var(--txm)">pcs</div></div>'
-      + '<div style="padding:12px 8px;text-align:center;border-right:1px solid var(--brd)"><div style="font:400 9px/1 var(--font-m);color:var(--txm);text-transform:uppercase;margin-bottom:6px">In Transit</div><div style="font:700 22px/1 var(--font-m);color:var(--gold)">' + totalInTransit + '</div><div style="font:400 10px/1 var(--font-m);color:var(--txm)">pcs</div></div>'
-      + '<div style="padding:12px 8px;text-align:center;border-right:1px solid var(--brd)"><div style="font:400 9px/1 var(--font-m);color:var(--txm);text-transform:uppercase;margin-bottom:6px">CTG Rcvd</div><div style="font:700 22px/1 var(--font-m);color:var(--gn)">' + totalRcvd + '</div><div style="font:400 10px/1 var(--font-m);color:var(--txm)">pcs</div></div>'
-      + '<div style="padding:12px 8px;text-align:center"><div style="font:400 9px/1 var(--font-m);color:var(--txm);text-transform:uppercase;margin-bottom:6px">Remaining</div><div style="font:700 22px/1 var(--font-m);color:var(--pu)">' + totalLeft + '</div><div style="font:400 10px/1 var(--font-m);color:var(--txm)">pcs</div></div></div>'
-      + (mi.length ? '<div>'
-        + '<div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:4px;padding:5px 8px;background:var(--s3);border-top:1px solid var(--brd)">'
-        + '<div style="font:500 9px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Model</div>'
-        + '<div style="font:500 9px/1 var(--font-m);color:var(--bl);text-transform:uppercase;text-align:center">Purchased</div>'
-        + '<div style="font:500 9px/1 var(--font-m);color:var(--gold);text-transform:uppercase;text-align:center">Transit</div>'
-        + '<div style="font:500 9px/1 var(--font-m);color:var(--gn);text-transform:uppercase;text-align:center">CTG Rcvd</div>'
-        + '<div style="font:500 9px/1 var(--font-m);color:var(--pu);text-transform:uppercase;text-align:center">Left</div></div>'
-        + mr + '</div>' : '')
-      + '<div style="padding:8px 14px;background:var(--s2);border-top:1px solid var(--brd);font:400 11px/1 var(--font-m);color:var(--txd)">Purchase: <b style="color:var(--gold)">' + fA(pv) + '</b>'
-      + (cv > 0 ? ' | Prep: <b style="color:var(--pu)">' + fA(cv) + '</b> | Grand: <b style="color:var(--gn)">' + fA(pv + cv) + '</b>' : '') + '</div></div>';
-  });
-
-  var sd = document.getElementById('m3-lot-status');
-  if (sd) sd.innerHTML = html;
-}
-
-// Override rPurchases to use exact tracking
-var _rp1 = window.rPurchases;
-window.rPurchases = function() {
-  var r = _rp1 ? _rp1.apply(this, arguments) : Promise.resolve();
-  Promise.resolve(r).then(function() {
-    try { runModelKPIExact(); } catch(e) { console.warn('KPI error:', e); }
-  });
+// rPurchases hook
+var _ctgRP=window.rPurchases;
+window.rPurchases=function(){
+  var r=_ctgRP?_ctgRP.apply(this,arguments):Promise.resolve();
+  Promise.resolve(r).then(function(){try{ctgRunKPI();}catch(e){}});
   return r;
 };
 
-// Override refreshAll hook to use exact tracking
-var _origRA4 = window.refreshAll;
-window.refreshAll = function() {
-  if (_origRA4) _origRA4.apply(this, arguments);
-  setTimeout(function() { try { runModelKPIExact(); } catch(e) {} }, 50);
+// connectFirebase hook (auto-trigger after Firebase connects)
+var _ctgCF=window.connectFirebase;
+window.connectFirebase=function(){
+  var r=_ctgCF?_ctgCF.apply(this,arguments):undefined;
+  var a=0;function chk(){a++;var DS=ctgGetS();if((DS.purchases||[]).length>0){ctgRunKPI();}else if(a<20)setTimeout(chk,500);}
+  setTimeout(chk,1000);return r;
 };
 
-// Tab hook
-var _ot4 = window.tab;
-window.tab = function(id, el) {
-  if (_ot4) _ot4.call(this, id, el);
-  if (id === 'm3') { setTimeout(function() { try { runModelKPIExact(); } catch(e) {} }, 200); }
-};
+// Fallback poll until data loads
+var _ctgIA=0;function _ctgIC(){_ctgIA++;var DS=ctgGetS();if((DS.purchases||[]).length>0){ctgRunKPI();return;}if(_ctgIA<30)setTimeout(_ctgIC,1000);}
+setTimeout(_ctgIC,2000);
 
-console.log('[CTG Dubai] Feature 4 COMPLETE: Model-wise courier booking + exact tracking');
-
-
-console.log('[CTG Dubai v3.2 FIXED] refreshAll hook active — works on ALL browsers');
-})();
+console.log('[CTG Dubai v3 FINAL] All features loaded - any browser OK');
 
 </script>
 </body>
