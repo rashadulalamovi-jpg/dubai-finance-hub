@@ -117,10 +117,36 @@
       '<td style="padding:6px 10px;color:var(--gold);font-weight:700;font-family:var(--font-m)">' + fA(pt) + '</td>' +
       '</tr></tbody></table></div></div>';
 
-    // Prep cost section
-    if (ct > 0) {
-      h += '<div style="padding:10px 14px;background:var(--s2);border:1px solid var(--brd);border-radius:var(--r);margin-bottom:14px;font:400 11px/1.4 var(--font-b);color:var(--txd)">' +
-        '🔧 Prep Cost/PC: <b style="color:var(--pu)">' + fA(pp) + '</b> (' + fA(ct) + ' ÷ ' + pcs + ' pcs)</div>';
+    // Prep cost section — detailed breakdown
+    if (costItems.length) {
+      var cRows = '';
+      costItems.forEach(function(c) {
+        cRows += '<tr style="border-bottom:1px solid var(--brd)">'
+          + '<td style="padding:7px 10px"><span style="background:var(--s3);border:1px solid var(--gold2);border-radius:4px;padding:2px 7px;font:600 10px/1 var(--font-m);color:var(--gold)">' + (c.category||'—') + '</span></td>'
+          + '<td style="padding:7px 10px;color:var(--tx)">' + (c.description||'—') + '</td>'
+          + '<td style="padding:7px 10px;color:var(--bl);text-align:center;font-family:var(--font-m)">' + (c.qty||1) + '</td>'
+          + '<td style="padding:7px 10px;color:var(--gold);font-family:var(--font-m)">' + fA(c.unitPrice) + '</td>'
+          + '<td style="padding:7px 10px;color:var(--pu);font-weight:700;font-family:var(--font-m)">' + fA(c.totalAED) + '</td>'
+          + '</tr>';
+      });
+      h += '<div style="margin-bottom:14px">'
+        + '<div style="font:600 11px/1 var(--font-m);color:var(--pu);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--brd)">🔧 Preparation Costs — Breakdown</div>'
+        + '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">'
+        + '<thead><tr style="background:var(--s2)">'
+        + '<th style="padding:7px 10px;text-align:left;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Category</th>'
+        + '<th style="padding:7px 10px;text-align:left;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Description</th>'
+        + '<th style="padding:7px 10px;text-align:center;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Qty</th>'
+        + '<th style="padding:7px 10px;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Unit(AED)</th>'
+        + '<th style="padding:7px 10px;font:500 10px/1 var(--font-m);color:var(--pu);text-transform:uppercase">Total(AED)</th>'
+        + '</tr></thead>'
+        + '<tbody>' + cRows
+        + '<tr style="background:var(--s2)">'
+        + '<td colspan="4" style="padding:6px 10px;font:600 11px/1 var(--font-m);color:var(--txd)">মোট Preparation Cost</td>'
+        + '<td style="padding:6px 10px;color:var(--pu);font-weight:700;font-family:var(--font-m)">' + fA(ct) + '</td>'
+        + '</tr></tbody></table></div>'
+        + '<div style="padding:7px 12px;background:var(--s3);border-radius:0 0 var(--r) var(--r);font:400 11px/1 var(--font-b);color:var(--txd)">'
+        + 'Avg Prep/PC: <b style="color:var(--pu)">' + fA(pp) + '</b> (' + fA(ct) + ' ÷ ' + pcs + ' pcs)</div>'
+        + '</div>';
     } else {
       h += '<div style="padding:10px 12px;background:var(--s2);border-radius:var(--r);font:400 11px/1 var(--font-b);color:var(--txd);margin-bottom:12px">🔧 No Preparation Costs yet for this lot</div>';
     }
