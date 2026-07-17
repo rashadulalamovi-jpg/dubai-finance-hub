@@ -366,6 +366,7 @@ body{padding-bottom:calc(56px + var(--safe-bottom));}
 <div class="ntab" onclick="tab('m7',this)"><span>📦</span> কুরিয়ার</div>
 <div class="ntab" onclick="tab('m8',this)"><span>👨‍💼</span> নেজাম</div>
 <div class="ntab" onclick="tab('m9',this)"><span>🏪</span> CTG অফিস</div>
+<div class="ntab" onclick="tab('ms',this)"><span>🏪</span> Dubai Sales</div>
 <div class="ntab" onclick="tab('rpt',this)"><span>📊</span> রিপোর্ট</div>
 </div>
 <div class="main">
@@ -789,6 +790,59 @@ body{padding-bottom:calc(56px + var(--safe-bottom));}
 <tbody id="tb-m8pay"><tr><td colspan="5"><div class="empty"><i class="fas fa-database"></i><p>কোনো পেমেন্ট রেকর্ড নেই</p></div></td></tr></tbody>
 </table></div></div></div>
 <!-- REPORT -->
+<div class="panel" id="panel-ms">
+<div class="sh">
+  <div><h2>🏪 Dubai Sales <span class="mod-badge">MS</span></h2></div>
+  <button onclick="tog('f-ms')" style="padding:6px 16px;background:var(--gold);color:var(--bg);border:none;border-radius:var(--r);cursor:pointer;font:600 12px/1 var(--font-m)">+ নতুন বিক্রয়</button>
+</div>
+<!-- KPI Cards -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px" id="ms-kpi">
+  <div style="background:var(--s2);border:1px solid var(--brd);border-radius:var(--r);padding:14px"><div style="font:400 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase;margin-bottom:6px">মোট বিক্রয়</div><div style="font:700 22px/1 var(--font-m);color:var(--bl)" id="ms-total-qty">0 pcs</div></div>
+  <div style="background:var(--s2);border:1px solid var(--brd);border-radius:var(--r);padding:14px"><div style="font:400 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase;margin-bottom:6px">মোট আয় (AED)</div><div style="font:700 18px/1 var(--font-m);color:var(--gold)" id="ms-total-rev">dh0</div></div>
+  <div style="background:var(--s2);border:1px solid var(--brd);border-radius:var(--r);padding:14px"><div style="font:400 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase;margin-bottom:6px">মোট লাভ (AED)</div><div style="font:700 18px/1 var(--font-m);color:var(--gn)" id="ms-total-profit">dh0</div></div>
+  <div style="background:var(--s2);border:1px solid var(--brd);border-radius:var(--r);padding:14px"><div style="font:400 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase;margin-bottom:6px">গড় লাভ/pc</div><div style="font:700 18px/1 var(--font-m);color:var(--gn)" id="ms-avg-profit">dh0</div></div>
+</div>
+<!-- Sale Form -->
+<div class="fwrap" id="f-ms" style="display:none">
+  <div class="ftitle"><i class="fas fa-store"></i> <span>নতুন Dubai Sale</span></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:16px">
+    <div><div class="flbl">তারিখ *</div><input type="date" id="ms-date" class="finp"></div>
+    <div><div class="flbl">Lot সিলেক্ট *</div>
+      <select id="ms-lot" class="finp" onchange="msLoadLotInfo(this.value)">
+        <option value="">-- Lot নির্বাচন করুন --</option>
+      </select>
+    </div>
+    <div><div class="flbl">Model *</div>
+      <select id="ms-model" class="finp" onchange="msLoadModelCost(this.value)">
+        <option value="">-- Model --</option>
+      </select>
+    </div>
+    <div><div class="flbl">Available (pcs)</div>
+      <div id="ms-available" style="padding:8px 12px;background:var(--s3);border-radius:var(--r);font:600 14px/1 var(--font-m);color:var(--bl)">—</div>
+    </div>
+    <div><div class="flbl">বিক্রয় পরিমাণ (pcs) *</div><input type="number" id="ms-qty" class="finp" placeholder="কতটি বিক্রয়?" min="1" oninput="msCalcProfit()"></div>
+    <div><div class="flbl">Cost Price/pc (AED) <span style="color:var(--txm);font-size:10px">Auto</span></div>
+      <input type="number" id="ms-cost" class="finp" placeholder="Auto" readonly style="background:var(--s3);color:var(--txd)">
+    </div>
+    <div><div class="flbl">Sell Price/pc (AED) *</div><input type="number" id="ms-sell" class="finp" placeholder="বিক্রয় মূল্য" oninput="msCalcProfit()"></div>
+    <div><div class="flbl">লাভ/ক্ষতি Preview</div>
+      <div id="ms-profit-preview" style="padding:8px 12px;background:var(--s3);border-radius:var(--r);font:600 13px/1 var(--font-m);color:var(--gn)">—</div>
+    </div>
+    <div><div class="flbl">Buyer নাম (optional)</div><input type="text" id="ms-buyer-name" class="finp" placeholder="Ahmed"></div>
+    <div><div class="flbl">Buyer Mobile (optional)</div><input type="text" id="ms-buyer-mobile" class="finp" placeholder="050-XXXXXXX"></div>
+    <div><div class="flbl">নোট</div><input type="text" id="ms-note" class="finp" placeholder="অতিরিক্ত তথ্য"></div>
+  </div>
+  <div class="fbtns">
+    <button class="btn btn-p" onclick="saveDubaiSale()">💾 Sale Save করুন</button>
+    <button class="btn btn-s" onclick="tog('f-ms')">Cancel</button>
+  </div>
+</div>
+<!-- Sales Table -->
+<div id="ms-table-wrap">
+  <div style="padding:40px;text-align:center;color:var(--txm)"><i class="fas fa-store" style="font-size:40px;opacity:.2;display:block;margin-bottom:12px"></i><p style="font-size:13px">কোনো Dubai Sale নেই</p></div>
+</div>
+</div>
+
 <div class="panel" id="panel-rpt">
 <div class="sh"><div><h2>📊 রিপোর্ট <span class="mod-badge">RPT</span></h2></div>
 <div style="display:flex;gap:8px">
@@ -897,8 +951,8 @@ body{padding-bottom:calc(56px + var(--safe-bottom));}
 
 <script>
 // ══ STATE ══
-const COLS={P:'payments',AD:'advances',PU:'purchases',LC:'lot_costs',OE:'office_expenses',PE:'personal_expenses',CO:'courier',NE:'nejam_commission',CT:'ctg_office'};
-const S={payments:[],advances:[],purchases:[],lot_costs:[],office_expenses:[],personal_expenses:[],courier:[],nejam_commission:[],ctg_office:[]};
+const COLS={P:'payments',AD:'advances',PU:'purchases',LC:'lot_costs',OE:'office_expenses',PE:'personal_expenses',CO:'courier',NE:'nejam_commission',CT:'ctg_office',DS:'dubai_sales'};
+const S={payments:[],advances:[],purchases:[],lot_costs:[],office_expenses:[],personal_expenses:[],courier:[],nejam_commission:[],ctg_office:[],dubai_sales:[]};
 let db=null;
 
 // ══ INIT ══
@@ -2808,6 +2862,439 @@ window.tab = function(id,el) {
 };
 
 console.log('[CTG] Report Engine v1.0 ready — Daily|Weekly|Monthly');
+
+// ══════════════════════════════════════════════════════
+// CTG Dubai Sales Module (MS) — Complete Engine
+// ══════════════════════════════════════════════════════
+
+// ── Populate lot dropdown in MS form ──
+function msPopulateLots() {
+  var sel = document.getElementById('ms-lot');
+  if(!sel) return;
+  var DS = ctgGetS ? ctgGetS() : (typeof S !== 'undefined' ? S : {});
+  var lots = [...new Set((DS.purchases||[]).map(function(p){return p.lot;}))].sort();
+  sel.innerHTML = '<option value="">-- Lot নির্বাচন করুন --</option>';
+  lots.forEach(function(lot) {
+    var opt = document.createElement('option');
+    opt.value = lot; opt.textContent = lot;
+    sel.appendChild(opt);
+  });
+}
+
+// ── Load models when lot selected ──
+window.msLoadLotInfo = function(lot) {
+  var modelSel = document.getElementById('ms-model');
+  var availEl = document.getElementById('ms-available');
+  if(!modelSel) return;
+  modelSel.innerHTML = '<option value="">-- Model --</option>';
+  document.getElementById('ms-cost').value = '';
+  document.getElementById('ms-profit-preview').textContent = '—';
+  if(availEl) { availEl.textContent = '—'; availEl.style.color = 'var(--bl)'; }
+  if(!lot) return;
+
+  var DS = ctgGetS ? ctgGetS() : (typeof S !== 'undefined' ? S : {});
+  var purItems = (DS.purchases||[]).filter(function(p){return p.lot===lot;});
+  var lotCosts = (DS.lot_costs||[]).filter(function(c){return c.lot===lot;});
+  var sales = (DS.dubai_sales||[]).filter(function(s){return s.lot===lot;});
+  var couriers = (DS.courier||[]).filter(function(c){return(c.lots||[]).some(function(l){return l.lotRef===lot;})||c.lotRef===lot;});
+
+  // Get model items from purchase
+  var mi = [];
+  purItems.forEach(function(p) {
+    if(p.items && p.items.length) {
+      p.items.forEach(function(it) {
+        mi.push({
+          m: it.model||'?',
+          qty: it.qty||0,
+          unitPrice: it.unitPrice||0,
+          totalPrice: it.totalPrice||0
+        });
+      });
+    } else if(p.model) {
+      mi.push({m: p.model, qty: p.qty||0, unitPrice: p.unitPrice||0, totalPrice: p.totalAED||0});
+    }
+  });
+
+  if(!mi.length) return;
+
+  var totalPcs = mi.reduce(function(s,x){return s+x.qty;},0);
+  var totalPurCost = mi.reduce(function(s,x){return s+x.totalPrice;},0);
+  var totalPrepCost = lotCosts.reduce(function(s,c){return s+(c.totalAED||0);},0);
+  var grandTotal = totalPurCost + totalPrepCost;
+  var avgCostPerPc = totalPcs > 0 ? grandTotal / totalPcs : 0;
+
+  // Calculate already sold and couriered per model
+  mi.forEach(function(x) {
+    var soldQty = sales.filter(function(s){return s.model===x.m;}).reduce(function(ss,s){return ss+(s.qty||0);},0);
+    var courierQty = 0;
+    couriers.forEach(function(c) {
+      var les = c.lots ? c.lots.filter(function(l){return l.lotRef===lot;}) : (c.lotRef===lot?[{lotRef:lot,lotQty:c.bookedQty||0}]:[]);
+      les.forEach(function(le) {
+        if(le.items) {
+          var mi2 = le.items.filter(function(it){return it.model===x.m;})[0];
+          if(mi2) courierQty += (mi2.qty||0);
+        } else {
+          courierQty += totalPcs > 0 ? Math.round((le.lotQty||0)*(x.qty/totalPcs)) : 0;
+        }
+      });
+    });
+    x.soldQty = soldQty;
+    x.courierQty = courierQty;
+    x.available = Math.max(0, x.qty - soldQty - courierQty);
+    x.costPerPc = avgCostPerPc; // Proportional prep allocation
+  });
+
+  // Add model options
+  mi.forEach(function(x) {
+    var opt = document.createElement('option');
+    opt.value = x.m;
+    opt.textContent = x.m + ' (Avail: ' + x.available + ')';
+    opt.dataset.cost = x.costPerPc.toFixed(2);
+    opt.dataset.available = x.available;
+    modelSel.appendChild(opt);
+  });
+
+  // If single model, auto-select
+  if(mi.length === 1) {
+    modelSel.value = mi[0].m;
+    window.msLoadModelCost(mi[0].m);
+  }
+};
+
+// ── Load cost when model selected ──
+window.msLoadModelCost = function(model) {
+  var modelSel = document.getElementById('ms-model');
+  var costEl = document.getElementById('ms-cost');
+  var availEl = document.getElementById('ms-available');
+  if(!modelSel || !model) return;
+  var opt = modelSel.querySelector('option[value="'+model+'"]');
+  if(!opt) return;
+  var cost = opt.dataset.cost || '0';
+  var avail = opt.dataset.available || '0';
+  if(costEl) costEl.value = cost;
+  if(availEl) {
+    var availNum = parseInt(avail);
+    availEl.textContent = availNum + ' pcs';
+    availEl.style.color = availNum > 0 ? 'var(--gn)' : 'var(--rd)';
+  }
+  msCalcProfit();
+};
+
+// ── Calculate profit preview ──
+window.msCalcProfit = function() {
+  var qty = parseFloat(document.getElementById('ms-qty')?.value) || 0;
+  var cost = parseFloat(document.getElementById('ms-cost')?.value) || 0;
+  var sell = parseFloat(document.getElementById('ms-sell')?.value) || 0;
+  var preview = document.getElementById('ms-profit-preview');
+  if(!preview || !qty || !sell) return;
+  var profitPc = sell - cost;
+  var totalProfit = profitPc * qty;
+  var totalSale = sell * qty;
+  var fA = function(n){return'dh'+(+n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});};
+  var isProfit = profitPc >= 0;
+  preview.style.color = isProfit ? 'var(--gn)' : 'var(--rd)';
+  preview.innerHTML = (isProfit ? '✅ লাভ: ' : '❌ ক্ষতি: ') + fA(Math.abs(profitPc)) + '/pc × ' + qty + ' = <b>' + fA(Math.abs(totalProfit)) + '</b>'
+    + '<br><span style="color:var(--gold);font-size:11px">মোট বিক্রয়: ' + fA(totalSale) + '</span>';
+};
+
+// ── Save Dubai Sale ──
+window.saveDubaiSale = function() {
+  var date = document.getElementById('ms-date')?.value;
+  var lot = document.getElementById('ms-lot')?.value;
+  var model = document.getElementById('ms-model')?.value;
+  var qty = parseFloat(document.getElementById('ms-qty')?.value) || 0;
+  var costPc = parseFloat(document.getElementById('ms-cost')?.value) || 0;
+  var sellPc = parseFloat(document.getElementById('ms-sell')?.value) || 0;
+  var buyerName = document.getElementById('ms-buyer-name')?.value || '';
+  var buyerMobile = document.getElementById('ms-buyer-mobile')?.value || '';
+  var note = document.getElementById('ms-note')?.value || '';
+  var availEl = document.getElementById('ms-available');
+  var avail = parseInt(availEl?.textContent) || 0;
+
+  if(!date) { if(typeof showToast==='function') showToast('তারিখ দিন','err'); return; }
+  if(!lot) { if(typeof showToast==='function') showToast('Lot সিলেক্ট করুন','err'); return; }
+  if(!model) { if(typeof showToast==='function') showToast('Model সিলেক্ট করুন','err'); return; }
+  if(!qty || qty <= 0) { if(typeof showToast==='function') showToast('পরিমাণ দিন','err'); return; }
+  if(qty > avail) { if(typeof showToast==='function') showToast('Available: '+avail+' pcs মাত্র!','err'); return; }
+  if(!sellPc || sellPc <= 0) { if(typeof showToast==='function') showToast('Sell Price দিন','err'); return; }
+
+  var totalSale = sellPc * qty;
+  var totalCost = costPc * qty;
+  var profitPc = sellPc - costPc;
+  var totalProfit = profitPc * qty;
+
+  var saleData = {
+    date: date,
+    lot: lot,
+    model: model,
+    qty: qty,
+    costPrice: costPc,
+    totalCost: totalCost,
+    sellPrice: sellPc,
+    totalSale: totalSale,
+    profitPerPc: profitPc,
+    totalProfit: totalProfit,
+    buyerName: buyerName,
+    buyerMobile: buyerMobile,
+    note: note,
+    source: 'dubai_sale',
+    createdAt: new Date().toISOString()
+  };
+
+  // Get db
+  var db2 = window.db || (firebase.firestore ? firebase.firestore() : null);
+  if(!db2) { if(typeof showToast==='function') showToast('Firebase not connected','err'); return; }
+
+  // Save to dubai_sales collection
+  db2.collection('dubai_sales').add(saleData).then(function(saleRef) {
+    // Auto-add to M1 Payments as AED income
+    var paymentData = {
+      date: date,
+      bdt: 0,
+      aed: totalSale,
+      rate: 0,
+      sender: 'Dubai Sale',
+      description: lot + ' | ' + model + ' × ' + qty + ' pcs @ dh' + sellPc,
+      source: 'dubai_sale',
+      saleRef: saleRef.id,
+      status: 'verified',
+      slip: ''
+    };
+    return db2.collection('payments').add(paymentData).then(function(payRef) {
+      // Update saleData with paymentRef
+      return saleRef.update({paymentRef: payRef.id});
+    });
+  }).then(function() {
+    if(typeof showToast==='function') showToast('Dubai Sale saved! M1-এ AED যুক্ত হয়েছে ✅','ok');
+    // Reset form
+    ['ms-date','ms-qty','ms-sell','ms-buyer-name','ms-buyer-mobile','ms-note'].forEach(function(id){
+      var el=document.getElementById(id); if(el) el.value='';
+    });
+    document.getElementById('ms-lot').value = '';
+    document.getElementById('ms-model').innerHTML = '<option value="">-- Model --</option>';
+    document.getElementById('ms-cost').value = '';
+    document.getElementById('ms-profit-preview').textContent = '—';
+    document.getElementById('ms-available').textContent = '—';
+    // Hide form
+    var form = document.getElementById('f-ms');
+    if(form) form.style.display = 'none';
+    // Refresh all data
+    if(typeof refreshAll==='function') setTimeout(refreshAll, 500);
+  }).catch(function(err) {
+    if(typeof showToast==='function') showToast('Error: '+err.message,'err');
+  });
+};
+
+// ── Render Dubai Sales table and KPIs ──
+window.rDubaiSales = function() {
+  var DS = ctgGetS ? ctgGetS() : (typeof S !== 'undefined' ? S : {});
+  var sales = (DS.dubai_sales||[]).sort(function(a,b){return (b.date||'').localeCompare(a.date||'');});
+
+  // KPI
+  var totalQty = sales.reduce(function(s,x){return s+(x.qty||0);},0);
+  var totalRev = sales.reduce(function(s,x){return s+(x.totalSale||0);},0);
+  var totalProfit = sales.reduce(function(s,x){return s+(x.totalProfit||0);},0);
+  var avgProfit = totalQty > 0 ? totalProfit/totalQty : 0;
+  var fA = function(n){if(!n)return'dh0';return'dh'+(+n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});};
+
+  var el = function(id,val) { var e=document.getElementById(id); if(e) e.textContent=val; };
+  el('ms-total-qty', totalQty+' pcs');
+  el('ms-total-rev', fA(totalRev));
+  el('ms-total-profit', fA(totalProfit));
+  el('ms-avg-profit', fA(avgProfit)+'/pc');
+
+  // Populate lot dropdown
+  msPopulateLots();
+
+  // Set today as default date
+  var dateEl = document.getElementById('ms-date');
+  if(dateEl && !dateEl.value) {
+    var today = new Date();
+    dateEl.value = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
+  }
+
+  // Table
+  var wrap = document.getElementById('ms-table-wrap');
+  if(!wrap) return;
+
+  if(!sales.length) {
+    wrap.innerHTML = '<div style="padding:40px;text-align:center;color:var(--txm)"><i class="fas fa-store" style="font-size:40px;opacity:.2;display:block;margin-bottom:12px"></i><p style="font-size:13px">এখনো কোনো Dubai Sale নেই</p></div>';
+    return;
+  }
+
+  var rows = sales.map(function(s) {
+    var isProfit = (s.profitPerPc||0) >= 0;
+    return '<tr style="border-bottom:1px solid var(--brd)">'
+      +'<td style="padding:8px 10px;font-size:12px;white-space:nowrap">'+((s.date||'').split('-').reverse().join('/'))+'</td>'
+      +'<td style="padding:8px 10px"><span style="background:var(--bl2);border:1px solid var(--bl);border-radius:4px;padding:2px 7px;font:700 10px/1 var(--font-m);color:var(--bl)">'+s.lot+'</span></td>'
+      +'<td style="padding:8px 10px;font:400 11px/1.3 var(--font-b);color:var(--tx)">'+s.model+'</td>'
+      +'<td style="padding:8px 10px;text-align:center;font:600 12px/1 var(--font-m);color:var(--bl)">'+s.qty+'</td>'
+      +'<td style="padding:8px 10px;font:600 12px/1 var(--font-m);color:var(--txd)">'+fA(s.costPrice)+'</td>'
+      +'<td style="padding:8px 10px;font:600 12px/1 var(--font-m);color:var(--gold)">'+fA(s.sellPrice)+'</td>'
+      +'<td style="padding:8px 10px;font:700 12px/1 var(--font-m);color:var(--gold)">'+fA(s.totalSale)+'</td>'
+      +'<td style="padding:8px 10px;font:700 12px/1 var(--font-m);color:'+(isProfit?'var(--gn)':'var(--rd)')+'">'+fA(s.totalProfit)+'</td>'
+      +'<td style="padding:8px 10px;font:400 11px/1 var(--font-b);color:var(--txd)">'+(s.buyerName||'—')+'</td>'
+      +'<td style="padding:8px 10px;font:400 11px/1 var(--font-m);color:var(--txd)">'+(s.buyerMobile||'—')+'</td>'
+      +'<td style="padding:8px 10px"><button onclick="deleteDubaiSale(\''+s.id+'\')" style="padding:3px 8px;background:var(--rd2);border:1px solid var(--rd);border-radius:4px;color:var(--rd);cursor:pointer;font-size:10px">Del</button></td>'
+    +'</tr>';
+  }).join('');
+
+  wrap.innerHTML = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">'
+    +'<thead><tr style="background:var(--s2)">'
+    +['তারিখ','Lot','Model','Qty','Cost/pc','Sell/pc','মোট (AED)','লাভ (AED)','Buyer','Mobile','Del'].map(function(h){
+      return '<th style="padding:8px 10px;text-align:left;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase;white-space:nowrap">'+h+'</th>';
+    }).join('')+'</tr></thead>'
+    +'<tbody>'+rows+'</tbody></table></div>';
+};
+
+// ── Delete Dubai Sale ──
+window.deleteDubaiSale = function(id) {
+  if(!confirm('এই Sale রেকর্ড ও M1 payment মুছে দেবেন?')) return;
+  var db2 = window.db || (firebase.firestore ? firebase.firestore() : null);
+  if(!db2) return;
+
+  // Find the sale to get paymentRef
+  var DS = ctgGetS ? ctgGetS() : (typeof S !== 'undefined' ? S : {});
+  var sale = (DS.dubai_sales||[]).find(function(s){return s.id===id;});
+
+  var delSale = db2.collection('dubai_sales').doc(id).delete();
+  var delPay = sale && sale.paymentRef ? db2.collection('payments').doc(sale.paymentRef).delete() : Promise.resolve();
+
+  Promise.all([delSale, delPay]).then(function() {
+    if(typeof showToast==='function') showToast('Deleted','ok');
+    if(typeof refreshAll==='function') setTimeout(refreshAll, 300);
+  }).catch(function(err) {
+    if(typeof showToast==='function') showToast('Error: '+err.message,'err');
+  });
+};
+
+// ── Hook into refreshAll for MS ──
+var _ctgRA_ms = window.refreshAll;
+window.refreshAll = function() {
+  if(_ctgRA_ms) _ctgRA_ms.apply(this, arguments);
+  setTimeout(function() {
+    try { if(typeof rDubaiSales==='function') rDubaiSales(); } catch(e) {}
+    try { if(typeof ctgRunKPI==='function') ctgRunKPI(); } catch(e) {}
+  }, 80);
+};
+
+// ── Tab hook for MS ──
+var _ctgTab_ms = window.tab;
+window.tab = function(id, el) {
+  if(_ctgTab_ms) _ctgTab_ms.call(this, id, el);
+  if(id==='ms') {
+    setTimeout(function() {
+      try { rDubaiSales(); } catch(e) {}
+    }, 200);
+  }
+};
+
+// ── Update ctgRunKPI to show Dubai Sold ──
+// Override to include dubai_sales in tracking
+function ctgRunKPIWithSales() {
+  var DS = ctgGetS ? ctgGetS() : (typeof S !== 'undefined' ? S : {});
+  var pu = DS.purchases||[], co = DS.courier||[], lc = DS.lot_costs||[], ms = DS.dubai_sales||[];
+  var lots = [];
+  pu.forEach(function(p){if(p.lot&&lots.indexOf(p.lot)===-1)lots.push(p.lot);});
+  if(!lots.length) return;
+
+  var fA = function(n){if(!n||isNaN(n))return'dh0';return'dh'+(+n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});};
+  var html = '';
+
+  lots.forEach(function(lot) {
+    var pi = pu.filter(function(p){return p.lot===lot;});
+    var ci = lc.filter(function(c){return c.lot===lot;});
+    var mi = [];
+    pi.forEach(function(p){if(p.items&&p.items.length){p.items.forEach(function(it){mi.push({m:it.model||'?',q:it.qty||0});});}else if(p.model){mi.push({m:p.model,q:p.qty||0});}});
+    var tp = mi.reduce(function(s,x){return s+x.q;},0);
+    var lco = co.filter(function(c){return(c.lots||[]).some(function(l){return l.lotRef===lot;})||c.lotRef===lot;});
+    var tb = lco.reduce(function(s,c){return s+(c.bookedQty||0);},0);
+    var tr2 = lco.reduce(function(s,c){return s+(c.receivedQty||0);},0);
+    var itr = Math.max(0,tb-tr2);
+    var totSold = ms.filter(function(s){return s.lot===lot;}).reduce(function(s,x){return s+(x.qty||0);},0);
+    var totLeft = Math.max(0,tp-tb-totSold);
+    var dp = tp>0?Math.round(tr2/tp*100):0;
+    var pv = pi.reduce(function(s,p){return s+(p.totalAED||0);},0);
+    var cv = ci.reduce(function(s,c){return s+(c.totalAED||0);},0);
+    var soldAED = ms.filter(function(s){return s.lot===lot;}).reduce(function(s,x){return s+(x.totalSale||0);},0);
+    var sup = pi[0]?pi[0].supplier||'':'';
+
+    function getMSt(mn) {
+      var b=0,r=0,sold=0;
+      lco.forEach(function(c){
+        var les=c.lots?c.lots.filter(function(l){return l.lotRef===lot;}):(c.lotRef===lot?[{lotRef:lot,lotQty:c.bookedQty||0}]:[]);
+        les.forEach(function(le){
+          if(le.items){var mi2=le.items.filter(function(it){return it.model===mn;})[0];if(mi2){b+=(mi2.qty||0);if(c.ctgReceiveDate)r+=(mi2.qty||0);}}
+          else{var tm=mi.filter(function(x){return x.m===mn;})[0];if(tm&&tp>0){var pr=Math.round((le.lotQty||c.bookedQty||0)*(tm.q/tp));b+=pr;if(c.ctgReceiveDate)r+=pr;}}
+        });
+      });
+      sold = ms.filter(function(s){return s.lot===lot&&s.model===mn;}).reduce(function(ss,s){return ss+(s.qty||0);},0);
+      return{b:b,r:r,sold:sold};
+    }
+
+    var totR=0,totB=0,totSoldAll=0;
+    mi.forEach(function(x){var st=getMSt(x.m);totB+=st.b;totR+=st.r;totSoldAll+=st.sold;});
+    var totT=Math.max(0,totB-totR);
+    var totLeftFinal=Math.max(0,tp-totB-totSoldAll);
+
+    var mr='';
+    mi.forEach(function(x){
+      var st=getMSt(x.m);var iT=Math.max(0,st.b-st.r);var lft=Math.max(0,x.q-st.b-st.sold);
+      mr+='<div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 1fr;gap:4px;padding:5px 8px;border-bottom:1px solid var(--brd)">'
+        +'<div style="font:400 11px/1.3 var(--font-b);color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+x.m+'">'+x.m+'</div>'
+        +'<div style="font:600 11px/1 var(--font-m);color:var(--bl);text-align:center">'+x.q+'</div>'
+        +(st.sold>0?'<div style="font:700 11px/1 var(--font-m);color:var(--gold);text-align:center">'+st.sold+'</div>':'<div style="font:400 11px/1 var(--font-m);color:var(--txm);text-align:center">0</div>')
+        +'<div style="font:600 11px/1 var(--font-m);color:var(--gold);text-align:center">'+iT+'</div>'
+        +'<div style="font:600 11px/1 var(--font-m);color:var(--gn);text-align:center">'+st.r+'</div>'
+        +'<div style="font:700 11px/1 var(--font-m);color:'+(lft>0?'var(--pu)':'var(--gn)')+';text-align:center">'+lft+'</div>'
+        +'</div>';
+    });
+
+    var lb='<span style="background:var(--bl2);border:1px solid var(--bl);border-radius:4px;padding:3px 10px;font:700 12px/1 var(--font-m);color:var(--bl);cursor:pointer" onclick="showLotDetail(\''+lot+'\')">'+lot+' &#9658;</span>';
+
+    html+='<div style="background:var(--s1);border:1px solid var(--brd);border-radius:var(--rl);margin-bottom:14px;overflow:hidden">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--s2);border-bottom:1px solid var(--brd)">'
+      +'<div style="display:flex;align-items:center;gap:10px">'+lb+'<span style="font:400 12px/1 var(--font-b);color:var(--txd)">'+sup+'</span>'
+      +(totSoldAll>0?'<span style="background:var(--gold2);border:1px solid var(--gold);border-radius:4px;padding:2px 7px;font:600 10px/1 var(--font-m);color:var(--gold)">🏪 Sold '+totSoldAll+' pcs</span>':'')
+      +'</div><span style="font:400 11px/1 var(--font-m);color:'+(dp>=100?'var(--gn)':'var(--txd)')+'">Delivered: '+dp+'%</span></div>'
+      +'<div style="display:grid;grid-template-columns:repeat(5,1fr)">'
+      +'<div style="padding:10px 6px;text-align:center;border-right:1px solid var(--brd)"><div style="font:400 8px/1 var(--font-m);color:var(--txm);text-transform:uppercase;margin-bottom:4px">Purchased</div><div style="font:700 20px/1 var(--font-m);color:var(--bl)">'+tp+'</div></div>'
+      +(totSoldAll>0?'<div style="padding:10px 6px;text-align:center;border-right:1px solid var(--brd);background:var(--gold2)"><div style="font:400 8px/1 var(--font-m);color:var(--gold);text-transform:uppercase;margin-bottom:4px">🏪 Sold</div><div style="font:700 20px/1 var(--font-m);color:var(--gold)">'+totSoldAll+'</div></div>'
+      :'<div style="padding:10px 6px;text-align:center;border-right:1px solid var(--brd)"><div style="font:400 8px/1 var(--font-m);color:var(--txm);text-transform:uppercase;margin-bottom:4px">Dubai Sold</div><div style="font:700 20px/1 var(--font-m);color:var(--txm)">0</div></div>')
+      +'<div style="padding:10px 6px;text-align:center;border-right:1px solid var(--brd)"><div style="font:400 8px/1 var(--font-m);color:var(--txm);text-transform:uppercase;margin-bottom:4px">Transit</div><div style="font:700 20px/1 var(--font-m);color:var(--gold)">'+totT+'</div></div>'
+      +'<div style="padding:10px 6px;text-align:center;border-right:1px solid var(--brd)"><div style="font:400 8px/1 var(--font-m);color:var(--txm);text-transform:uppercase;margin-bottom:4px">CTG Rcvd</div><div style="font:700 20px/1 var(--font-m);color:var(--gn)">'+totR+'</div></div>'
+      +'<div style="padding:10px 6px;text-align:center"><div style="font:400 8px/1 var(--font-m);color:var(--txm);text-transform:uppercase;margin-bottom:4px">Left</div><div style="font:700 20px/1 var(--font-m);color:var(--pu)">'+totLeftFinal+'</div></div>'
+      +'</div>'
+      +(mi.length?'<div><div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 1fr;gap:4px;padding:5px 8px;background:var(--s3);border-top:1px solid var(--brd)">'
+        +'<div style="font:500 9px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Model</div>'
+        +'<div style="font:500 9px/1 var(--font-m);color:var(--bl);text-transform:uppercase;text-align:center">Bought</div>'
+        +'<div style="font:500 9px/1 var(--font-m);color:var(--gold);text-transform:uppercase;text-align:center">Sold</div>'
+        +'<div style="font:500 9px/1 var(--font-m);color:var(--gold);text-transform:uppercase;text-align:center">Transit</div>'
+        +'<div style="font:500 9px/1 var(--font-m);color:var(--gn);text-transform:uppercase;text-align:center">Rcvd</div>'
+        +'<div style="font:500 9px/1 var(--font-m);color:var(--pu);text-transform:uppercase;text-align:center">Left</div>'
+        +'</div>'+mr+'</div>':'')
+      +'<div style="padding:8px 14px;background:var(--s2);border-top:1px solid var(--brd);font:400 11px/1 var(--font-m);color:var(--txd)">'
+      +'Purchase: <b style="color:var(--gold)">'+fA(pv)+'</b>'
+      +(cv>0?' | Prep: <b style="color:var(--pu)">'+fA(cv)+'</b> | Grand: <b style="color:var(--gn)">'+fA(pv+cv)+'</b>':'')
+      +(soldAED>0?' | <span style="color:var(--gold)">🏪 Sale: <b>'+fA(soldAED)+'</b></span>':'')
+      +'</div></div>';
+  });
+
+  var sd = document.getElementById('m3-lot-status');
+  if(sd) sd.innerHTML = html;
+}
+
+// Override ctgRunKPI with new version including Dubai Sales
+window.ctgRunKPI = ctgRunKPIWithSales;
+// Also override rPurchases to call new KPI
+var _rp_ms = window.rPurchases;
+window.rPurchases = function() {
+  var r = _rp_ms ? _rp_ms.apply(this, arguments) : Promise.resolve();
+  Promise.resolve(r).then(function() { try { ctgRunKPIWithSales(); } catch(e) {} });
+  return r;
+};
+
+console.log('[CTG] Dubai Sales Module (MS) loaded');
 
 console.log('[CTG Dubai v3 FINAL] All features loaded - any browser OK');
 
