@@ -796,18 +796,34 @@ body{padding-bottom:calc(56px + var(--safe-bottom));}
 <button onclick="window.print()" id="rpt-print-btn" style="display:none;padding:5px 12px;background:var(--s2);border:1px solid var(--brd2);color:var(--tx);border-radius:var(--r);cursor:pointer;font-size:12px">🖨️ Print / PDF</button>
 </div></div>
 <div id="rpt-filter-bar" style="background:var(--s2);border:1px solid var(--brd);border-radius:var(--r);padding:14px 16px;margin-bottom:16px">
-<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
-<div><div style="font-size:10px;color:var(--txd);text-transform:uppercase;margin-bottom:5px">Filter Type</div>
-<div style="display:flex;border:1px solid var(--brd);border-radius:var(--r);overflow:hidden">
-<button id="rpt-btn-month" onclick="rptMode('month')" style="padding:6px 16px;background:var(--gold);color:var(--bg);border:none;cursor:pointer;font-size:12px;font-weight:700">মাস</button>
-<button id="rpt-btn-range" onclick="rptMode('range')" style="padding:6px 16px;background:var(--s3);color:var(--txd);border:none;cursor:pointer;font-size:12px">Custom Range</button>
-</div></div>
-<div id="rpt-month-wrap"><div style="font-size:10px;color:var(--txd);text-transform:uppercase;margin-bottom:5px">Month</div><input type="month" id="rpt-month" style="padding:6px 10px;background:var(--s2);border:1px solid var(--brd);border-radius:var(--r);color:var(--tx);font-family:var(--font-m)"></div>
-<div id="rpt-range-wrap" style="display:none;gap:8px;flex-wrap:wrap">
-<div><div style="font-size:10px;color:var(--txd);text-transform:uppercase;margin-bottom:5px">From</div><input type="date" id="rpt-from" style="padding:6px 10px;background:var(--s2);border:1px solid var(--brd);border-radius:var(--r);color:var(--tx)"></div>
-<div><div style="font-size:10px;color:var(--txd);text-transform:uppercase;margin-bottom:5px">To</div><input type="date" id="rpt-to" style="padding:6px 10px;background:var(--s2);border:1px solid var(--brd);border-radius:var(--r);color:var(--tx)"></div>
+<!-- Mode Tabs -->
+<div style="display:flex;border:1px solid var(--brd);border-radius:var(--r);overflow:hidden;margin-bottom:12px">
+  <button id="rpt-btn-today" onclick="ctgRptMode('today')" style="flex:1;padding:8px 4px;background:var(--s3);color:var(--txd);border:none;cursor:pointer;font-size:12px">📅 আজ</button>
+  <button id="rpt-btn-week" onclick="ctgRptMode('week')" style="flex:1;padding:8px 4px;background:var(--s3);color:var(--txd);border:none;cursor:pointer;font-size:12px">📆 সপ্তাহ</button>
+  <button id="rpt-btn-month" onclick="ctgRptMode('month')" style="flex:1;padding:8px 4px;background:var(--gold);color:var(--bg);border:none;cursor:pointer;font-size:12px;font-weight:700">📊 মাস</button>
+  <button id="rpt-btn-range" onclick="ctgRptMode('range')" style="flex:1;padding:8px 4px;background:var(--s3);color:var(--txd);border:none;cursor:pointer;font-size:12px">🗓 Custom</button>
 </div>
-<button onclick="generateReport()" style="padding:8px 22px;background:var(--gold);color:var(--bg);border:none;border-radius:var(--r);cursor:pointer;font-weight:700;font-size:13px">▶ Generate</button>
+<!-- Week Navigation -->
+<div id="rpt-week-wrap" style="display:none;align-items:center;justify-content:space-between;margin-bottom:10px;padding:8px 12px;background:var(--s3);border-radius:var(--r)">
+  <button onclick="ctgWeekNav(-1)" style="background:var(--s2);border:1px solid var(--brd);color:var(--tx);padding:5px 12px;border-radius:var(--r);cursor:pointer;font-size:12px">◀ আগের সপ্তাহ</button>
+  <span id="rpt-week-label" style="font:600 12px/1 var(--font-m);color:var(--gold);text-align:center"></span>
+  <button onclick="ctgWeekNav(1)" id="rpt-week-next" style="background:var(--s2);border:1px solid var(--brd);color:var(--tx);padding:5px 12px;border-radius:var(--r);cursor:pointer;font-size:12px">পরের সপ্তাহ ▶</button>
+</div>
+<!-- Today Info -->
+<div id="rpt-today-wrap" style="display:none;padding:8px 12px;background:var(--s3);border-radius:var(--r);margin-bottom:10px">
+  <span id="rpt-today-label" style="font:600 12px/1 var(--font-m);color:var(--bl)"></span>
+</div>
+<!-- Month picker -->
+<div id="rpt-month-wrap" style="margin-bottom:10px">
+  <div style="font-size:10px;color:var(--txd);text-transform:uppercase;margin-bottom:5px">Month</div>
+  <input type="month" id="rpt-month" style="padding:6px 10px;background:var(--s2);border:1px solid var(--brd);border-radius:var(--r);color:var(--tx);font-family:var(--font-m)">
+</div>
+<!-- Custom Range -->
+<div id="rpt-range-wrap" style="display:none;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+  <div><div style="font-size:10px;color:var(--txd);text-transform:uppercase;margin-bottom:5px">From</div><input type="date" id="rpt-from" style="padding:6px 10px;background:var(--s2);border:1px solid var(--brd);border-radius:var(--r);color:var(--tx)"></div>
+  <div><div style="font-size:10px;color:var(--txd);text-transform:uppercase;margin-bottom:5px">To</div><input type="date" id="rpt-to" style="padding:6px 10px;background:var(--s2);border:1px solid var(--brd);border-radius:var(--r);color:var(--tx)"></div>
+</div>
+<button onclick="ctgGenerateReport()" style="width:100%;padding:10px;background:var(--gold);color:var(--bg);border:none;border-radius:var(--r);cursor:pointer;font-weight:700;font-size:13px">▶ Generate Report</button>
 </div></div>
 <div id="rpt-output"><div style="padding:40px;text-align:center;color:var(--txm)"><i class="fas fa-chart-bar" style="font-size:40px;opacity:.2;display:block;margin-bottom:12px"></i><p style="font-size:13px">মাস বা তারিখ সিলেক্ট করে <b style="color:var(--gold)">Generate</b> করুন</p></div></div>
 </div>
@@ -2394,6 +2410,404 @@ window.ctgImport = function(input) {
 };
 
 console.log('[CTG] Backup/Sync/Import functions ready');
+
+// ══════════════════════════════════════════════════════
+// CTG Report Engine v1.0
+// Daily | Weekly (Sat-Fri) | Monthly | Custom
+// Includes: Payment, Advance M2, Purchase, Courier, Expenses
+// ══════════════════════════════════════════════════════
+
+var _ctgRptMode = 'month';
+var _ctgWeekOffset = 0; // 0 = current week
+var _ctgRptFrom = '';
+var _ctgRptTo = '';
+
+// ── Helpers ──
+function _ctgFmtDate(d) {
+  if(!d) return '—';
+  try {
+    var p = d.split('-');
+    var days = ['রবি','সোম','মঙ্গল','বুধ','বৃহ','শুক্র','শনি'];
+    var months = ['জানুয়ারি','ফেব্রুয়ারি','মার্চ','এপ্রিল','মে','জুন','জুলাই','আগস্ট','সেপ্টেম্বর','অক্টোবর','নভেম্বর','ডিসেম্বর'];
+    var dt = new Date(+p[0],+p[1]-1,+p[2]);
+    return days[dt.getDay()] + ', ' + p[2] + ' ' + months[dt.getMonth()] + ' ' + p[0];
+  } catch(e) { return d; }
+}
+
+function _ctgFmtDateShort(d) {
+  if(!d) return '—';
+  try {
+    var p = d.split('-');
+    var dt = new Date(+p[0],+p[1]-1,+p[2]);
+    return p[2]+'/'+String(dt.getMonth()+1).padStart(2,'0')+'/'+p[0].slice(2);
+  } catch(e) { return d; }
+}
+
+function _ctgPadDate(d) {
+  // Returns YYYY-MM-DD
+  var y = d.getFullYear();
+  var m = String(d.getMonth()+1).padStart(2,'0');
+  var day = String(d.getDate()).padStart(2,'0');
+  return y+'-'+m+'-'+day;
+}
+
+// Get Saturday-to-Friday week containing date + offset weeks
+function _ctgGetWeekRange(offsetWeeks) {
+  var today = new Date();
+  var dow = today.getDay(); // 0=Sun,1=Mon,...,6=Sat
+  // Days since last Saturday
+  var daysSinceSat = (dow + 1) % 7; // Sat=0,Sun=1,...,Fri=6
+  var sat = new Date(today);
+  sat.setDate(today.getDate() - daysSinceSat + (offsetWeeks * 7));
+  var fri = new Date(sat);
+  fri.setDate(sat.getDate() + 6);
+  return {from: _ctgPadDate(sat), to: _ctgPadDate(fri)};
+}
+
+// Mode switching
+window.ctgRptMode = function(m) {
+  _ctgRptMode = m;
+  var modes = ['today','week','month','range'];
+  var btnStyle = {
+    active: 'flex:1;padding:8px 4px;background:var(--gold);color:var(--bg);border:none;cursor:pointer;font-size:12px;font-weight:700',
+    inactive: 'flex:1;padding:8px 4px;background:var(--s3);color:var(--txd);border:none;cursor:pointer;font-size:12px'
+  };
+  modes.forEach(function(mode) {
+    var btn = document.getElementById('rpt-btn-'+mode);
+    if(btn) btn.style.cssText = mode===m ? btnStyle.active : btnStyle.inactive;
+  });
+  // Show/hide sections
+  var el = function(id) { return document.getElementById(id); };
+  if(el('rpt-today-wrap')) el('rpt-today-wrap').style.display = m==='today' ? 'block' : 'none';
+  if(el('rpt-week-wrap')) el('rpt-week-wrap').style.display = m==='week' ? 'flex' : 'none';
+  if(el('rpt-month-wrap')) el('rpt-month-wrap').style.display = m==='month' ? 'block' : 'none';
+  if(el('rpt-range-wrap')) el('rpt-range-wrap').style.display = m==='range' ? 'flex' : 'none';
+  
+  if(m==='today') {
+    var today = _ctgPadDate(new Date());
+    _ctgRptFrom = today; _ctgRptTo = today;
+    var tLabel = document.getElementById('rpt-today-label');
+    if(tLabel) tLabel.textContent = '📅 ' + _ctgFmtDate(today);
+  }
+  if(m==='week') {
+    _ctgWeekOffset = 0;
+    _ctgUpdateWeekLabel();
+  }
+};
+
+function _ctgUpdateWeekLabel() {
+  var range = _ctgGetWeekRange(_ctgWeekOffset);
+  _ctgRptFrom = range.from; _ctgRptTo = range.to;
+  var label = document.getElementById('rpt-week-label');
+  var nextBtn = document.getElementById('rpt-week-next');
+  if(label) {
+    label.textContent = _ctgFmtDateShort(range.from) + ' — ' + _ctgFmtDateShort(range.to);
+  }
+  if(nextBtn) nextBtn.style.opacity = _ctgWeekOffset >= 0 ? '0.4' : '1';
+}
+
+window.ctgWeekNav = function(dir) {
+  if(dir > 0 && _ctgWeekOffset >= 0) return; // Can't go to future
+  _ctgWeekOffset += dir;
+  _ctgUpdateWeekLabel();
+};
+
+// Main report generator
+window.ctgGenerateReport = function() {
+  var DS = ctgGetS ? ctgGetS() : (typeof S !== 'undefined' ? S : {});
+  var from = '', to = '', label = '', mode = _ctgRptMode;
+  
+  if(mode === 'today') {
+    from = to = _ctgPadDate(new Date());
+    label = _ctgFmtDate(from);
+  } else if(mode === 'week') {
+    from = _ctgRptFrom; to = _ctgRptTo;
+    var wd = ['শনিবার','রবিবার','সোমবার','মঙ্গলবার','বুধবার','বৃহস্পতিবার','শুক্রবার'];
+    label = 'সাপ্তাহিক: ' + _ctgFmtDateShort(from) + ' (শনি) → ' + _ctgFmtDateShort(to) + ' (শুক্র)';
+    if(_ctgWeekOffset === 0) label = '🟢 চলতি সপ্তাহ | ' + label;
+    else if(_ctgWeekOffset === -1) label = 'গত সপ্তাহ | ' + label;
+  } else if(mode === 'month') {
+    var mo = document.getElementById('rpt-month') ? document.getElementById('rpt-month').value : '';
+    if(!mo) { if(typeof showToast==='function') showToast('Month সিলেক্ট করুন','err'); return; }
+    from = mo+'-01'; to = mo+'-31';
+    var mNames = ['জানুয়ারি','ফেব্রুয়ারি','মার্চ','এপ্রিল','মে','জুন','জুলাই','আগস্ট','সেপ্টেম্বর','অক্টোবর','নভেম্বর','ডিসেম্বর'];
+    label = mNames[parseInt(mo.split('-')[1])-1] + ' ' + mo.split('-')[0];
+  } else {
+    from = document.getElementById('rpt-from') ? document.getElementById('rpt-from').value : '';
+    to = document.getElementById('rpt-to') ? document.getElementById('rpt-to').value : '';
+    if(!from||!to) { if(typeof showToast==='function') showToast('তারিখ দিন','err'); return; }
+    label = _ctgFmtDateShort(from) + ' → ' + _ctgFmtDateShort(to);
+  }
+  
+  var inR = function(d) { if(!d) return false; return d.substring(0,10) >= from && d.substring(0,10) <= to; };
+  
+  // Data filter
+  var pay = (DS.payments||[]).filter(function(p){return inR(p.date);});
+  var adv = (DS.advances||[]).filter(function(a){return inR(a.date);});
+  var pur = (DS.purchases||[]).filter(function(p){return inR(p.date);});
+  var lc  = (DS.lot_costs||[]).filter(function(c){return inR(c.date);});
+  var oe  = (DS.office_expenses||[]).filter(function(e){return inR(e.date);});
+  var pe  = (DS.personal_expenses||[]).filter(function(e){return inR(e.date);});
+  var ct  = (DS.ctg_office||[]).filter(function(e){return inR(e.date);});
+  var co  = (DS.courier||[]).filter(function(c){return inR(c.bookDate);});
+  var nj  = (DS.nejam_commission||[]).filter(function(n){return inR(n.date);});
+  
+  // Totals
+  var tBDT = pay.reduce(function(s,p){return s+(p.bdt||0);},0);
+  var tAED = pay.reduce(function(s,p){return s+(p.aed||0);},0);
+  var avgRate = tBDT>0 && tAED>0 ? (tBDT/tAED).toFixed(2) : '—';
+  
+  // Advance M2
+  var tAdvAED = adv.reduce(function(s,a){return s+(a.advanceAmount||a.amount||0);},0);
+  var tAdvBDT = adv.reduce(function(s,a){return s+(a.advanceBDT||0);},0);
+  
+  var tPcs  = pur.reduce(function(s,p){return s+(p.qty||0);},0);
+  var tPur  = pur.reduce(function(s,p){return s+(p.totalAED||0);},0);
+  var tLC   = lc.reduce(function(s,c){return s+(c.totalAED||0);},0);
+  var tOE   = oe.reduce(function(s,e){return s+(e.amount||0);},0);
+  var tPE   = pe.reduce(function(s,e){return s+(e.amount||0);},0);
+  var tCT   = ct.reduce(function(s,e){return s+(e.totalAED||0);},0);
+  var tNJ   = nj.reduce(function(s,n){return s+(n.amount||0);},0);
+  var tSpent = tPur + tLC + tOE + tPE + tCT + tNJ + tAdvAED;
+  var tBal  = tAED - tSpent;
+  var tCouPcs  = co.reduce(function(s,c){return s+(c.bookedQty||0);},0);
+  var tCouRcvd = co.filter(function(c){return c.ctgReceiveDate;}).reduce(function(s,c){return s+(c.receivedQty||c.bookedQty||0);},0);
+  
+  // Save for WA copy
+  window._ctgRptData = {mode,label,from,to,tBDT,tAED,avgRate,tAdvAED,tAdvBDT,tPcs,tPur,tLC,tOE,tPE,tCT,tNJ,tSpent,tBal,tCouPcs,tCouRcvd,pay,adv,pur,lc,oe,pe,ct,nj,co};
+  
+  // ── Render ──
+  var fA = function(n){if(!n||isNaN(n))return'dh0';return'dh'+(+n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});};
+  var fB = function(n){if(!n)return'৳0';return'৳'+(+n).toLocaleString('en-BD');};
+  var fD = function(d){if(!d)return'—';try{var p=d.split('-');return p[2]+'/'+p[1]+'/'+p[0].slice(2);}catch(e){return d;}};
+  
+  var kpi = function(icon,lbl,val,color,sub) {
+    return '<div style="background:var(--s2);border:1px solid var(--brd);border-radius:10px;padding:14px 16px;position:relative;overflow:hidden">'
+      +'<div style="position:absolute;right:10px;top:8px;font-size:22px;opacity:.12">'+icon+'</div>'
+      +'<div style="font-size:10px;color:var(--txd);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">'+lbl+'</div>'
+      +'<div style="font-family:var(--font-m);font-size:18px;font-weight:700;color:'+color+'">'+val+'</div>'
+      +(sub?'<div style="font-size:10px;color:var(--txm);margin-top:3px">'+sub+'</div>':'')+'</div>';
+  };
+  
+  var sec = function(icon,title,count,inner) {
+    return '<div class="rpt-section" style="margin-bottom:20px">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--s2);border:1px solid var(--brd);border-radius:8px 8px 0 0;border-bottom:2px solid var(--gold)">'
+      +'<span style="font-size:12px;font-weight:700;color:var(--tx)">'+icon+' '+title+'</span>'
+      +'<span style="font-size:10px;color:var(--txd)">'+count+'টি</span>'
+      +'</div>'+inner+'</div>';
+  };
+  
+  var tbl = function(headers,rows,empty) {
+    if(!rows||rows.length===0) return '<div style="padding:12px 16px;background:var(--s2);border:1px solid var(--brd);border-top:none;border-radius:0 0 8px 8px;color:var(--txm);font-size:12px">'+empty+'</div>';
+    return '<div class="tscroll" style="border:1px solid var(--brd);border-top:none;border-radius:0 0 8px 8px;overflow-x:auto">'
+      +'<table style="width:100%;border-collapse:collapse"><thead><tr>'
+      +headers.map(function(h){return '<th style="padding:7px 10px;text-align:left;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase;background:var(--s3);white-space:nowrap">'+h+'</th>';}).join('')
+      +'</tr></thead><tbody>'+rows.join('')+'</tbody></table></div>';
+  };
+  
+  var tr = function(cells) {
+    return '<tr style="border-bottom:1px solid var(--brd)">'+cells.map(function(c){return '<td style="padding:7px 10px;font-size:12px">'+c+'</td>';}).join('')+'</tr>';
+  };
+  
+  var tag = function(txt,color) {
+    return '<span style="background:var(--s3);border:1px solid '+color+';border-radius:4px;padding:2px 6px;font:600 9px/1 var(--font-m);color:'+color+'">'+txt+'</span>';
+  };
+  
+  // Mode title
+  var modeEmoji = mode==='today'?'📅 Daily':mode==='week'?'📆 Weekly':mode==='month'?'📊 Monthly':'🗓 Custom';
+  
+  var html = '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;padding:12px 16px;background:linear-gradient(135deg,var(--s2),var(--s3));border:1px solid var(--brd2);border-radius:var(--r)">'
+    +'<div style="width:42px;height:42px;background:var(--gold2);border:1px solid var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px">📊</div>'
+    +'<div><div style="font-size:14px;font-weight:700;color:var(--gold)">CTG Click Shop — '+modeEmoji+' Report</div>'
+    +'<div style="font-size:12px;color:var(--txd);margin-top:2px">'+label+'</div></div></div>';
+  
+  // KPI Grid
+  html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:20px" class="rpt-kpi-grid">'
+    + kpi('৳','BDT পাঠানো',fB(tBDT),'var(--gold)',pay.length+'টি লেনদেন | Rate: '+avgRate)
+    + kpi('◈','AED পাওয়া',fA(tAED),'var(--bl)','')
+    + (tAdvAED > 0 ? kpi('⏩','Advance (M2)',fA(tAdvAED),'var(--pu)',adv.length+'টি advance') : '')
+    + kpi('🛒','Purchase',tPcs+' pcs','var(--pu)',pur.length+'টি lot')
+    + kpi('✈️','Courier Booked',tCouPcs+' pcs','var(--bl)','Received: '+tCouRcvd+' pcs')
+    + kpi('💸','মোট খরচ (AED)',fA(tSpent),'var(--rd)','')
+    + kpi('✅','Net Balance',fA(tBal),tBal>=0?'var(--gn)':'var(--rd)',tBal>=0?'✅ Balance OK':'⚠️ Deficit')
+  + '</div>';
+  
+  // Spending bar chart
+  if(tSpent > 0) {
+    var bar = function(lbl,amt,tot,color) {
+      var pct = tot>0?Math.round(amt/tot*100):0;
+      return '<div style="margin-bottom:8px">'
+        +'<div style="display:flex;justify-content:space-between;margin-bottom:3px">'
+        +'<span style="font-size:11px;color:var(--txd)">'+lbl+'</span>'
+        +'<span style="font:600 11px/1 var(--font-m);color:'+color+'">'+fA(amt)+' <span style="color:var(--txm)">('+pct+'%)</span></span>'
+        +'</div><div style="height:5px;background:var(--s3);border-radius:3px"><div style="height:100%;width:'+pct+'%;background:'+color+';border-radius:3px"></div></div></div>';
+    };
+    html += '<div style="background:var(--s2);border:1px solid var(--brd);border-radius:10px;padding:14px 16px;margin-bottom:20px">'
+      +'<div style="font-size:11px;font-weight:700;color:var(--txd);text-transform:uppercase;margin-bottom:12px">💸 AED খরচের বিশ্লেষণ</div>'
+      + (tPur>0?bar('🛒 Purchase',tPur,tSpent,'var(--gold)'):'')
+      + (tAdvAED>0?bar('⏩ Advance M2',tAdvAED,tSpent,'var(--pu)'):'')
+      + (tLC>0?bar('🔧 Lot Prep',tLC,tSpent,'var(--rd)'):'')
+      + (tOE>0?bar('🏢 Office',tOE,tSpent,'var(--bl)'):'')
+      + (tPE>0?bar('👤 Personal',tPE,tSpent,'var(--pu)'):'')
+      + (tCT>0?bar('🏪 CTG Office',tCT,tSpent,'var(--gn)'):'')
+      + (tNJ>0?bar('🤝 Nejam',tNJ,tSpent,'var(--txd)'):'')
+      +'<div style="border-top:1px solid var(--brd);margin-top:10px;padding-top:8px;display:flex;justify-content:space-between">'
+      +'<span style="font-size:11px;color:var(--txd)">মোট খরচ</span>'
+      +'<span style="font:700 13px/1 var(--font-m);color:var(--rd)">'+fA(tSpent)+'</span>'
+      +'</div></div>';
+  }
+  
+  // Sections with detail tables
+  html += sec('💰','পেমেন্ট (BDT → AED)', pay.length,
+    tbl(['তারিখ','BDT','AED','Rate','Sender'],
+      pay.map(function(p){return tr([fD(p.date),fB(p.bdt||0),fA(p.aed||0),p.rate||'—',p.sender||'—']);}),
+      'এই সময়ে কোনো পেমেন্ট নেই'));
+  
+  if(adv.length > 0) {
+    html += sec('⏩','অ্যাডভান্স পেমেন্ট M2', adv.length,
+      tbl(['তারিখ','Supplier','Model/Qty','Advance(AED)','Status'],
+        adv.map(function(a){return tr([fD(a.date),a.supplier||'—',
+          (a.model||'')+(a.qty?' ('+a.qty+'pcs)':''),
+          fA(a.advanceAmount||a.amount||0),
+          tag(a.status==='closed'?'Closed':'Active',a.status==='closed'?'var(--txd)':'var(--gn)')
+        ]);}),
+        'Advance নেই'));
+  }
+  
+  html += sec('🛒','পার্চেজ লট', pur.length,
+    tbl(['তারিখ','Lot','Model','Qty','Total(AED)','Supplier'],
+      pur.map(function(p){return tr([fD(p.date),
+        '<span style="background:var(--bl2);border:1px solid var(--bl);border-radius:4px;padding:1px 6px;font:700 10px/1 var(--font-m);color:var(--bl)">'+p.lot+'</span>',
+        p.model||'—',p.qty,fA(p.totalAED||0),p.supplier||'—'
+      ]);}),
+      'এই সময়ে পার্চেজ নেই'));
+  
+  html += sec('🔧','Lot Preparation Cost', lc.length,
+    tbl(['তারিখ','Lot','Category','Qty','Unit','Total'],
+      lc.map(function(c){return tr([fD(c.date),
+        '<span style="background:var(--bl2);border:1px solid var(--bl);border-radius:4px;padding:1px 6px;font:700 10px/1 var(--font-m);color:var(--bl)">'+c.lot+'</span>',
+        tag(c.category||'—','var(--gold)'),c.qty||1,fA(c.unitPrice||0),fA(c.totalAED||0)
+      ]);}),
+      'Preparation cost নেই'));
+  
+  html += sec('📦','কুরিয়ার', co.length,
+    tbl(['Booking','Box','Lot/Pcs','Model','Status','Payment'],
+      co.map(function(c){
+        var lots = (c.lots||[]).map(function(l){return l.lotRef+'('+l.lotQty+'p)';}).join(', ')||c.lotRef||'—';
+        return tr([fD(c.bookDate),c.boxNumber||'—',lots,
+          (c.model||'').substring(0,30)+(c.model&&c.model.length>30?'…':''),
+          tag(c.status==='delivered'?'Delivered':'In Transit',c.status==='delivered'?'var(--gn)':'var(--gold)'),
+          tag(c.paymentStatus==='paid'?'Paid':'Unpaid',c.paymentStatus==='paid'?'var(--gn)':'var(--rd)')
+        ]);
+      }),
+      'এই সময়ে কোনো কুরিয়ার নেই'));
+  
+  if(oe.length>0) html += sec('🏢','Office Expense', oe.length,
+    tbl(['তারিখ','Category','Description','Amount'],
+      oe.map(function(e){return tr([fD(e.date),tag(e.category||'—','var(--bl)'),e.description||'—',fA(e.amount||0)]);}),
+      'Office খরচ নেই'));
+  
+  if(pe.length>0) html += sec('👤','Personal Expense', pe.length,
+    tbl(['তারিখ','Person','Category','Amount'],
+      pe.map(function(e){return tr([fD(e.date),
+        tag(e.person==='rashed'?'রাশেদ':e.person==='both'?'দুজন':'নেজাম',e.person==='rashed'?'var(--bl)':e.person==='both'?'var(--gold)':'var(--pu)'),
+        tag(e.category||'—','var(--txd)'),fA(e.amount||0)]);}),
+      'Personal খরচ নেই'));
+  
+  if(ct.length>0) html += sec('🏪','CTG Office', ct.length,
+    tbl(['তারিখ','Category','Model','Qty','Total'],
+      ct.map(function(e){return tr([fD(e.date),tag(e.category||'—','var(--gn)'),e.model||'—',e.qty||'—',fA(e.totalAED||0)]);}),
+      'CTG Office নেই'));
+  
+  if(nj.length>0) html += sec('🤝','Nezam Commission', nj.length,
+    tbl(['তারিখ','Type','Qty','Amount'],
+      nj.map(function(n){return tr([fD(n.date),n.type||'—',n.qty||'—',fA(n.amount||0)]);}),
+      'Nejam commission নেই'));
+  
+  // Summary footer
+  html += '<div style="background:linear-gradient(135deg,var(--gn2),#0A2510);border:1px solid var(--gn2);border-radius:10px;padding:16px;margin-top:8px">'
+    +'<div style="font:700 13px/1 var(--font-b);color:var(--gn);margin-bottom:12px">📊 '+label+' — সারসংক্ষেপ</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+    +'<div><div style="font-size:10px;color:var(--txm);text-transform:uppercase;margin-bottom:4px">মোট AED পাওয়া</div><div style="font:700 16px/1 var(--font-m);color:var(--bl)">'+fA(tAED)+'</div></div>'
+    +'<div><div style="font-size:10px;color:var(--txm);text-transform:uppercase;margin-bottom:4px">মোট AED খরচ</div><div style="font:700 16px/1 var(--font-m);color:var(--rd)">'+fA(tSpent)+'</div></div>'
+    +'<div><div style="font-size:10px;color:var(--txm);text-transform:uppercase;margin-bottom:4px">BDT পাঠানো</div><div style="font:700 16px/1 var(--font-m);color:var(--gold)">'+fB(tBDT)+'</div></div>'
+    +'<div><div style="font-size:10px;color:var(--txm);text-transform:uppercase;margin-bottom:4px">Net Balance</div><div style="font:700 16px/1 var(--font-m);color:'+(tBal>=0?'var(--gn)':'var(--rd)')+'">'+fA(tBal)+'</div></div>'
+    +'</div></div>';
+  
+  document.getElementById('rpt-output').innerHTML = html;
+  var wb=document.getElementById('rpt-wa-btn'); if(wb)wb.style.display='';
+  var pb=document.getElementById('rpt-print-btn'); if(pb)pb.style.display='';
+  if(typeof showToast==='function') showToast('রিপোর্ট তৈরি ✓','ok');
+};
+
+// WhatsApp copy
+window.copyReportWA = function() {
+  var d = window._ctgRptData || {};
+  if(!d.label) {
+    // Fall back to original
+    if(typeof _rptData !== 'undefined' && _rptData.label) {
+      d = _rptData;
+    } else {
+      if(typeof showToast==='function') showToast('আগে Generate করুন','err');
+      return;
+    }
+  }
+  var fA = function(n){if(!n||isNaN(n))return'dh0';return'dh'+(+n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});};
+  var fB = function(n){if(!n)return'৳0';return'৳'+(+n).toLocaleString('en-BD');};
+  var t = '📊 *CTG Click Shop — Finance Report*\n';
+  t += '📅 *'+d.label+'*\n';
+  t += '━'.repeat(26)+'\n';
+  t += '\n💰 *Income*\n';
+  t += '  BDT পাঠানো: '+fB(d.tBDT)+'\n';
+  t += '  AED পাওয়া: '+fA(d.tAED)+' ('+d.pay?.length+'টি)\n';
+  if(d.tAdvAED>0) {
+    t += '\n⏩ *Advance M2*\n';
+    t += '  AED Advance: '+fA(d.tAdvAED)+' ('+d.adv?.length+'টি)\n';
+  }
+  if(d.tPcs>0) {
+    t += '\n🛒 *Purchase*\n';
+    t += '  Pcs: '+d.tPcs+' pcs ('+d.pur?.length+'টি lot)\n';
+    t += '  মোট AED: '+fA(d.tPur)+'\n';
+  }
+  if(d.tCouPcs>0) {
+    t += '\n📦 *Courier*\n';
+    t += '  Booked: '+d.tCouPcs+' pcs | Received: '+d.tCouRcvd+' pcs\n';
+  }
+  t += '\n💸 *খরচ (AED)*\n';
+  if(d.tPur>0)    t += '  🛒 Purchase: '+fA(d.tPur)+'\n';
+  if(d.tAdvAED>0) t += '  ⏩ Advance: '+fA(d.tAdvAED)+'\n';
+  if(d.tLC>0)     t += '  🔧 Lot Prep: '+fA(d.tLC)+'\n';
+  if(d.tOE>0)     t += '  🏢 Office: '+fA(d.tOE)+'\n';
+  if(d.tPE>0)     t += '  👤 Personal: '+fA(d.tPE)+'\n';
+  if(d.tCT>0)     t += '  🏪 CTG: '+fA(d.tCT)+'\n';
+  if(d.tNJ>0)     t += '  🤝 Nejam: '+fA(d.tNJ)+'\n';
+  t += '  *মোট: '+fA(d.tSpent)+'*\n';
+  t += '\n━'.repeat(26)+'\n';
+  t += (d.tBal>=0?'✅':'⚠️')+' *Net Balance: '+fA(d.tBal)+'*\n';
+  t += '\n_CTG Click Shop — Dubai Finance Hub_';
+  navigator.clipboard.writeText(t).then(function(){
+    if(typeof showToast==='function') showToast('WhatsApp text copied!','ok');
+  }).catch(function(){
+    var ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
+    if(typeof showToast==='function') showToast('Copied!','ok');
+  });
+};
+
+// Auto-init on tab switch to rpt
+var _ctgOrigTab2 = window.tab;
+window.tab = function(id,el) {
+  if(_ctgOrigTab2) _ctgOrigTab2.call(this,id,el);
+  if(id==='rpt') {
+    setTimeout(function(){
+      // Set today as default if not set
+      if(typeof ctgRptMode==='function') ctgRptMode('today');
+      // Auto-generate daily report
+      if(typeof ctgGenerateReport==='function') ctgGenerateReport();
+    }, 200);
+  }
+};
+
+console.log('[CTG] Report Engine v1.0 ready — Daily|Weekly|Monthly');
 
 console.log('[CTG Dubai v3 FINAL] All features loaded - any browser OK');
 
