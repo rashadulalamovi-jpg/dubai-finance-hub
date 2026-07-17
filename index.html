@@ -1109,9 +1109,8 @@ function rPayments(){
     <td class="abl">${fAED(p.aed)}</td>
     <td class="bn">${p.sender||'—'}</td><td>${lnk(p.slip,'Slip')}</td>
     <td>${tag(p.verified?'t-pk':'t-pd',p.verified?'✓ Verified':'⏳ Pending')}</td>
-    <td style="display:flex;gap:4px">
+    <td>
       ${!p.verified?`<button class="btn btn-v" onclick="verifyPayment('${p.id}')">Verify</button>`:''}
-      <button class="btn btn-d" onclick="del('${COLS.P}','${p.id}')">Del</button>
     </td></tr>`).join('');
 }
 async function verifyPayment(id){
@@ -2568,6 +2567,12 @@ window.ctgWeekNav = function(dir) {
 
 // Main report generator
 window.ctgGenerateReport = function() {
+  // Guard: only generate if RPT panel is active
+  var rptPanel = document.getElementById('panel-rpt');
+  if(rptPanel && !rptPanel.classList.contains('on')) {
+    console.log('[CTG Report] Skipped - RPT panel not active');
+    return;
+  }
   var DS = ctgGetS ? ctgGetS() : (typeof S !== 'undefined' ? S : {});
   var from = '', to = '', label = '', mode = _ctgRptMode;
   
@@ -2847,17 +2852,16 @@ window.copyReportWA = function() {
   });
 };
 
-// Auto-init on tab switch to rpt
+// Tab hook for RPT - set today mode but DO NOT auto-generate
 var _ctgOrigTab2 = window.tab;
 window.tab = function(id,el) {
   if(_ctgOrigTab2) _ctgOrigTab2.call(this,id,el);
   if(id==='rpt') {
     setTimeout(function(){
-      // Set today as default if not set
+      // Set today mode as default when opening RPT tab
       if(typeof ctgRptMode==='function') ctgRptMode('today');
-      // Auto-generate daily report
-      if(typeof ctgGenerateReport==='function') ctgGenerateReport();
-    }, 200);
+      // Do NOT auto-generate - user clicks Generate button
+    }, 100);
   }
 };
 
