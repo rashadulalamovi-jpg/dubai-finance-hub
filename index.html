@@ -1606,7 +1606,7 @@ function onLotRowChange(idx){
   if(!lot){if(infoEl)infoEl.style.display='none';return;}
   const purchased=S.purchases.filter(p=>p.lot===lot).reduce((s,p)=>s+(p.qty||0),0);
   const already=S.courier.reduce((s,c)=>s+getLotEntries(c).filter(l=>l.lotRef===lot).reduce((ss,l)=>ss+(l.lotQty||0),0),0);
-  const avail=Math.max(0,purchased-already);
+  const dubaiSoldQty=(S.dubai_sales||[]).filter(s=>s.lot===lot).reduce((ss,s)=>ss+(s.qty||0),0);const avail=Math.max(0,purchased-already-dubaiSoldQty);
   if(infoEl){infoEl.style.display='block';infoEl.innerHTML=`<span style="color:var(--gold)">Purchased: ${purchased}</span> | <span style="color:var(--rd)">Booked: ${already}</span> | <span style="color:var(--gn);font-weight:700">Available: ${avail}</span>`;}
   const qEl=g(`p7lq-${idx}`);if(qEl&&!qEl.value&&avail>0)qEl.value=avail;
   syncLotTotal();
@@ -2282,7 +2282,7 @@ window.onLotRowChange=function(idx){
   var couriers=(DS.courier||[]).filter(function(c){return(c.lots||[]).some(function(l){return l.lotRef===lot;})||c.lotRef===lot;});
   var tp=mi.reduce(function(s,x){return s+x.q;},0);
   function getB(mn){var b=0;couriers.forEach(function(c){var les=c.lots?c.lots.filter(function(l){return l.lotRef===lot;}):(c.lotRef===lot?[{lotRef:lot,lotQty:c.bookedQty||0}]:[]);les.forEach(function(le){if(le.items){var mi2=le.items.filter(function(it){return it.model===mn;})[0];if(mi2)b+=(mi2.qty||0);}else{var tm=mi.filter(function(x){return x.m===mn;})[0];if(tm&&tp>0)b+=Math.round((le.lotQty||c.bookedQty||0)*(tm.q/tp));}});});return b;}
-  var rows='';mi.forEach(function(x,i){var alB=getB(x.m),avail=Math.max(0,x.q-alB);rows+='<div style="display:grid;grid-template-columns:2fr 55px 55px 90px;gap:6px;align-items:center;padding:7px 0;border-bottom:1px solid var(--brd)"><div style="font:400 12px/1.3 var(--font-b);color:var(--tx)">'+x.m+'</div><div style="text-align:center;font:600 12px/1 var(--font-m);color:var(--bl)">'+x.q+'</div><div style="text-align:center;font:600 12px/1 var(--font-m);color:var(--gn)">'+avail+'</div><input type="number" id="cm-'+idx+'-'+i+'" data-model="'+x.m+'" data-max="'+avail+'" placeholder="0 pcs" min="0" max="'+avail+'" oninput="ctgSyncTotal('+idx+')" style="padding:7px 8px;background:var(--s2);border:2px solid var(--gold2);border-radius:var(--r);color:var(--gold);font:700 12px/1 var(--font-m);width:100%;text-align:center"></div>';});
+  var rows='';mi.forEach(function(x,i){var alB=getB(x.m),soldQty=(DS.dubai_sales||[]).filter(function(s){return s.lot===lot&&s.model===x.m;}).reduce(function(ss,s){return ss+(s.qty||0);},0),avail=Math.max(0,x.q-alB-soldQty);rows+='<div style="display:grid;grid-template-columns:2fr 55px 55px 90px;gap:6px;align-items:center;padding:7px 0;border-bottom:1px solid var(--brd)"><div style="font:400 12px/1.3 var(--font-b);color:var(--tx)">'+x.m+'</div><div style="text-align:center;font:600 12px/1 var(--font-m);color:var(--bl)">'+x.q+'</div><div style="text-align:center;font:600 12px/1 var(--font-m);color:var(--gn)">'+avail+'</div><input type="number" id="cm-'+idx+'-'+i+'" data-model="'+x.m+'" data-max="'+avail+'" placeholder="0 pcs" min="0" max="'+avail+'" oninput="ctgSyncTotal('+idx+')" style="padding:7px 8px;background:var(--s2);border:2px solid var(--gold2);border-radius:var(--r);color:var(--gold);font:700 12px/1 var(--font-m);width:100%;text-align:center"></div>';});
   if(infoEl){infoEl.style.display='block';infoEl.style.padding='10px 12px';infoEl.style.borderLeft='3px solid var(--gold)';infoEl.style.marginTop='8px';infoEl.innerHTML='<div style="font:700 10px/1 var(--font-m);color:var(--gold);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">\uD83D\uDCE6 '+lot+' \u2014 Model-wise Booking</div><div style="display:grid;grid-template-columns:2fr 55px 55px 90px;gap:6px;padding:4px 0;margin-bottom:4px;border-bottom:1px solid var(--brd)"><div style="font:500 9px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Model</div><div style="text-align:center;font:500 9px/1 var(--font-m);color:var(--bl);text-transform:uppercase">Purchased</div><div style="text-align:center;font:500 9px/1 var(--font-m);color:var(--gn);text-transform:uppercase">Available</div><div style="text-align:center;font:500 9px/1 var(--font-m);color:var(--gold);text-transform:uppercase">Book Now</div></div>'+rows+'<div id="cm-total-'+idx+'" style="margin-top:8px;padding:6px 10px;background:var(--s3);border-radius:var(--r);font:600 12px/1 var(--font-b);color:var(--txd)">Total Booking: <b style="color:var(--gold)">0 pcs</b></div>';}
   var qEl=document.getElementById('p7lq-'+idx);if(qEl)qEl.value='';
   var mf=document.getElementById('p7m');if(mf&&!mf.value)mf.value=mi.map(function(x){return x.m+' ('+x.q+'pcs)';}).join(', ');
@@ -3299,6 +3299,36 @@ window.rPurchases = function() {
 };
 
 console.log('[CTG] Dubai Sales Module (MS) loaded');
+
+
+// ── FIX: updateHeader — deduct Dubai Sales from Total PCS & Inventory ──
+var _origUpdateHdr = window.updateHeader;
+window.updateHeader = function() {
+  if(_origUpdateHdr) _origUpdateHdr.apply(this, arguments);
+  var DS = ctgGetS ? ctgGetS() : (typeof S!=='undefined'?S:{});
+  var totalPurchased = (DS.purchases||[]).reduce(function(s,p){return s+(p.qty||0);},0);
+  var totalSold = (DS.dubai_sales||[]).reduce(function(s,x){return s+(x.qty||0);},0);
+  var availPcs = totalPurchased - totalSold;
+  var hPCS = document.getElementById('hPCS');
+  if(hPCS && totalSold > 0) {
+    hPCS.textContent = availPcs + ' pcs';
+    hPCS.title = 'Purchased: '+totalPurchased+' | Dubai Sold: '+totalSold+' | Available: '+availPcs;
+    hPCS.style.position = 'relative';
+    // Add small sold badge if not already there
+    var badge = document.getElementById('hpcs-sold-badge');
+    if(!badge) {
+      badge = document.createElement('span');
+      badge.id = 'hpcs-sold-badge';
+      badge.style.cssText = 'position:absolute;top:-4px;right:-4px;background:var(--gold);color:var(--bg);font:700 8px/1 var(--font-m);border-radius:4px;padding:1px 4px';
+      badge.textContent = '-'+totalSold+' sold';
+      hPCS.style.position = 'relative';
+      hPCS.parentNode.style.position = 'relative';
+      hPCS.parentNode.appendChild(badge);
+    } else {
+      badge.textContent = '-'+totalSold+' sold';
+    }
+  }
+};
 
 console.log('[CTG Dubai v3 FINAL] All features loaded - any browser OK');
 
