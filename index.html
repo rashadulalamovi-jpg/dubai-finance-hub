@@ -3179,6 +3179,16 @@ window.refreshAll = function() {
   setTimeout(function() {
     try { if(typeof rDubaiSales==='function') rDubaiSales(); } catch(e) {}
     try { if(typeof ctgRunKPI==='function') ctgRunKPI(); } catch(e) {}
+    // Fix Header PCS: deduct Dubai Sales
+    try {
+      var DS9=ctgGetS();
+      var sold9=(DS9.dubai_sales||[]).reduce(function(s,x){return s+(x.qty||0);},0);
+      if(sold9>0){
+        var pur9=(DS9.purchases||[]).reduce(function(s,p){return s+(p.qty||0);},0);
+        var el9=document.getElementById('hPCS');
+        if(el9)el9.textContent=(pur9-sold9)+' pcs';
+      }
+    } catch(e){}
   }, 80);
 };
 
@@ -3301,34 +3311,6 @@ window.rPurchases = function() {
 console.log('[CTG] Dubai Sales Module (MS) loaded');
 
 
-// ── FIX: updateHeader — deduct Dubai Sales from Total PCS & Inventory ──
-var _origUpdateHdr = window.updateHeader;
-window.updateHeader = function() {
-  if(_origUpdateHdr) _origUpdateHdr.apply(this, arguments);
-  var DS = ctgGetS ? ctgGetS() : (typeof S!=='undefined'?S:{});
-  var totalPurchased = (DS.purchases||[]).reduce(function(s,p){return s+(p.qty||0);},0);
-  var totalSold = (DS.dubai_sales||[]).reduce(function(s,x){return s+(x.qty||0);},0);
-  var availPcs = totalPurchased - totalSold;
-  var hPCS = document.getElementById('hPCS');
-  if(hPCS && totalSold > 0) {
-    hPCS.textContent = availPcs + ' pcs';
-    hPCS.title = 'Purchased: '+totalPurchased+' | Dubai Sold: '+totalSold+' | Available: '+availPcs;
-    hPCS.style.position = 'relative';
-    // Add small sold badge if not already there
-    var badge = document.getElementById('hpcs-sold-badge');
-    if(!badge) {
-      badge = document.createElement('span');
-      badge.id = 'hpcs-sold-badge';
-      badge.style.cssText = 'position:absolute;top:-4px;right:-4px;background:var(--gold);color:var(--bg);font:700 8px/1 var(--font-m);border-radius:4px;padding:1px 4px';
-      badge.textContent = '-'+totalSold+' sold';
-      hPCS.style.position = 'relative';
-      hPCS.parentNode.style.position = 'relative';
-      hPCS.parentNode.appendChild(badge);
-    } else {
-      badge.textContent = '-'+totalSold+' sold';
-    }
-  }
-};
 
 console.log('[CTG Dubai v3 FINAL] All features loaded - any browser OK');
 
