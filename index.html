@@ -750,7 +750,7 @@ body{padding-bottom:calc(56px + var(--safe-bottom));}
 </div>
 <div class="twrap"><div class="thead2"><span class="ttitle">কুরিয়ার রেকর্ড</span></div>
 <div class="tscroll"><table>
-<thead><tr><th>Date</th><th>Box</th><th>Sender/Cargo</th><th>Lot/Qty</th><th>Model</th><th>Booked</th><th>CTG Date</th><th>Days</th><th>Flow</th><th>Pay</th><th>Slip</th><th>Action</th></tr></thead>
+<thead><tr><th>Date</th><th>Lot/Qty</th><th>Model</th><th>Booked</th><th>CTG Date</th><th>Days</th><th>Flow</th><th>Remaining</th><th>Action</th></tr></thead>
 <tbody id="tb-m7"><tr><td colspan="12"><div class="empty"><i class="fas fa-database"></i><p>কোনো রেকর্ড নেই</p></div></td></tr></tbody>
 </table></div></div></div>
 
@@ -1638,7 +1638,7 @@ function rCourier(){
   data.forEach(c=>{bk+=c.bookedQty||0;rv+=c.receivedQty||0;if(c.paymentStatus==='unpaid')pd++;});
   tr=bk-rv;g('m7bk').textContent=bk;g('m7rv').textContent=rv;g('m7tr').textContent=tr;g('m7pd').textContent=pd;
   const tb=g('tb-m7');
-  if(!data.length){tb.innerHTML=`<tr><td colspan="12"><div class="empty"><i class="fas fa-database"></i><p>কোনো রেকর্ড নেই</p></div></td></tr>`;return;}
+  if(!data.length){tb.innerHTML=`<tr><td colspan="10"><div class="empty"><i class="fas fa-database"></i><p>কোনো কুরিয়ার রেকর্ড নেই</p></div></td></tr>`;return;}
   tb.innerHTML=data.map(c=>{
     const ctgDate=c.ctgReceiveDate||c.receivedDate||'';
     let days='—';
@@ -1646,22 +1646,56 @@ function rCourier(){
     const notReceived=!ctgDate||(c.receivedQty||0)<(c.bookedQty||0);
     const sTag=c.senderName==='nejam'?tag('t-pd','নেজাম'):c.senderName==='rashed'?tag('t-lt','রাশেদ'):'—';
     const al=getLotEntries(c);
-    const lotDisplay=al.length?al.map(l=>`${tag('t-lt',l.lotRef)} <span style="font-family:var(--font-m);font-size:11px;color:var(--txd)">${l.lotQty}p</span>`).join(' '):'—';
+
+    // Lot/Qty — show lot + model items breakdown
+    let lotDisplay='—';
+    if(al.length){
+      lotDisplay=al.map(l=>{
+        let lotLine=`<div style="margin-bottom:2px">${tag('t-lt',l.lotRef)} <span style="font:600 11px/1 var(--font-m);color:var(--gold)">${l.lotQty}p</span></div>`;
+        if(l.items&&l.items.length){
+          lotLine+=l.items.map(it=>`<div style="font:400 10px/1.3 var(--font-b);color:var(--txm);padding-left:6px">• ${it.model}: ${it.qty}p</div>`).join('');
+        }
+        return lotLine;
+      }).join('');
+    }
+
+    // Model description (from c.model or auto-built from items)
+    let modelText = c.model||'—';
+    if(!modelText||modelText==='—'){
+      const allItems=al.flatMap(l=>l.items||[]);
+      if(allItems.length) modelText=allItems.map(it=>it.model+' ('+it.qty+'p)').join(', ');
+    }
+
+    // Remaining Qty = booked - received
+    const remainingQty=Math.max(0,(c.bookedQty||0)-(c.receivedQty||0));
+    const remainingDisplay=remainingQty>0
+      ?`<span style="font:700 13px/1 var(--font-m);color:var(--gold)">${remainingQty}</span><span style="font:400 10px/1 var(--font-m);color:var(--txm)"> pcs</span>`
+      :`<span style="font:700 13px/1 var(--font-m);color:var(--gn)">✓</span>`;
+
     return `<tr>
-      <td>${fD(c.bookDate)}</td><td style="color:var(--gold)">${c.boxNumber||'—'}</td>
-      <td><div>${sTag}</div><div style="font-size:10px;color:var(--txd)">${c.cargoCompany||''}</div></td>
-      <td>${lotDisplay}</td><td class="bn">${c.model||'—'}</td><td class="ag">${c.bookedQty}</td>
-      <td style="font-size:12px">${ctgDate?`<span style="color:var(--gn)">${fD(ctgDate)}</span>${c.receivedQty?` <span style="color:var(--txd);font-size:10px">(${c.receivedQty})</span>`:''}` :'<span style="color:var(--txm)">—</span>'}</td>
+      <td style="white-space:nowrap">${fD(c.bookDate)}</td>
+      <td>${lotDisplay}</td>
+      <td class="bn" style="max-width:160px;overflow:hidden">${modelText}</td>
+      <td class="ag" style="font:700 14px/1 var(--font-m)">${c.bookedQty}</td>
+      <td>${ctgDate?`<span style="color:var(--gn)">${fD(ctgDate)}</span>${c.receivedQty?` <span style="color:var(--txd);font-size:10px">(${c.receivedQty}p)</span>`:''}` :'<span style="color:var(--txm)">—</span>'}</td>
       <td style="text-align:center">${days}</td>
-      <td><div class="cflow"><span class="cs-step done">Dubai</span><span class="cs-arr">→</span><span class="cs-step ${c.status==='delivered'?'done':'live'}">Transit</span><span class="cs-arr">→</span><span class="cs-step ${c.status==='delivered'?'done':''}">CTG</span></div></td>
-      <td>${tag(c.paymentStatus==='paid'?'t-pk':'t-up',c.paymentStatus==='paid'?'✓ Paid':'⚠ Unpaid')}</td>
-      <td>${lnk(c.courierSlip,'Slip')}</td>
+      <td>
+        <div class="cflow">
+          <span class="cs-step done">Dubai</span>
+          <span class="cs-arr">→</span>
+          <span class="cs-step ${c.status==='delivered'?'done':'live'}">Transit</span>
+          <span class="cs-arr">→</span>
+          <span class="cs-step ${c.status==='delivered'?'done':''}">CTG</span>
+        </div>
+      </td>
+      <td style="text-align:center">${remainingDisplay}</td>
       <td style="display:flex;gap:4px;flex-wrap:wrap">
         ${c.paymentStatus==='unpaid'?`<button class="btn btn-v" onclick="markPaid('${c.id}')">Paid</button>`:''}
         ${notReceived?`<button class="btn btn-v" style="background:var(--gn2);color:var(--gn);font-size:10px;padding:3px 7px" onclick="editCourier('${c.id}')">CTG ✓</button>`:''}
         <button class="btn btn-d" onclick="del('${COLS.CO}','${c.id}')">Del</button>
       </td></tr>`;
   }).join('');
+}
 }
 async function markPaid(id){
   await upd(COLS.CO,id,{paymentStatus:'paid'});const c=S.courier.find(x=>x.id===id);if(c)c.paymentStatus='paid';
