@@ -3392,16 +3392,20 @@ window.ctgDailyCard = function(dateStr) {
   var tTodayOut=tPur+tLC+tOE+tPE+tCT+tNJ+tAdvOut;
 
   // Overall AED Balance
+  // Available Cash — matches header formula exactly
   var allAED=sum(DS.payments||[],'aed');
-  var allSale=sum(DS.dubai_sales||[],'totalSale');
-  var allPur=sum(DS.purchases||[],'totalAED');
+  // Purchase: netPayable if defined (advance pre-deducted), else totalAED
+  var allPur=(DS.purchases||[]).reduce(function(s,p){return s+(p.netPayable!==undefined?p.netPayable:(p.totalAED||0));},0);
+  // Advances: non-reversed only
+  var allAdv=(DS.advances||[]).reduce(function(s,a){return s+(a.status!=='reversed'?(a.advanceAmount||a.amount||0):0);},0);
   var allLC=sum(DS.lot_costs||[],'totalAED');
   var allOE=sum(DS.office_expenses||[],'amount');
   var allPE=sum(DS.personal_expenses||[],'amount');
   var allCT=sum(DS.ctg_office||[],'totalAED');
-  var allNJ=sum(DS.nejam_commission||[],'amount');
-  var allAdv=(DS.advances||[]).reduce(function(s,a){return s+(a.advanceAmount||a.amount||0);},0);
-  var balance=allAED+allSale-allPur-allLC-allOE-allPE-allCT-allNJ-allAdv;
+  // Dubai Sales already in allAED via M1 auto-payment — no separate addition
+  var balance=allAED-(allPur+allAdv+allLC+allOE+allPE+allCT);
+  var rate=typeof getRate==='function'?getRate():34.2;
+  var balanceBDT=balance*rate;
 
   function fA(n){if(!n||isNaN(n))return'dh0';return'dh'+(+n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
   function fB(n){if(!n)return'৳0';return'৳'+(+n).toLocaleString('en-BD');}
@@ -3510,10 +3514,18 @@ window.ctgDailyCard = function(dateStr) {
 
   // Balance
   html+='<div style="border-top:1px solid var(--brd);padding-top:12px">';
-  html+='<div style="padding:12px 16px;background:'+balBg+';border:1px solid '+balColor+';border-radius:10px;display:flex;justify-content:space-between;align-items:center">';
-  html+='<div><div style="font:400 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase;margin-bottom:4px">'+balIcon+' মোট AED Balance</div>';
-  html+='<div style="font:400 10px/1 var(--font-b);color:var(--txm)">(সব সময়ের হিসাব)</div></div>';
-  html+='<div style="font:700 24px/1 var(--font-m);color:'+balColor+'">'+fA(balance)+'</div>';
+  html+='<div style="padding:14px 16px;background:'+balBg+';border:1px solid '+balColor+';border-radius:10px">';
+  html+='<div style="display:flex;justify-content:space-between;align-items:flex-start">';
+  html+='<div>';
+  html+='<div style="font:500 9px/1 var(--font-m);color:var(--txm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">'+balIcon+' Available Cash</div>';
+  html+='<div style="font:700 26px/1 var(--font-m);color:'+balColor+'">'+fA(balance)+'</div>';
+  html+='<div style="font:400 11px/1 var(--font-m);color:var(--txm);margin-top:5px">≈ ৳'+Math.round(balanceBDT).toLocaleString('en-BD')+'</div>';
+  html+='</div>';
+  html+='<div style="text-align:right;padding-top:4px">';
+  html+='<div style="font:400 9px/1 var(--font-m);color:var(--txm)">Rate</div>';
+  html+='<div style="font:600 12px/1 var(--font-m);color:var(--txm)">'+rate+'</div>';
+  html+='</div>';
+  html+='</div>';
   html+='</div></div>';
 
   html+='</div>'; // body
