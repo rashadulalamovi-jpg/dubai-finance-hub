@@ -1696,7 +1696,6 @@ function rCourier(){
       </td></tr>`;
   }).join('');
 }
-}
 async function markPaid(id){
   await upd(COLS.CO,id,{paymentStatus:'paid'});const c=S.courier.find(x=>x.id===id);if(c)c.paymentStatus='paid';
   rCourier();showToast('Payment Marked ✓','ok');
