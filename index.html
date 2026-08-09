@@ -2326,7 +2326,7 @@ window.onLotRowChange=function(idx){
 
 window.ctgSyncTotal=function(idx){
   var total=0,i=0;
-  while(true){var el=document.getElementById('cm-'+idx+'-'+i);if(!el)break;var val=parseFloat(el.value)||0,max=parseFloat(el.dataset.max)||0;if(max>0&&val>max){el.value=max;val=max;el.style.borderColor='var(--rd)';}else{el.style.borderColor=val>0?'var(--gn)':'var(--gold2)';}total+=val;i++;}
+  while(true){var el=document.getElementById('cm-'+idx+'-'+i);if(!el)break;var val=parseFloat(el.value)||0,max=parseFloat(el.dataset.max)||0;if(val>max){el.value=max;val=max;el.style.borderColor='var(--rd)';}else{el.style.borderColor=val>0?'var(--gn)':'var(--gold2)';}total+=val;i++;}
   var te=document.getElementById('cm-total-'+idx);if(te)te.innerHTML='Total Booking: <b style="color:'+(total>0?'var(--gn)':'var(--gold)')+'">'+total+' pcs</b>';
   var qEl=document.getElementById('p7lq-'+idx);if(qEl)qEl.value=total>0?total:'';
   if(typeof syncLotTotal==='function')syncLotTotal();
