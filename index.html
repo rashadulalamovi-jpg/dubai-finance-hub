@@ -3419,7 +3419,7 @@ window.ctgDailyCard = function(dateStr) {
       incHtml+='</span></div>';
     });
   } else {
-    incHtml='<div class="dr-row"><span class="dr-label dr-muted">└─ কোনো payment নেই</span></div>';
+    incHtml='<div class="dr-row"><span class="dr-label dr-muted">└─ <span style="color:var(--txm);font-style:italic">কোনো payment নেই</span></span><span class="dr-val" style="color:var(--txm)">dh0</span></div>';
   }
 
   var saleHtml='';
@@ -3450,22 +3450,14 @@ window.ctgDailyCard = function(dateStr) {
       expHtml+='<span class="dr-val dr-red">'+fA(e.val)+'</span></div>';
     });
   } else {
-    expHtml='<div class="dr-row"><span class="dr-label dr-muted">└─ কোনো খরচ নেই</span></div>';
+    expHtml='<div class="dr-row"><span class="dr-label dr-muted">└─ <span style="color:var(--txm);font-style:italic">কোনো খরচ নেই</span></span><span class="dr-val" style="color:var(--txm)">dh0</span></div>';
   }
 
   var balColor=balance>=0?'var(--gn)':'var(--rd)';
   var balBg=balance>=0?'var(--gn2)':'rgba(255,80,80,.1)';
   var balIcon=balance>=0?'✅':'⚠️';
 
-  // No data
-  if(!pay.length&&!ms.length&&!tTodayOut){
-    el.innerHTML='<div style="padding:40px;text-align:center;color:var(--txm)">'
-      +'<div style="font-size:40px;margin-bottom:12px">📅</div>'
-      +'<div style="font:600 14px/1 var(--font-b);color:var(--txd);margin-bottom:8px">'+dateLabel+'</div>'
-      +'<div style="font-size:12px">আজকে কোনো transaction নেই</div>'
-      +'</div>';
-    return;
-  }
+  // Always show full card (no early return for empty data)
 
   var html='<style>'
     +'.dr-card{max-width:460px;margin:0 auto;background:var(--s1);border:1px solid var(--brd2);border-radius:14px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.3)}'
@@ -3490,8 +3482,8 @@ window.ctgDailyCard = function(dateStr) {
   html+='<div class="dr-head"><div class="dr-head-sub">📅 Daily Report</div><div class="dr-head-date">'+dateLabel+'</div></div>';
   html+='<div class="dr-body">';
 
-  // Income section
-  if(tAED>0||tSale>0){
+  // Income section — always show
+  {
     html+='<div class="dr-section">';
     html+='<div class="dr-section-title" style="color:var(--gn)">💰 আজকের আয়</div>';
     html+=incHtml;
@@ -3503,21 +3495,18 @@ window.ctgDailyCard = function(dateStr) {
     }
     html+='<div class="dr-total-row" style="background:linear-gradient(90deg,var(--gn2),transparent);border-left:3px solid var(--gn)">';
     html+='<span style="font:600 11px/1 var(--font-m);color:var(--gn)">💰 মোট আয়'+(tSale>0?' + Dubai Sale':'')+'</span>';
-    html+='<span style="font:700 16px/1 var(--font-m);color:var(--gn)">'+fA(tTodayIn)+'</span>';
+    html+='<span style="font:700 16px/1 var(--font-m);color:'+(tTodayIn>0?'var(--gn)':'var(--txm)')+'">'+fA(tTodayIn)+'</span>';
     html+='</div>';
     html+='</div>';
-  }
 
   // Expense section
   html+='<div class="dr-section">';
   html+='<div class="dr-section-title" style="color:var(--rd)">💸 আজকের খরচ</div>';
   html+=expHtml;
-  if(tTodayOut>0){
-    html+='<div class="dr-total-row" style="background:linear-gradient(90deg,rgba(255,80,80,.08),transparent);border-left:3px solid var(--rd)">';
-    html+='<span style="font:600 11px/1 var(--font-m);color:var(--rd)">💸 মোট খরচ</span>';
-    html+='<span style="font:700 16px/1 var(--font-m);color:var(--rd)">'+fA(tTodayOut)+'</span>';
-    html+='</div>';
-  }
+  html+='<div class="dr-total-row" style="background:linear-gradient(90deg,rgba(255,80,80,.08),transparent);border-left:3px solid '+(tTodayOut>0?'var(--rd)':'var(--brd)')+'">';
+  html+='<span style="font:600 11px/1 var(--font-m);color:'+(tTodayOut>0?'var(--rd)':'var(--txm)')+'">💸 মোট খরচ</span>';
+  html+='<span style="font:700 16px/1 var(--font-m);color:'+(tTodayOut>0?'var(--rd)':'var(--txm)')+'">'+fA(tTodayOut)+'</span>';
+  html+='</div>';
   html+='</div>';
 
   // Balance
