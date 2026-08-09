@@ -3351,27 +3351,25 @@ console.log('[CTG] Dubai Sales Module (MS) loaded');
 
 
 
-// ════════════════════════════════════════════════
-// CTG Daily Report Card — Beautiful Simple Design
-// ════════════════════════════════════════════════
-window.ctgDailyCard = function(dateStr) {
-  var rptPanel = document.getElementById('panel-rpt');
-  if(rptPanel && !rptPanel.classList.contains('on')) return;
 
-  var DS = ctgGetS ? ctgGetS() : (typeof S!=='undefined'?S:{});
+
+// ── Daily Report Card (Simple & Reliable) ──
+window.ctgDailyCard = function(dateStr) {
+  var el = document.getElementById('rpt-output');
+  if(!el) return;
+  
+  var DS = ctgGetS ? ctgGetS() : (typeof S!=='undefined' ? S : {});
   var d = dateStr || (function(){
-    var t=new Date(); 
+    var t=new Date();
     return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');
   })();
 
-  // Bengali day + month
   var days=['রবিবার','সোমবার','মঙ্গলবার','বুধবার','বৃহস্পতিবার','শুক্রবার','শনিবার'];
   var months=['জানুয়ারি','ফেব্রুয়ারি','মার্চ','এপ্রিল','মে','জুন','জুলাই','আগস্ট','সেপ্টেম্বর','অক্টোবর','নভেম্বর','ডিসেম্বর'];
   var dp=d.split('-'); var dt=new Date(+dp[0],+dp[1]-1,+dp[2]);
   var dateLabel=days[dt.getDay()]+', '+parseInt(dp[2])+' '+months[dt.getMonth()]+' '+dp[0];
 
-  // Filter today's data
-  var inDay=function(x){return (x.date||'').substring(0,10)===d;};
+  function inDay(x){ return (x.date||'').substring(0,10)===d; }
   var pay=(DS.payments||[]).filter(inDay);
   var adv=(DS.advances||[]).filter(inDay);
   var pur=(DS.purchases||[]).filter(inDay);
@@ -3380,237 +3378,226 @@ window.ctgDailyCard = function(dateStr) {
   var pe=(DS.personal_expenses||[]).filter(inDay);
   var ct=(DS.ctg_office||[]).filter(inDay);
   var nj=(DS.nejam_commission||[]).filter(inDay);
-  var ms=(DS.dubai_sales||[]).filter(function(s){return (s.date||'').substring(0,10)===d;});
+  var ms=(DS.dubai_sales||[]).filter(inDay);
 
-  // Totals
-  var tBDT=pay.reduce(function(s,p){return s+(p.bdt||0);},0);
-  var tAED=pay.reduce(function(s,p){return s+(p.aed||0);},0);
-  var tAdvAED=adv.reduce(function(s,a){return s+(a.advanceAmount||a.amount||0);},0);
-  var tPur=pur.reduce(function(s,p){return s+(p.totalAED||0);},0);
-  var tLC=lc.reduce(function(s,c){return s+(c.totalAED||0);},0);
-  var tOE=oe.reduce(function(s,e){return s+(e.amount||0);},0);
-  var tPE=pe.reduce(function(s,e){return s+(e.amount||0);},0);
-  var tCT=ct.reduce(function(s,e){return s+(e.totalAED||0);},0);
-  var tNJ=nj.reduce(function(s,n){return s+(n.amount||0);},0);
-  var tSale=ms.reduce(function(s,x){return s+(x.totalSale||0);},0);
-  var tSaleProfit=ms.reduce(function(s,x){return s+(x.totalProfit||0);},0);
+  function sum(arr,key){ return arr.reduce(function(s,x){return s+(x[key]||0);},0); }
+  var tBDT=sum(pay,'bdt'), tAED=sum(pay,'aed');
+  var tAdvAED=pay.reduce(function(s,p){return s+(p.aed&&p.source==='dubai_sale'?0:0);},0);
+  var tPur=sum(pur,'totalAED'), tLC=sum(lc,'totalAED');
+  var tOE=sum(oe,'amount'), tPE=sum(pe,'amount');
+  var tCT=sum(ct,'totalAED'), tNJ=sum(nj,'amount');
+  var tAdvOut=adv.reduce(function(s,a){return s+(a.advanceAmount||a.amount||0);},0);
+  var tSale=sum(ms,'totalSale'), tSaleProfit=sum(ms,'totalProfit');
   var tTodayIn=tAED+tSale;
-  var tTodayOut=tPur+tLC+tOE+tPE+tCT+tNJ+tAdvAED;
+  var tTodayOut=tPur+tLC+tOE+tPE+tCT+tNJ+tAdvOut;
 
-  // Overall AED Balance (all-time)
-  var allAED=(DS.payments||[]).reduce(function(s,p){return s+(p.aed||0);},0);
-  var allSaleAED=(DS.dubai_sales||[]).reduce(function(s,x){return s+(x.totalSale||0);},0);
-  var allPur=(DS.purchases||[]).reduce(function(s,p){return s+(p.totalAED||0);},0);
-  var allLC=(DS.lot_costs||[]).reduce(function(s,c){return s+(c.totalAED||0);},0);
-  var allOE=(DS.office_expenses||[]).reduce(function(s,e){return s+(e.amount||0);},0);
-  var allPE=(DS.personal_expenses||[]).reduce(function(s,e){return s+(e.amount||0);},0);
-  var allCT=(DS.ctg_office||[]).reduce(function(s,e){return s+(e.totalAED||0);},0);
-  var allNJ=(DS.nejam_commission||[]).reduce(function(s,n){return s+(n.amount||0);},0);
+  // Overall AED Balance
+  var allAED=sum(DS.payments||[],'aed');
+  var allSale=sum(DS.dubai_sales||[],'totalSale');
+  var allPur=sum(DS.purchases||[],'totalAED');
+  var allLC=sum(DS.lot_costs||[],'totalAED');
+  var allOE=sum(DS.office_expenses||[],'amount');
+  var allPE=sum(DS.personal_expenses||[],'amount');
+  var allCT=sum(DS.ctg_office||[],'totalAED');
+  var allNJ=sum(DS.nejam_commission||[],'amount');
   var allAdv=(DS.advances||[]).reduce(function(s,a){return s+(a.advanceAmount||a.amount||0);},0);
-  var overallBalance=allAED+allSaleAED-allPur-allLC-allOE-allPE-allCT-allNJ-allAdv;
+  var balance=allAED+allSale-allPur-allLC-allOE-allPE-allCT-allNJ-allAdv;
 
-  var fA=function(n){if(!n||isNaN(n))return'dh0';return'dh'+(+n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});};
-  var fB=function(n){if(!n)return'৳0';return'৳'+(+n).toLocaleString('en-BD');};
+  function fA(n){if(!n||isNaN(n))return'dh0';return'dh'+(+n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
+  function fB(n){if(!n)return'৳0';return'৳'+(+n).toLocaleString('en-BD');}
 
-  // ── Build HTML Card ──
-  var hasAnyData = tBDT>0||tAED>0||tSale>0||tTodayOut>0;
-
-  // Income rows
-  var incomeRows='';
+  // Build sections
+  var incHtml='';
   if(pay.length){
     pay.forEach(function(p,i){
-      var isLast=(i===pay.length-1)&&!ms.length;
-      var prefix=isLast?'└─':'├─';
-      incomeRows+='<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:3px 0">'
-        +'<div style="font-size:12px;color:var(--txd)"><span style="color:var(--txm)">'+prefix+'</span> '
-        +(p.bdt?fB(p.bdt)+'<span style="color:var(--txm);font-size:10px"> → </span>':'')
-        +fA(p.aed)
-        +(p.rate?'<span style="color:var(--txm);font-size:10px"> ('+p.rate+')</span>':'')
-        +(p.sender?'<span style="color:var(--txm);font-size:10px"> | '+p.sender+'</span>':'')
-        +'</div></div>';
+      var prefix = (i===pay.length-1&&!ms.length)?'└─':'├─';
+      incHtml+='<div class="dr-row"><span class="dr-label">'+prefix+' ';
+      if(p.bdt) incHtml+=fB(p.bdt)+' <span class="dr-muted">→</span> ';
+      incHtml+=fA(p.aed);
+      if(p.rate) incHtml+=' <span class="dr-muted">('+p.rate+')</span>';
+      if(p.sender) incHtml+=' <span class="dr-muted">| '+p.sender+'</span>';
+      incHtml+='</span></div>';
     });
+  } else {
+    incHtml='<div class="dr-row"><span class="dr-label dr-muted">└─ কোনো payment নেই</span></div>';
   }
 
-  // Dubai Sale rows
-  var saleRows='';
+  var saleHtml='';
   if(ms.length){
     ms.forEach(function(s,i){
-      var isLast=i===ms.length-1;
-      saleRows+='<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0">'
-        +'<div style="font-size:12px;color:var(--txd)"><span style="color:var(--txm)">'+(isLast?'└─':'├─')+'</span> '
-        +'<span style="background:var(--bl2);border:1px solid var(--bl);border-radius:3px;padding:1px 5px;font:600 9px/1 var(--font-m);color:var(--bl);margin-right:4px">'+s.lot+'</span>'
-        +s.model+' × '+s.qty+'pc'
-        +'</div>'
-        +'<span style="font:700 12px/1 var(--font-m);color:var(--gold)">'+fA(s.totalSale)+'</span>'
-        +'</div>';
+      var prefix=i===ms.length-1?'└─':'├─';
+      saleHtml+='<div class="dr-row"><span class="dr-label">'+prefix+' ';
+      saleHtml+='<span class="dr-badge">'+s.lot+'</span> ';
+      saleHtml+=(s.model||'')+'<span class="dr-muted"> × '+s.qty+'pc</span>';
+      saleHtml+='</span><span class="dr-val dr-gold">'+fA(s.totalSale)+'</span></div>';
     });
   }
 
-  // Expense rows (only non-zero)
-  var expRows='';
-  var expItems=[
-    {icon:'🛒',label:'Purchase',val:tPur},
-    {icon:'🔧',label:'Prep Cost',val:tLC},
-    {icon:'⏩',label:'Advance M2',val:tAdvAED},
-    {icon:'🏢',label:'Office',val:tOE},
-    {icon:'👤',label:'Personal',val:tPE},
-    {icon:'🏪',label:'CTG Office',val:tCT},
-    {icon:'🤝',label:'Nezam',val:tNJ},
+  var expHtml='';
+  var exps=[
+    {icon:'🛒',lbl:'Purchase',val:tPur},
+    {icon:'🔧',lbl:'Prep Cost',val:tLC},
+    {icon:'⏩',lbl:'Advance M2',val:tAdvOut},
+    {icon:'🏢',lbl:'Office',val:tOE},
+    {icon:'👤',lbl:'Personal',val:tPE},
+    {icon:'🏪',lbl:'CTG Office',val:tCT},
+    {icon:'🤝',lbl:'Nezam',val:tNJ}
   ].filter(function(e){return e.val>0;});
 
-  expItems.forEach(function(e,i){
-    var isLast=i===expItems.length-1;
-    expRows+='<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0">'
-      +'<span style="font-size:12px;color:var(--txd)"><span style="color:var(--txm)">'+(isLast?'└─':'├─')+'</span> '+e.icon+' '+e.label+'</span>'
-      +'<span style="font:600 12px/1 var(--font-m);color:var(--rd)">'+fA(e.val)+'</span>'
-      +'</div>';
-  });
-  if(!expItems.length) expRows='<div style="font-size:11px;color:var(--txm);padding:4px 0">└─ কোনো খরচ নেই</div>';
-
-  var html='';
-
-  if(!hasAnyData) {
-    html='<div style="padding:40px;text-align:center;color:var(--txm)">'
-      +'<div style="font-size:40px;margin-bottom:12px">📅</div>'
-      +'<div style="font:600 14px/1 var(--font-b);color:var(--txd);margin-bottom:6px">'+dateLabel+'</div>'
-      +'<div style="font-size:12px">আজকে কোনো transaction নেই</div>'
-      +'</div>';
-  } else {
-    html='<div style="max-width:480px;margin:0 auto">'
-    // Card
-    +'<div style="background:var(--s1);border:1px solid var(--brd2);border-radius:14px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.3)">'
-
-    // Header
-    +'<div style="background:linear-gradient(135deg,var(--s2),var(--s3));padding:16px 20px;border-bottom:2px solid var(--gold)">'
-    +'<div style="font:400 11px/1 var(--font-m);color:var(--txm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">📅 Daily Report</div>'
-    +'<div style="font:700 15px/1 var(--font-b);color:var(--tx)">'+dateLabel+'</div>'
-    +'</div>'
-
-    // Body
-    +'<div style="padding:16px 20px">'
-
-    // ── আয় section ──
-    +(tAED>0||tSale>0?
-    '<div style="margin-bottom:14px">'
-    +'<div style="font:700 11px/1 var(--font-m);color:var(--gn);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">💰 আজকের আয়</div>'
-    +(tAED>0?incomeRows:'<div style="font-size:12px;color:var(--txm)">└─ কোনো payment নেই</div>')
-    +(ms.length?
-      '<div style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--brd)">'
-      +'<div style="font:700 11px/1 var(--font-m);color:var(--bl);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">🏪 Dubai Sale</div>'
-      +saleRows
-      +'</div>' : '')
-    // Total income
-    +'<div style="margin-top:10px;padding:8px 12px;background:linear-gradient(90deg,var(--gn2),transparent);border-left:3px solid var(--gn);border-radius:0 6px 6px 0;display:flex;justify-content:space-between;align-items:center">'
-    +'<span style="font:600 11px/1 var(--font-m);color:var(--gn)">💰 মোট আয় (আজ)'+(tSale>0?' + Dubai Sale':'')+'</span>'
-    +'<span style="font:700 15px/1 var(--font-m);color:var(--gn)">'+fA(tTodayIn)+'</span>'
-    +'</div>'
-    +'</div>' : '')
-
-    // ── খরচ section ──
-    +'<div style="margin-bottom:14px">'
-    +'<div style="font:700 11px/1 var(--font-m);color:var(--rd);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">💸 আজকের খরচ</div>'
-    +expRows
-    +(tTodayOut>0?
-      '<div style="margin-top:10px;padding:8px 12px;background:linear-gradient(90deg,rgba(255,80,80,.08),transparent);border-left:3px solid var(--rd);border-radius:0 6px 6px 0;display:flex;justify-content:space-between;align-items:center">'
-      +'<span style="font:600 11px/1 var(--font-m);color:var(--rd)">💸 মোট খরচ (আজ)</span>'
-      +'<span style="font:700 15px/1 var(--font-m);color:var(--rd)">'+fA(tTodayOut)+'</span>'
-      +'</div>' : '')
-    +'</div>'
-
-    // ── Balance ──
-    +'<div style="border-top:1px solid var(--brd);padding-top:14px">'
-    +'<div style="padding:12px 16px;background:'+(overallBalance>=0?'linear-gradient(135deg,var(--gn2),var(--s2))':'linear-gradient(135deg,rgba(255,80,80,.1),var(--s2))')+';border:1px solid '+(overallBalance>=0?'var(--gn)':'var(--rd)')+';border-radius:10px;display:flex;justify-content:space-between;align-items:center">'
-    +'<div>'
-    +'<div style="font:400 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase;margin-bottom:4px">'+(overallBalance>=0?'✅':'⚠️')+' মোট AED Balance</div>'
-    +'<div style="font:400 10px/1 var(--font-b);color:var(--txm)">(সব সময়ের হিসাব)</div>'
-    +'</div>'
-    +'<div style="font:700 24px/1 var(--font-m);color:'+(overallBalance>=0?'var(--gn)':'var(--rd)')+'">'+fA(overallBalance)+'</div>'
-    +'</div>'
-    +'</div>'
-
-    +'</div>' // body end
-    +'<div style="padding:10px 20px;background:var(--s3);border-top:1px solid var(--brd);text-align:center;font:400 10px/1 var(--font-m);color:var(--txm)">CTG Click Shop — Dubai Finance Hub</div>'
-    +'</div>'  // card end
-    +'</div>'; // wrapper end
-  }
-
-  document.getElementById('rpt-output').innerHTML = html;
-
-  // Show WA button, hide print
-  var waBtn=document.getElementById('rpt-wa-btn');
-  if(waBtn) waBtn.style.display='';
-
-  // Generate WhatsApp text and store
-  window._ctgDailyWA = (function(){
-    var t='📊 *CTG Click Shop — Daily Report*\n';
-    t+='📅 *'+dateLabel+'*\n';
-    t+='━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
-    if(tAED>0||tSale>0){
-      t+='\n💰 *আজকের আয়*\n';
-      pay.forEach(function(p){
-        t+='  ';
-        if(p.bdt) t+=fB(p.bdt)+' → ';
-        t+=fA(p.aed);
-        if(p.rate) t+=' (Rate: '+p.rate+')';
-        if(p.sender) t+=' | '+p.sender;
-        t+='\n';
-      });
-      if(ms.length){
-        t+='\n🏪 *Dubai Sale*\n';
-        ms.forEach(function(s){t+='  '+s.lot+' | '+s.model+' × '+s.qty+'pc = '+fA(s.totalSale)+(s.totalProfit?' (লাভ: '+fA(s.totalProfit)+')')+'\n';});
-      }
-      t+='  *মোট আয়: '+fA(tTodayIn)+'*\n';
-    }
-    if(tTodayOut>0){
-      t+='\n💸 *আজকের খরচ*\n';
-      if(tPur>0)    t+='  🛒 Purchase: '+fA(tPur)+'\n';
-      if(tLC>0)     t+='  🔧 Prep Cost: '+fA(tLC)+'\n';
-      if(tAdvAED>0) t+='  ⏩ Advance: '+fA(tAdvAED)+'\n';
-      if(tOE>0)     t+='  🏢 Office: '+fA(tOE)+'\n';
-      if(tPE>0)     t+='  👤 Personal: '+fA(tPE)+'\n';
-      if(tCT>0)     t+='  🏪 CTG: '+fA(tCT)+'\n';
-      if(tNJ>0)     t+='  🤝 Nezam: '+fA(tNJ)+'\n';
-      t+='  *মোট খরচ: '+fA(tTodayOut)+'*\n';
-    }
-    t+='\n━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
-    t+=(overallBalance>=0?'✅':'⚠️')+' *মোট AED Balance: '+fA(overallBalance)+'*\n';
-    t+='_CTG Click Shop — Dubai Finance Hub_';
-    return t;
-  })();
-};
-
-// Override WA copy for daily card
-var _origCopyWA = window.copyReportWA;
-window.copyReportWA = function() {
-  if(_ctgRptMode==='today' && window._ctgDailyWA) {
-    navigator.clipboard.writeText(window._ctgDailyWA).then(function(){
-      if(typeof showToast==='function') showToast('WhatsApp text copied! ✓','ok');
-    }).catch(function(){
-      var ta=document.createElement('textarea');ta.value=window._ctgDailyWA;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
-      if(typeof showToast==='function') showToast('Copied!','ok');
+  if(exps.length){
+    exps.forEach(function(e,i){
+      expHtml+='<div class="dr-row"><span class="dr-label">'+(i===exps.length-1?'└─':'├─')+' '+e.icon+' '+e.lbl+'</span>';
+      expHtml+='<span class="dr-val dr-red">'+fA(e.val)+'</span></div>';
     });
   } else {
-    if(_origCopyWA) _origCopyWA.apply(this,arguments);
+    expHtml='<div class="dr-row"><span class="dr-label dr-muted">└─ কোনো খরচ নেই</span></div>';
   }
+
+  var balColor=balance>=0?'var(--gn)':'var(--rd)';
+  var balBg=balance>=0?'var(--gn2)':'rgba(255,80,80,.1)';
+  var balIcon=balance>=0?'✅':'⚠️';
+
+  // No data
+  if(!pay.length&&!ms.length&&!tTodayOut){
+    el.innerHTML='<div style="padding:40px;text-align:center;color:var(--txm)">'
+      +'<div style="font-size:40px;margin-bottom:12px">📅</div>'
+      +'<div style="font:600 14px/1 var(--font-b);color:var(--txd);margin-bottom:8px">'+dateLabel+'</div>'
+      +'<div style="font-size:12px">আজকে কোনো transaction নেই</div>'
+      +'</div>';
+    return;
+  }
+
+  var html='<style>'
+    +'.dr-card{max-width:460px;margin:0 auto;background:var(--s1);border:1px solid var(--brd2);border-radius:14px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.3)}'
+    +'.dr-head{background:linear-gradient(135deg,var(--s2),var(--s3));padding:14px 20px;border-bottom:2px solid var(--gold)}'
+    +'.dr-head-sub{font:400 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}'
+    +'.dr-head-date{font:700 15px/1.3 var(--font-b);color:var(--tx)}'
+    +'.dr-body{padding:16px 20px}'
+    +'.dr-section{margin-bottom:14px}'
+    +'.dr-section-title{font:700 11px/1 var(--font-m);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}'
+    +'.dr-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:12px}'
+    +'.dr-label{color:var(--txd);flex:1}'
+    +'.dr-val{font:700 12px/1 var(--font-m);white-space:nowrap;margin-left:8px}'
+    +'.dr-gold{color:var(--gold)}'
+    +'.dr-red{color:var(--rd)}'
+    +'.dr-muted{color:var(--txm);font-size:10px}'
+    +'.dr-badge{background:var(--bl2);border:1px solid var(--bl);border-radius:3px;padding:1px 5px;font:600 9px/1 var(--font-m);color:var(--bl);margin-right:4px}'
+    +'.dr-total-row{margin-top:8px;padding:8px 12px;border-radius:0 6px 6px 0;display:flex;justify-content:space-between;align-items:center}'
+    +'.dr-footer{padding:10px 20px;background:var(--s3);border-top:1px solid var(--brd);text-align:center;font:400 10px/1 var(--font-m);color:var(--txm)}'
+    +'</style>';
+
+  html+='<div class="dr-card">';
+  html+='<div class="dr-head"><div class="dr-head-sub">📅 Daily Report</div><div class="dr-head-date">'+dateLabel+'</div></div>';
+  html+='<div class="dr-body">';
+
+  // Income section
+  if(tAED>0||tSale>0){
+    html+='<div class="dr-section">';
+    html+='<div class="dr-section-title" style="color:var(--gn)">💰 আজকের আয়</div>';
+    html+=incHtml;
+    if(ms.length){
+      html+='<div style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--brd)">';
+      html+='<div class="dr-section-title" style="color:var(--bl)">🏪 Dubai Sale</div>';
+      html+=saleHtml;
+      html+='</div>';
+    }
+    html+='<div class="dr-total-row" style="background:linear-gradient(90deg,var(--gn2),transparent);border-left:3px solid var(--gn)">';
+    html+='<span style="font:600 11px/1 var(--font-m);color:var(--gn)">💰 মোট আয়'+(tSale>0?' + Dubai Sale':'')+'</span>';
+    html+='<span style="font:700 16px/1 var(--font-m);color:var(--gn)">'+fA(tTodayIn)+'</span>';
+    html+='</div>';
+    html+='</div>';
+  }
+
+  // Expense section
+  html+='<div class="dr-section">';
+  html+='<div class="dr-section-title" style="color:var(--rd)">💸 আজকের খরচ</div>';
+  html+=expHtml;
+  if(tTodayOut>0){
+    html+='<div class="dr-total-row" style="background:linear-gradient(90deg,rgba(255,80,80,.08),transparent);border-left:3px solid var(--rd)">';
+    html+='<span style="font:600 11px/1 var(--font-m);color:var(--rd)">💸 মোট খরচ</span>';
+    html+='<span style="font:700 16px/1 var(--font-m);color:var(--rd)">'+fA(tTodayOut)+'</span>';
+    html+='</div>';
+  }
+  html+='</div>';
+
+  // Balance
+  html+='<div style="border-top:1px solid var(--brd);padding-top:12px">';
+  html+='<div style="padding:12px 16px;background:'+balBg+';border:1px solid '+balColor+';border-radius:10px;display:flex;justify-content:space-between;align-items:center">';
+  html+='<div><div style="font:400 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase;margin-bottom:4px">'+balIcon+' মোট AED Balance</div>';
+  html+='<div style="font:400 10px/1 var(--font-b);color:var(--txm)">(সব সময়ের হিসাব)</div></div>';
+  html+='<div style="font:700 24px/1 var(--font-m);color:'+balColor+'">'+fA(balance)+'</div>';
+  html+='</div></div>';
+
+  html+='</div>'; // body
+  html+='<div class="dr-footer">CTG Click Shop — Dubai Finance Hub</div>';
+  html+='</div>'; // card
+
+  el.innerHTML=html;
+
+  // Build & store WA text
+  var wa='\uD83D\uDCCA *CTG Click Shop \u2014 Daily Report*\n';
+  wa+='\uD83D\uDCC5 *'+dateLabel+'*\n';
+  wa+='\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n';
+  if(tAED>0||tSale>0){
+    wa+='\n\uD83D\uDCB0 *\u0986\u099C\u0995\u09C7\u09B0 \u0986\u09AF\u09BC*\n';
+    pay.forEach(function(p){
+      wa+='  ';
+      if(p.bdt) wa+=fB(p.bdt)+' \u2192 ';
+      wa+=fA(p.aed);
+      if(p.rate) wa+=' (Rate: '+p.rate+')';
+      if(p.sender) wa+=' | '+p.sender;
+      wa+='\n';
+    });
+    if(ms.length){
+      wa+='\n\uD83C\uDFAA *Dubai Sale*\n';
+      ms.forEach(function(s){wa+='  '+s.lot+' | '+(s.model||'')+' \u00D7'+s.qty+'pc = '+fA(s.totalSale)+'\n';});
+    }
+    wa+='  *\u09AE\u09CB\u099F \u0986\u09AF\u09BC: '+fA(tTodayIn)+'*\n';
+  }
+  if(tTodayOut>0){
+    wa+='\n\uD83D\uDCB8 *\u0986\u099C\u0995\u09C7\u09B0 \u0996\u09B0\u099A*\n';
+    if(tPur>0)    wa+='  \uD83D\uDED2 Purchase: '+fA(tPur)+'\n';
+    if(tLC>0)     wa+='  \uD83D\uDD27 Prep Cost: '+fA(tLC)+'\n';
+    if(tAdvOut>0) wa+='  \u23E9 Advance: '+fA(tAdvOut)+'\n';
+    if(tOE>0)     wa+='  \uD83C\uDFE2 Office: '+fA(tOE)+'\n';
+    if(tPE>0)     wa+='  \uD83D\uDC64 Personal: '+fA(tPE)+'\n';
+    if(tCT>0)     wa+='  \uD83C\uDFAA CTG: '+fA(tCT)+'\n';
+    if(tNJ>0)     wa+='  \uD83E\uDD1D Nezam: '+fA(tNJ)+'\n';
+    wa+='  *\u09AE\u09CB\u099F \u0996\u09B0\u099A: '+fA(tTodayOut)+'*\n';
+  }
+  wa+='\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n';
+  wa+=(balance>=0?'\u2705':'\u26A0\uFE0F')+' *\u09AE\u09CB\u099F AED Balance: '+fA(balance)+'*';
+  window._ctgDailyWA=wa;
+
+  var waBtn=document.getElementById('rpt-wa-btn');
+  if(waBtn) waBtn.style.display='';
 };
 
-// Hook: today mode triggers daily card
-var _origCtgGenerateReport = window.ctgGenerateReport;
-window.ctgGenerateReport = function() {
-  if(_ctgRptMode==='today') {
-    var rptPanel = document.getElementById('panel-rpt');
-    if(rptPanel && !rptPanel.classList.contains('on')) return;
-    var dateVal = document.getElementById('rpt-today-date')?.value || (function(){
-      var t=new Date();
-      return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');
-    })();
+// Override copyReportWA for today mode
+var _origCopyWA2=window.copyReportWA;
+window.copyReportWA=function(){
+  if(typeof _ctgRptMode!=='undefined'&&_ctgRptMode==='today'&&window._ctgDailyWA){
+    var txt=window._ctgDailyWA;
+    if(navigator.clipboard){navigator.clipboard.writeText(txt).then(function(){if(typeof showToast==='function')showToast('WhatsApp text copied!','ok');}).catch(function(){var ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);if(typeof showToast==='function')showToast('Copied!','ok');});}
+    else{var ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);if(typeof showToast==='function')showToast('Copied!','ok');}
+    return;
+  }
+  if(_origCopyWA2) _origCopyWA2.apply(this,arguments);
+};
+
+// Override ctgGenerateReport for today mode
+var _origGenRpt2=window.ctgGenerateReport;
+window.ctgGenerateReport=function(){
+  var rptPanel=document.getElementById('panel-rpt');
+  if(rptPanel&&!rptPanel.classList.contains('on')) return;
+  if(typeof _ctgRptMode!=='undefined'&&_ctgRptMode==='today'){
+    var inp=document.getElementById('rpt-today-date');
+    var dateVal=inp&&inp.value?inp.value:(function(){var t=new Date();return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');})();
     ctgDailyCard(dateVal);
-  } else {
-    if(_origCtgGenerateReport) _origCtgGenerateReport.apply(this,arguments);
+    return;
   }
+  if(_origGenRpt2) _origGenRpt2.apply(this,arguments);
 };
-
-console.log('[CTG] Daily Report Card loaded');
 
 console.log('[CTG Dubai v3 FINAL] All features loaded - any browser OK');
 
