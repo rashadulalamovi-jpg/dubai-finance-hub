@@ -271,11 +271,13 @@ body{padding-bottom:calc(56px + var(--safe-bottom));}
 @media(max-width:480px){.fgrid{grid-template-columns:1fr;}.cards{grid-template-columns:1fr;}}
 @media print{body{background:#fff!important;color:#111!important;}.hdr,.nav,.sh button,.btn-add,.btn,.fwrap,#rpt-filter-bar{display:none!important;}.panel{display:block!important;}.rpt-kpi-grid{break-inside:avoid;}.rpt-section{break-inside:avoid;page-break-inside:avoid;}table{border-collapse:collapse;width:100%;}th,td{border:1px solid #ccc!important;padding:5px 8px!important;color:#111!important;background:#fff!important;font-size:11px;}th{background:#f5f5f5!important;}.tag{border:1px solid #999!important;color:#333!important;background:#eee!important;}}
 
-.sf-badge{display:inline-flex;align-items:center;gap:4px;background:var(--s3);border:1px solid var(--brd);border-radius:6px;padding:3px 8px;cursor:default}
-.sf-icon{font-size:11px;line-height:1}
-.sf-label{font:400 9px/1 var(--font-m);color:var(--txm);text-transform:uppercase}
-.sf-val{font:700 12px/1 var(--font-m)}
-.sf-sep{color:var(--txm);font-size:10px;margin:0 2px}
+.sf-card{display:flex;flex-direction:column;align-items:center;padding:6px 12px;min-width:72px;border-right:1px solid var(--brd);cursor:default;transition:background .15s}
+.sf-card:hover{background:var(--s3)}
+.sf-card-icon{font-size:14px;line-height:1;margin-bottom:3px}
+.sf-card-label{font:600 8px/1 var(--font-m);color:var(--txm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
+.sf-card-pcs{font:700 13px/1 var(--font-m);margin-bottom:2px}
+.sf-card-aed{font:400 9px/1 var(--font-m);color:var(--txm)}
+.sf-arrow{font-size:12px;color:var(--txm);padding:0 4px;align-self:center;opacity:.5}
 </style>
 </head>
 <body>
@@ -353,7 +355,7 @@ body{padding-bottom:calc(56px + var(--safe-bottom));}
 <div class="kbadge"><div class="kbl">BDT Sent</div><div class="kbv g" id="hBDT">৳0</div></div>
 <div class="kbadge"><div class="kbl">AED Received</div><div class="kbv bl" id="hAED">dh0</div></div>
 <div class="kbadge"><div class="kbl">AED Expense</div><div class="kbv rd" id="hEXP">dh0</div></div>
-<div class="kbadge"><div class="kbl">AED Balance</div><div class="kbv gn" id="hBAL">dh0</div></div>
+<div class="kbadge" id="hBAL-wrap" style="border-color:var(--gn);background:linear-gradient(135deg,var(--gn2),var(--s1));box-shadow:0 0 10px rgba(0,200,100,.15)"><div class="kbl" style="color:var(--gn)">AED Balance</div><div class="kbv gn" id="hBAL" style="font-size:14px">dh0</div></div>
 <div class="kbadge"><div class="kbl">Total Lots</div><div class="kbv" id="hLOTS">0</div></div>
 <div class="kbadge"><div class="kbl">Total PCs</div><div class="kbv bl" id="hPCS">0</div></div>
 <div class="kbadge" style="border-color:var(--pu2)" title="Dubai Office + Transit stock value"><div class="kbl">Inventory Value</div><div class="kbv" id="hINV" style="color:var(--pu)">—</div></div>
@@ -365,36 +367,46 @@ body{padding-bottom:calc(56px + var(--safe-bottom));}
 <button class="btn-ico" onclick="document.getElementById('cfgModal').classList.add('on')" title="Firebase Settings"><i class="fas fa-cog"></i></button>
 </div>
 <!-- Stock Flow Sub-header Row 2 -->
-<div id="stock-flow-bar" style="display:flex;align-items:center;gap:6px;padding:4px 14px;background:var(--s2);border-top:1px solid var(--brd);flex-wrap:wrap">
-  <div style="font:500 9px/1 var(--font-m);color:var(--txm);text-transform:uppercase;letter-spacing:.5px;margin-right:4px">Stock Flow:</div>
-  <div class="sf-badge" title="মোট কেনা laptop">
-    <span class="sf-icon">🛒</span>
-    <span class="sf-label">Total</span>
-    <span class="sf-val" id="sf-total" style="color:var(--bl)">0p</span>
+<div id="stock-flow-bar" style="display:flex;align-items:center;gap:0;padding:0 14px;background:var(--s2);border-top:1px solid var(--brd);overflow-x:auto">
+  <div style="font:600 9px/1 var(--font-m);color:var(--txm);text-transform:uppercase;letter-spacing:.5px;padding:8px 10px 8px 0;white-space:nowrap;border-right:1px solid var(--brd);margin-right:10px">STOCK<br>FLOW</div>
+  <!-- Total -->
+  <div class="sf-card" title="মোট কেনা">
+    <div class="sf-card-icon" style="color:var(--bl)">🛒</div>
+    <div class="sf-card-label">TOTAL</div>
+    <div class="sf-card-pcs" id="sf-total" style="color:var(--bl)">0p</div>
+    <div class="sf-card-aed" id="sf-total-aed">—</div>
   </div>
-  <span class="sf-sep">›</span>
-  <div class="sf-badge" title="Dubai-তে locally বিক্রয়">
-    <span class="sf-icon">🏪</span>
-    <span class="sf-label">Sold</span>
-    <span class="sf-val" id="sf-sold" style="color:var(--gold)">0p</span>
+  <div class="sf-arrow">›</div>
+  <!-- Sold -->
+  <div class="sf-card" id="sf-sold-card" title="Dubai-তে বিক্রয়">
+    <div class="sf-card-icon" style="color:var(--gold)">🏪</div>
+    <div class="sf-card-label">SOLD</div>
+    <div class="sf-card-pcs" id="sf-sold" style="color:var(--gold)">0p</div>
+    <div class="sf-card-aed" id="sf-sold-aed">—</div>
   </div>
-  <span class="sf-sep">›</span>
-  <div class="sf-badge" title="Dubai office-এ আছে, courier হয়নি">
-    <span class="sf-icon">🇦🇪</span>
-    <span class="sf-label">Dubai</span>
-    <span class="sf-val" id="sf-dubai" style="color:var(--bl)">0p</span>
+  <div class="sf-arrow">›</div>
+  <!-- Dubai Office -->
+  <div class="sf-card" title="Dubai-তে আছে, courier হয়নি">
+    <div class="sf-card-icon" style="color:var(--bl)">🇦🇪</div>
+    <div class="sf-card-label">DUBAI</div>
+    <div class="sf-card-pcs" id="sf-dubai" style="color:var(--bl)">0p</div>
+    <div class="sf-card-aed" id="sf-dubai-aed" style="color:var(--pu)">—</div>
   </div>
-  <span class="sf-sep">›</span>
-  <div class="sf-badge" title="Courier-এ পাঠানো, CTG-তে পৌঁছায়নি">
-    <span class="sf-icon">✈️</span>
-    <span class="sf-label">Transit</span>
-    <span class="sf-val" id="sf-transit" style="color:#FFB800">0p</span>
+  <div class="sf-arrow">›</div>
+  <!-- Transit -->
+  <div class="sf-card" title="Courier-এ আছে, CTG পৌঁছায়নি">
+    <div class="sf-card-icon" style="color:#FFB800">✈️</div>
+    <div class="sf-card-label">TRANSIT</div>
+    <div class="sf-card-pcs" id="sf-transit" style="color:#FFB800">0p</div>
+    <div class="sf-card-aed" id="sf-transit-aed" style="color:var(--pu)">—</div>
   </div>
-  <span class="sf-sep">›</span>
-  <div class="sf-badge" title="CTG-তে পৌঁছেছে — এখন Bangladesh Stock (Dubai inventory নয়)" style="opacity:.7">
-    <span class="sf-icon">🇧🇩</span>
-    <span class="sf-label">BD Stock</span>
-    <span class="sf-val" id="sf-ctg" style="color:var(--gn)">0p</span>
+  <div class="sf-arrow">›</div>
+  <!-- BD Stock -->
+  <div class="sf-card" title="CTG পেয়েছে — Bangladesh Stock" style="opacity:.75">
+    <div class="sf-card-icon" style="color:var(--gn)">🇧🇩</div>
+    <div class="sf-card-label">BD STOCK</div>
+    <div class="sf-card-pcs" id="sf-ctg" style="color:var(--gn)">0p</div>
+    <div class="sf-card-aed" id="sf-ctg-aed" style="color:var(--gn)">—</div>
   </div>
 </div>
 </div>
@@ -3777,7 +3789,7 @@ window.ctgGenerateReport=function(){
 // ── Stock Flow Sub-header ──
 window.updateStockFlow = function() {
   var DS = ctgGetS ? ctgGetS() : (typeof S!=='undefined'?S:{});
-  var pu=DS.purchases||[], co=DS.courier||[], ms=DS.dubai_sales||[];
+  var pu=DS.purchases||[], co=DS.courier||[], ms=DS.dubai_sales||[], lc=DS.lot_costs||[];
   
   var totalPurchased=pu.reduce(function(s,p){return s+(p.qty||0);},0);
   var totalSold=ms.reduce(function(s,x){return s+(x.qty||0);},0);
@@ -3786,20 +3798,32 @@ window.updateStockFlow = function() {
   var dubaiOffice=Math.max(0,totalPurchased-totalSold-totalCouriered);
   var inTransit=Math.max(0,totalCouriered-totalReceived);
   var ctgRcvd=totalReceived;
-
-  function setEl(id,val){var e=document.getElementById(id);if(e)e.textContent=val+'p';}
-  setEl('sf-total',   totalPurchased);
-  setEl('sf-sold',    totalSold);
-  setEl('sf-dubai',   dubaiOffice);
-  setEl('sf-transit', inTransit);
-  setEl('sf-ctg',     ctgRcvd);
   
-  // Hide "Sold" if 0
-  var soldBadge=document.querySelector('#sf-sold')?.closest('.sf-badge');
-  var soldSep=soldBadge?.nextElementSibling;
-  if(soldBadge){
-    soldBadge.style.opacity=totalSold>0?'1':'0.3';
-  }
+  // Calculate avg cost per pc (purchase + prep)
+  var totalPurAED=pu.reduce(function(s,p){return s+(p.totalAED||0);},0);
+  var totalPrepAED=lc.reduce(function(s,c){return s+(c.totalAED||0);},0);
+  var avgCostPc=totalPurchased>0?(totalPurAED+totalPrepAED)/totalPurchased:0;
+  
+  // AED values
+  var saleAED=ms.reduce(function(s,x){return s+(x.totalSale||0);},0);
+  var dubaiAED=dubaiOffice*avgCostPc;
+  var transitAED=inTransit*avgCostPc;
+  var ctgAED=ctgRcvd*avgCostPc;
+  var totalAED=totalPurAED+totalPrepAED;
+  
+  function fA(n){if(!n)return'—';if(n>=1000)return'dh'+(n/1000).toFixed(1)+'K';return'dh'+n.toFixed(0);}
+  function setP(id,val){var e=document.getElementById(id);if(e)e.textContent=val+'p';}
+  function setA(id,val){var e=document.getElementById(id);if(e)e.textContent=fA(val);}
+  
+  setP('sf-total',   totalPurchased); setA('sf-total-aed', totalAED);
+  setP('sf-sold',    totalSold);      setA('sf-sold-aed',  saleAED);
+  setP('sf-dubai',   dubaiOffice);    setA('sf-dubai-aed', dubaiAED);
+  setP('sf-transit', inTransit);      setA('sf-transit-aed', transitAED);
+  setP('sf-ctg',     ctgRcvd);        setA('sf-ctg-aed',   ctgAED);
+  
+  // Dim "Sold" card if 0
+  var soldCard=document.getElementById('sf-sold-card');
+  if(soldCard) soldCard.style.opacity=totalSold>0?'1':'0.35';
 };
 
 console.log('[CTG Dubai v3 FINAL] All features loaded - any browser OK');
