@@ -2113,7 +2113,9 @@ function renderDashboard(){
     });
   });
   const totalInTransit=Math.max(0,totalBooked-totalCTGRcvd);
-  const dubaiOfficePcs=Math.max(0,totalPurchasedPcs-totalBooked);
+  // Dubai Office = purchased - dubai_sold - couriered (correct formula)
+  const totalDubaiSold=(S.dubai_sales||[]).reduce((s,x)=>s+(x.qty||0),0);
+  const dubaiOfficePcs=Math.max(0,totalPurchasedPcs-totalDubaiSold-totalBooked);
 
   // ── Inventory Value (with prep cost) ──
   const invValue=purValue+prepTotal;
@@ -3809,7 +3811,9 @@ window.updateStockFlow = function() {
   var avgCostPc=totalPurchased>0?(totalPurAED+totalPrepAED)/totalPurchased:0;
   
   // AED values
-  var saleAED=ms.reduce(function(s,x){return s+(x.totalSale||0);},0);
+  // Sold: show cost value (not revenue) so all AED values reconcile with Total
+  var soldPcs=ms.reduce(function(s,x){return s+(x.qty||0);},0);
+  var saleAED=soldPcs*avgCostPc; // cost of sold items
   var dubaiAED=dubaiOffice*avgCostPc;
   var transitAED=inTransit*avgCostPc;
   var ctgAED=ctgRcvd*avgCostPc;
