@@ -750,7 +750,7 @@ body{padding-bottom:calc(56px + var(--safe-bottom));}
 </div>
 <div class="twrap"><div class="thead2"><span class="ttitle">কুরিয়ার রেকর্ড</span></div>
 <div class="tscroll"><table>
-<thead><tr><th>Date</th><th>Lot/Qty</th><th>Model</th><th>Booked</th><th>CTG Date</th><th>Days</th><th>Flow</th><th>Remaining</th><th>Action</th></tr></thead>
+<thead><tr><th>Date</th><th>Lot/Qty (booked/total)</th><th>Model</th><th>Booked</th><th>CTG Date</th><th>Days</th><th>Flow</th><th>Remaining</th><th>Action</th></tr></thead>
 <tbody id="tb-m7"><tr><td colspan="12"><div class="empty"><i class="fas fa-database"></i><p>কোনো রেকর্ড নেই</p></div></td></tr></tbody>
 </table></div></div></div>
 
@@ -1654,8 +1654,17 @@ function rCourier(){
     let lotDisplay='—';
     if(al.length){
       lotDisplay=al.map(l=>{
-        let lotLine=`<div style="margin-bottom:2px">${tag('t-lt',l.lotRef)} <span style="font:600 11px/1 var(--font-m);color:var(--gold)">${l.lotQty}p</span></div>`;
-        if(l.items&&l.items.length){
+        // Total purchased for this lot
+        const purQty=(typeof S!=='undefined'?S:DS).purchases.filter(p=>p.lot===l.lotRef).reduce((s,p)=>s+(p.qty||0),0);
+        // Show purchased qty as primary
+        let lotLine='<div style="margin-bottom:3px">'+tag('t-lt',l.lotRef)+' <span style="font:700 12px/1 var(--font-m);color:var(--bl)">'+purQty+'p</span>'+(l.lotQty&&l.lotQty!==purQty?' <span style="font:400 10px/1 var(--font-m);color:var(--txm)">(courier:'+l.lotQty+'p)</span>':'')+'</div>';
+        // Show model items from purchase (correct purchased qty per model)
+        var purItems2=(typeof S!=='undefined'?S:DS).purchases.filter(function(p){return p.lot===l.lotRef;});
+        var modelItems2=[];
+        purItems2.forEach(function(p){if(p.items&&p.items.length){p.items.forEach(function(it){modelItems2.push({m:it.model,q:it.qty});});}else if(p.model){modelItems2.push({m:p.model,q:p.qty||purQty});}});
+        if(modelItems2.length>1){
+          lotLine+=modelItems2.map(function(it){return '<div style="font:400 10px/1.3 var(--font-b);color:var(--txm);padding-left:6px">• '+it.m+': '+it.q+'p</div>';}).join('');
+        } else if(l.items&&l.items.length&&!modelItems2.length){
           lotLine+=l.items.map(it=>`<div style="font:400 10px/1.3 var(--font-b);color:var(--txm);padding-left:6px">• ${it.model}: ${it.qty}p</div>`).join('');
         }
         return lotLine;
