@@ -271,13 +271,12 @@ body{padding-bottom:calc(56px + var(--safe-bottom));}
 @media(max-width:480px){.fgrid{grid-template-columns:1fr;}.cards{grid-template-columns:1fr;}}
 @media print{body{background:#fff!important;color:#111!important;}.hdr,.nav,.sh button,.btn-add,.btn,.fwrap,#rpt-filter-bar{display:none!important;}.panel{display:block!important;}.rpt-kpi-grid{break-inside:avoid;}.rpt-section{break-inside:avoid;page-break-inside:avoid;}table{border-collapse:collapse;width:100%;}th,td{border:1px solid #ccc!important;padding:5px 8px!important;color:#111!important;background:#fff!important;font-size:11px;}th{background:#f5f5f5!important;}.tag{border:1px solid #999!important;color:#333!important;background:#eee!important;}}
 
-.sf-card{display:flex;flex-direction:column;align-items:center;padding:6px 12px;min-width:72px;border-right:1px solid var(--brd);cursor:default;transition:background .15s}
-.sf-card:hover{background:var(--s3)}
-.sf-card-icon{font-size:14px;line-height:1;margin-bottom:3px}
-.sf-card-label{font:600 8px/1 var(--font-m);color:var(--txm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
-.sf-card-pcs{font:700 13px/1 var(--font-m);margin-bottom:2px}
-.sf-card-aed{font:400 9px/1 var(--font-m);color:var(--txm)}
-.sf-arrow{font-size:12px;color:var(--txm);padding:0 4px;align-self:center;opacity:.5}
+.sf-badge{display:inline-flex;align-items:center;gap:5px;background:var(--s3);border:1px solid var(--brd);border-radius:6px;padding:4px 9px;cursor:default}
+.sf-icon{font-size:12px;line-height:1}
+.sf-label{font:400 9px/1 var(--font-m);color:var(--txm);text-transform:uppercase}
+.sf-val{font:700 12px/1 var(--font-m)}
+.sf-aed{font:400 9px/1.2 var(--font-m);color:var(--txm)}
+.sf-sep{color:var(--txm);font-size:11px;margin:0 1px}
 </style>
 </head>
 <body>
@@ -367,46 +366,51 @@ body{padding-bottom:calc(56px + var(--safe-bottom));}
 <button class="btn-ico" onclick="document.getElementById('cfgModal').classList.add('on')" title="Firebase Settings"><i class="fas fa-cog"></i></button>
 </div>
 <!-- Stock Flow Sub-header Row 2 -->
-<div id="stock-flow-bar" style="display:flex;align-items:center;gap:0;padding:0 14px;background:var(--s2);border-top:1px solid var(--brd);overflow-x:auto">
-  <div style="font:600 9px/1 var(--font-m);color:var(--txm);text-transform:uppercase;letter-spacing:.5px;padding:8px 10px 8px 0;white-space:nowrap;border-right:1px solid var(--brd);margin-right:10px">STOCK<br>FLOW</div>
-  <!-- Total -->
-  <div class="sf-card" title="মোট কেনা">
-    <div class="sf-card-icon" style="color:var(--bl)">🛒</div>
-    <div class="sf-card-label">TOTAL</div>
-    <div class="sf-card-pcs" id="sf-total" style="color:var(--bl)">0p</div>
-    <div class="sf-card-aed" id="sf-total-aed">—</div>
+<div id="stock-flow-bar" style="display:flex;align-items:center;gap:6px;padding:5px 14px;background:var(--s2);border-top:1px solid var(--brd);flex-wrap:wrap">
+  <div style="font:500 9px/1 var(--font-m);color:var(--txm);text-transform:uppercase;letter-spacing:.5px;margin-right:4px;white-space:nowrap">Stock Flow:</div>
+  <div class="sf-badge" title="মোট কেনা laptop">
+    <span class="sf-icon">🛒</span>
+    <span class="sf-label">Total</span>
+    <div style="text-align:center">
+      <div class="sf-val" id="sf-total" style="color:var(--bl)">0p</div>
+      <div class="sf-aed" id="sf-total-aed">—</div>
+    </div>
   </div>
-  <div class="sf-arrow">›</div>
-  <!-- Sold -->
-  <div class="sf-card" id="sf-sold-card" title="Dubai-তে বিক্রয়">
-    <div class="sf-card-icon" style="color:var(--gold)">🏪</div>
-    <div class="sf-card-label">SOLD</div>
-    <div class="sf-card-pcs" id="sf-sold" style="color:var(--gold)">0p</div>
-    <div class="sf-card-aed" id="sf-sold-aed">—</div>
+  <span class="sf-sep">›</span>
+  <div class="sf-badge" id="sf-sold-card" title="Dubai-তে locally বিক্রয়">
+    <span class="sf-icon">🏪</span>
+    <span class="sf-label">Sold</span>
+    <div style="text-align:center">
+      <div class="sf-val" id="sf-sold" style="color:var(--gold)">0p</div>
+      <div class="sf-aed" id="sf-sold-aed">—</div>
+    </div>
   </div>
-  <div class="sf-arrow">›</div>
-  <!-- Dubai Office -->
-  <div class="sf-card" title="Dubai-তে আছে, courier হয়নি">
-    <div class="sf-card-icon" style="color:var(--bl)">🇦🇪</div>
-    <div class="sf-card-label">DUBAI</div>
-    <div class="sf-card-pcs" id="sf-dubai" style="color:var(--bl)">0p</div>
-    <div class="sf-card-aed" id="sf-dubai-aed" style="color:var(--pu)">—</div>
+  <span class="sf-sep">›</span>
+  <div class="sf-badge" title="Dubai office-এ আছে, courier হয়নি">
+    <span class="sf-icon">🇦🇪</span>
+    <span class="sf-label">Dubai</span>
+    <div style="text-align:center">
+      <div class="sf-val" id="sf-dubai" style="color:var(--bl)">0p</div>
+      <div class="sf-aed" id="sf-dubai-aed" style="color:var(--pu)">—</div>
+    </div>
   </div>
-  <div class="sf-arrow">›</div>
-  <!-- Transit -->
-  <div class="sf-card" title="Courier-এ আছে, CTG পৌঁছায়নি">
-    <div class="sf-card-icon" style="color:#FFB800">✈️</div>
-    <div class="sf-card-label">TRANSIT</div>
-    <div class="sf-card-pcs" id="sf-transit" style="color:#FFB800">0p</div>
-    <div class="sf-card-aed" id="sf-transit-aed" style="color:var(--pu)">—</div>
+  <span class="sf-sep">›</span>
+  <div class="sf-badge" title="Courier-এ পাঠানো, CTG-তে পৌঁছায়নি">
+    <span class="sf-icon">✈️</span>
+    <span class="sf-label">Transit</span>
+    <div style="text-align:center">
+      <div class="sf-val" id="sf-transit" style="color:#FFB800">0p</div>
+      <div class="sf-aed" id="sf-transit-aed" style="color:var(--pu)">—</div>
+    </div>
   </div>
-  <div class="sf-arrow">›</div>
-  <!-- BD Stock -->
-  <div class="sf-card" title="CTG পেয়েছে — Bangladesh Stock" style="opacity:.75">
-    <div class="sf-card-icon" style="color:var(--gn)">🇧🇩</div>
-    <div class="sf-card-label">BD STOCK</div>
-    <div class="sf-card-pcs" id="sf-ctg" style="color:var(--gn)">0p</div>
-    <div class="sf-card-aed" id="sf-ctg-aed" style="color:var(--gn)">—</div>
+  <span class="sf-sep">›</span>
+  <div class="sf-badge" title="CTG-তে পৌঁছেছে — Bangladesh Stock" style="opacity:.7">
+    <span class="sf-icon">🇧🇩</span>
+    <span class="sf-label">BD Stock</span>
+    <div style="text-align:center">
+      <div class="sf-val" id="sf-ctg" style="color:var(--gn)">0p</div>
+      <div class="sf-aed" id="sf-ctg-aed" style="color:var(--gn)">—</div>
+    </div>
   </div>
 </div>
 </div>
@@ -3811,7 +3815,7 @@ window.updateStockFlow = function() {
   var ctgAED=ctgRcvd*avgCostPc;
   var totalAED=totalPurAED+totalPrepAED;
   
-  function fA(n){if(!n)return'—';if(n>=1000)return'dh'+(n/1000).toFixed(1)+'K';return'dh'+n.toFixed(0);}
+  function fA(n){if(!n||isNaN(n))return'—';return'dh'+(+n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
   function setP(id,val){var e=document.getElementById(id);if(e)e.textContent=val+'p';}
   function setA(id,val){var e=document.getElementById(id);if(e)e.textContent=fA(val);}
   
