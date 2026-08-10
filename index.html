@@ -1636,7 +1636,8 @@ async function saveCourier(){
   showToast('কুরিয়ার সেভ ✓','ok');rCourier();rNejam();rLotCourierStatus();updateHeader();
 }
 function rCourier(){
-  const data=S.courier.sort((a,b)=>new Date(b.bookDate)-new Date(a.bookDate));
+  const DS=ctgGetS?ctgGetS():(typeof S!=='undefined'?S:{});
+  const data=(DS.courier||[]).sort((a,b)=>new Date(b.bookDate)-new Date(a.bookDate));
   let bk=0,rv=0,tr=0,pd=0;
   data.forEach(c=>{bk+=c.bookedQty||0;rv+=c.receivedQty||0;if(c.paymentStatus==='unpaid')pd++;});
   tr=bk-rv;g('m7bk').textContent=bk;g('m7rv').textContent=rv;g('m7tr').textContent=tr;g('m7pd').textContent=pd;
@@ -1680,9 +1681,23 @@ function rCourier(){
 
     // Remaining Qty = booked - received
     const remainingQty=Math.max(0,(c.bookedQty||0)-(c.receivedQty||0));
-    const remainingDisplay=remainingQty>0
-      ?`<span style="font:700 13px/1 var(--font-m);color:var(--gold)">${remainingQty}</span><span style="font:400 10px/1 var(--font-m);color:var(--txm)"> pcs</span>`
-      :`<span style="font:700 13px/1 var(--font-m);color:var(--gn)">✓</span>`;
+    // Dubai Office: pcs still in Dubai (not yet couriered for this lot)
+    const lotRefs=(c.lots||[]).map(function(l){return l.lotRef;});
+    const firstLot=lotRefs[0]||(c.lotRef||'');
+    const purForLot=(DS.purchases||[]).filter(function(p){return p.lot===firstLot;}).reduce(function(s,p){return s+(p.qty||0);},0);
+    const soldForLot=(DS.dubai_sales||[]).filter(function(s){return s.lot===firstLot;}).reduce(function(ss,s){return ss+(s.qty||0);},0);
+    const allCourieredForLot=(DS.courier||[]).filter(function(cr){return (cr.lots||[]).some(function(l){return l.lotRef===firstLot;})||cr.lotRef===firstLot;}).reduce(function(s,cr){return s+(cr.bookedQty||0);},0);
+    const dubaiOfficeQty=Math.max(0,purForLot-soldForLot-allCourieredForLot);
+    const totalRemaining=remainingQty+dubaiOfficeQty;
+    var remainingDisplay='';
+    if(totalRemaining===0){
+      remainingDisplay='<span style="font:700 13px/1 var(--font-m);color:var(--gn)">✓</span>';
+    } else {
+      remainingDisplay='';
+      if(dubaiOfficeQty>0) remainingDisplay+='<div style="font:500 10px/1 var(--font-m);color:var(--bl)">🇦🇪 '+dubaiOfficeQty+'p Dubai</div>';
+      if(remainingQty>0)   remainingDisplay+='<div style="font:500 10px/1 var(--font-m);color:#FFB800">✈️ '+remainingQty+'p Transit</div>';
+      if(totalRemaining>0) remainingDisplay+='<div style="font:700 11px/1 var(--font-m);color:var(--gold);margin-top:2px">📦 '+totalRemaining+'p total</div>';
+    }
 
     return `<tr>
       <td style="white-space:nowrap">${fD(c.bookDate)}</td>
@@ -3252,97 +3267,179 @@ window.tab = function(id, el) {
 
 // ── Update ctgRunKPI to show Dubai Sold ──
 // Override to include dubai_sales in tracking
+// ── Complete Lot Tracking System (Purchased→Sold→Dubai→Transit→CTG) ──
 function ctgRunKPIWithSales() {
-  var DS = ctgGetS ? ctgGetS() : (typeof S !== 'undefined' ? S : {});
-  var pu = DS.purchases||[], co = DS.courier||[], lc = DS.lot_costs||[], ms = DS.dubai_sales||[];
-  var lots = [];
+  var DS = ctgGetS ? ctgGetS() : (typeof S!=='undefined'?S:{});
+  var pu=DS.purchases||[], co=DS.courier||[], lc=DS.lot_costs||[], ms=DS.dubai_sales||[];
+  var lots=[];
   pu.forEach(function(p){if(p.lot&&lots.indexOf(p.lot)===-1)lots.push(p.lot);});
   if(!lots.length) return;
 
-  var fA = function(n){if(!n||isNaN(n))return'dh0';return'dh'+(+n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});};
-  var html = '';
+  var fA=function(n){if(!n||isNaN(n))return'dh0';return'dh'+(+n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});};
+  var html='';
 
   lots.forEach(function(lot) {
-    var pi = pu.filter(function(p){return p.lot===lot;});
-    var ci = lc.filter(function(c){return c.lot===lot;});
-    var mi = [];
-    pi.forEach(function(p){if(p.items&&p.items.length){p.items.forEach(function(it){mi.push({m:it.model||'?',q:it.qty||0});});}else if(p.model){mi.push({m:p.model,q:p.qty||0});}});
-    var tp = mi.reduce(function(s,x){return s+x.q;},0);
-    var lco = co.filter(function(c){return(c.lots||[]).some(function(l){return l.lotRef===lot;})||c.lotRef===lot;});
-    var tb = lco.reduce(function(s,c){return s+(c.bookedQty||0);},0);
-    var tr2 = lco.reduce(function(s,c){return s+(c.receivedQty||0);},0);
-    var itr = Math.max(0,tb-tr2);
-    var totSold = ms.filter(function(s){return s.lot===lot;}).reduce(function(s,x){return s+(x.qty||0);},0);
-    var totLeft = Math.max(0,tp-tb-totSold);
-    var dp = tp>0?Math.round(tr2/tp*100):0;
-    var pv = pi.reduce(function(s,p){return s+(p.totalAED||0);},0);
-    var cv = ci.reduce(function(s,c){return s+(c.totalAED||0);},0);
-    var soldAED = ms.filter(function(s){return s.lot===lot;}).reduce(function(s,x){return s+(x.totalSale||0);},0);
-    var sup = pi[0]?pi[0].supplier||'':'';
-
-    function getMSt(mn) {
+    var pi=pu.filter(function(p){return p.lot===lot;});
+    var ci=lc.filter(function(c){return c.lot===lot;});
+    
+    // ── Purchase data ──
+    var mi=[];
+    pi.forEach(function(p){
+      if(p.items&&p.items.length){p.items.forEach(function(it){mi.push({m:it.model||'?',q:it.qty||0});});}
+      else if(p.model){mi.push({m:p.model,q:p.qty||0});}
+    });
+    var purchased=mi.reduce(function(s,x){return s+x.q;},0);
+    var sup=pi[0]?pi[0].supplier||'':'';
+    
+    // ── Dubai Sales (MS module) ──
+    var lotSales=ms.filter(function(s){return s.lot===lot;});
+    var dubaiSold=lotSales.reduce(function(s,x){return s+(x.qty||0);},0);
+    
+    // ── Courier data ──
+    var lotCouriers=co.filter(function(c){
+      return (c.lots||[]).some(function(l){return l.lotRef===lot;})||c.lotRef===lot;
+    });
+    var totalCouriered=lotCouriers.reduce(function(s,c){return s+(c.bookedQty||0);},0);
+    var totalReceived=lotCouriers.reduce(function(s,c){return s+(c.receivedQty||0);},0);
+    
+    // ── 5-column Flow ──
+    var dubaiOffice=Math.max(0, purchased - dubaiSold - totalCouriered);
+    var inTransit=Math.max(0, totalCouriered - totalReceived);
+    var ctgRcvd=totalReceived;
+    
+    // ── Lot Status ──
+    var isComplete=(dubaiOffice===0 && inTransit===0 && (dubaiSold+ctgRcvd)===purchased);
+    var pct=purchased>0?Math.round((dubaiSold+ctgRcvd)/purchased*100):0;
+    
+    // ── Per-model stats ──
+    function getModelStats(modelName) {
       var b=0,r=0,sold=0;
-      lco.forEach(function(c){
+      lotCouriers.forEach(function(c){
         var les=c.lots?c.lots.filter(function(l){return l.lotRef===lot;}):(c.lotRef===lot?[{lotRef:lot,lotQty:c.bookedQty||0}]:[]);
         les.forEach(function(le){
-          if(le.items){var mi2=le.items.filter(function(it){return it.model===mn;})[0];if(mi2){b+=(mi2.qty||0);if(c.ctgReceiveDate)r+=(mi2.qty||0);}}
-          else{var tm=mi.filter(function(x){return x.m===mn;})[0];if(tm&&tp>0){var pr=Math.round((le.lotQty||c.bookedQty||0)*(tm.q/tp));b+=pr;if(c.ctgReceiveDate)r+=pr;}}
+          if(le.items){
+            var mi2=le.items.filter(function(it){return it.model===modelName;})[0];
+            if(mi2){b+=(mi2.qty||0);if(c.ctgReceiveDate)r+=(mi2.qty||0);}
+          } else {
+            var tm=mi.filter(function(x){return x.m===modelName;})[0];
+            if(tm&&purchased>0){var pr=Math.round((le.lotQty||c.bookedQty||0)*(tm.q/purchased));b+=pr;if(c.ctgReceiveDate)r+=pr;}
+          }
         });
       });
-      sold = ms.filter(function(s){return s.lot===lot&&s.model===mn;}).reduce(function(ss,s){return ss+(s.qty||0);},0);
-      return{b:b,r:r,sold:sold};
+      sold=ms.filter(function(s){return s.lot===lot&&s.model===modelName;}).reduce(function(ss,s){return ss+(s.qty||0);},0);
+      var dubai=Math.max(0,tm?tm.q-sold-b:0);
+      var transit=Math.max(0,b-r);
+      return {couriered:b,rcvd:r,sold:sold,dubai:dubai,transit:transit};
     }
 
-    var totR=0,totB=0,totSoldAll=0;
-    mi.forEach(function(x){var st=getMSt(x.m);totB+=st.b;totR+=st.r;totSoldAll+=st.sold;});
-    var totT=Math.max(0,totB-totR);
-    var totLeftFinal=Math.max(0,tp-totB-totSoldAll);
+    // Cost data
+    var pv=pi.reduce(function(s,p){return s+(p.totalAED||0);},0);
+    var cv=ci.reduce(function(s,c){return s+(c.totalAED||0);},0);
+    var saleRev=lotSales.reduce(function(s,x){return s+(x.totalSale||0);},0);
+    var saleProfit=lotSales.reduce(function(s,x){return s+(x.totalProfit||0);},0);
 
+    // ── Lot label button ──
+    var lb='<span onclick="showLotDetail(\''+lot+'\')" style="cursor:pointer;background:var(--bl2);border:1px solid var(--bl);border-radius:4px;padding:3px 10px;font:700 12px/1 var(--font-m);color:var(--bl)">'+lot+' &#9658;</span>';
+
+    // ── COMPLETED badge ──
+    var statusBadge='';
+    var cardBorder='border:1px solid var(--brd)';
+    if(isComplete){
+      statusBadge='<span style="background:var(--gn2);border:1px solid var(--gn);border-radius:4px;padding:3px 10px;font:700 11px/1 var(--font-m);color:var(--gn);margin-left:8px">✅ COMPLETED</span>';
+      cardBorder='border:2px solid var(--gn)';
+    }
+
+    // ── 5-column summary ──
+    var flowCols=''
+      +'<div style="padding:10px 6px;text-align:center;border-right:1px solid var(--brd)">'
+        +'<div style="font:400 8px/1 var(--font-m);color:var(--txm);text-transform:uppercase;margin-bottom:4px">🛒 Purchased</div>'
+        +'<div style="font:700 20px/1 var(--font-m);color:var(--bl)">'+purchased+'</div></div>'
+      +(dubaiSold>0?
+        '<div style="padding:10px 6px;text-align:center;border-right:1px solid var(--brd);background:rgba(255,165,0,.05)">'
+          +'<div style="font:400 8px/1 var(--font-m);color:var(--gold);text-transform:uppercase;margin-bottom:4px">🏪 Sold</div>'
+          +'<div style="font:700 20px/1 var(--font-m);color:var(--gold)">'+dubaiSold+'</div></div>'
+      :'<div style="padding:10px 6px;text-align:center;border-right:1px solid var(--brd)">'
+          +'<div style="font:400 8px/1 var(--font-m);color:var(--txm);text-transform:uppercase;margin-bottom:4px">🏪 Sold</div>'
+          +'<div style="font:700 20px/1 var(--font-m);color:var(--txm)">0</div></div>')
+      +(dubaiOffice>0?
+        '<div style="padding:10px 6px;text-align:center;border-right:1px solid var(--brd);background:rgba(100,180,255,.05)">'
+          +'<div style="font:400 8px/1 var(--font-m);color:var(--bl);text-transform:uppercase;margin-bottom:4px">🇦🇪 Dubai</div>'
+          +'<div style="font:700 20px/1 var(--font-m);color:var(--bl)">'+dubaiOffice+'</div></div>'
+      :'<div style="padding:10px 6px;text-align:center;border-right:1px solid var(--brd)">'
+          +'<div style="font:400 8px/1 var(--font-m);color:var(--txm);text-transform:uppercase;margin-bottom:4px">🇦🇪 Dubai</div>'
+          +'<div style="font:700 20px/1 var(--font-m);color:var(--txm)">0</div></div>')
+      +(inTransit>0?
+        '<div style="padding:10px 6px;text-align:center;border-right:1px solid var(--brd);background:rgba(255,200,0,.05)">'
+          +'<div style="font:400 8px/1 var(--font-m);color:#FFB800;text-transform:uppercase;margin-bottom:4px">✈️ Transit</div>'
+          +'<div style="font:700 20px/1 var(--font-m);color:#FFB800">'+inTransit+'</div></div>'
+      :'<div style="padding:10px 6px;text-align:center;border-right:1px solid var(--brd)">'
+          +'<div style="font:400 8px/1 var(--font-m);color:var(--txm);text-transform:uppercase;margin-bottom:4px">✈️ Transit</div>'
+          +'<div style="font:700 20px/1 var(--font-m);color:var(--txm)">0</div></div>')
+      +'<div style="padding:10px 6px;text-align:center">'
+        +'<div style="font:400 8px/1 var(--font-m);color:var(--gn);text-transform:uppercase;margin-bottom:4px">🇧🇩 CTG Rcvd</div>'
+        +'<div style="font:700 20px/1 var(--font-m);color:var(--gn)">'+ctgRcvd+'</div></div>';
+
+    // ── Model breakdown rows ──
     var mr='';
     mi.forEach(function(x){
-      var st=getMSt(x.m);var iT=Math.max(0,st.b-st.r);var lft=Math.max(0,x.q-st.b-st.sold);
-      mr+='<div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 1fr;gap:4px;padding:5px 8px;border-bottom:1px solid var(--brd)">'
-        +'<div style="font:400 11px/1.3 var(--font-b);color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+x.m+'">'+x.m+'</div>'
+      var st=getModelStats(x.m);
+      mr+='<div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:4px;padding:5px 8px;border-bottom:1px solid var(--brd)">'
+        +'<div style="font:400 11px/1.3 var(--font-b);color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+x.m+'</div>'
         +'<div style="font:600 11px/1 var(--font-m);color:var(--bl);text-align:center">'+x.q+'</div>'
-        +(st.sold>0?'<div style="font:700 11px/1 var(--font-m);color:var(--gold);text-align:center">'+st.sold+'</div>':'<div style="font:400 11px/1 var(--font-m);color:var(--txm);text-align:center">0</div>')
-        +'<div style="font:600 11px/1 var(--font-m);color:var(--gold);text-align:center">'+iT+'</div>'
-        +'<div style="font:600 11px/1 var(--font-m);color:var(--gn);text-align:center">'+st.r+'</div>'
-        +'<div style="font:700 11px/1 var(--font-m);color:'+(lft>0?'var(--pu)':'var(--gn)')+';text-align:center">'+lft+'</div>'
+        +(st.sold>0?'<div style="font:600 11px/1 var(--font-m);color:var(--gold);text-align:center">'+st.sold+'</div>':'<div style="font:400 11px/1 var(--font-m);color:var(--txm);text-align:center">—</div>')
+        +(st.dubai>0?'<div style="font:600 11px/1 var(--font-m);color:var(--bl);text-align:center">'+st.dubai+'</div>':'<div style="font:400 11px/1 var(--font-m);color:var(--txm);text-align:center">—</div>')
+        +(st.transit>0?'<div style="font:600 11px/1 var(--font-m);color:#FFB800;text-align:center">'+st.transit+'</div>':'<div style="font:400 11px/1 var(--font-m);color:var(--txm);text-align:center">—</div>')
+        +'<div style="font:700 11px/1 var(--font-m);color:var(--gn);text-align:center">'+st.rcvd+'</div>'
         +'</div>';
     });
 
-    var lb='<span style="background:var(--bl2);border:1px solid var(--bl);border-radius:4px;padding:3px 10px;font:700 12px/1 var(--font-m);color:var(--bl);cursor:pointer" onclick="showLotDetail(\''+lot+'\')">'+lot+' &#9658;</span>';
-
-    html+='<div style="background:var(--s1);border:1px solid var(--brd);border-radius:var(--rl);margin-bottom:14px;overflow:hidden">'
-      +'<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--s2);border-bottom:1px solid var(--brd)">'
-      +'<div style="display:flex;align-items:center;gap:10px">'+lb+'<span style="font:400 12px/1 var(--font-b);color:var(--txd)">'+sup+'</span>'
-      +(totSoldAll>0?'<span style="background:var(--gold2);border:1px solid var(--gold);border-radius:4px;padding:2px 7px;font:600 10px/1 var(--font-m);color:var(--gold)">🏪 Sold '+totSoldAll+' pcs</span>':'')
-      +'</div><span style="font:400 11px/1 var(--font-m);color:'+(dp>=100?'var(--gn)':'var(--txd)')+'">Delivered: '+dp+'%</span></div>'
-      +'<div style="display:grid;grid-template-columns:repeat(5,1fr)">'
-      +'<div style="padding:10px 6px;text-align:center;border-right:1px solid var(--brd)"><div style="font:400 8px/1 var(--font-m);color:var(--txm);text-transform:uppercase;margin-bottom:4px">Purchased</div><div style="font:700 20px/1 var(--font-m);color:var(--bl)">'+tp+'</div></div>'
-      +(totSoldAll>0?'<div style="padding:10px 6px;text-align:center;border-right:1px solid var(--brd);background:var(--gold2)"><div style="font:400 8px/1 var(--font-m);color:var(--gold);text-transform:uppercase;margin-bottom:4px">🏪 Sold</div><div style="font:700 20px/1 var(--font-m);color:var(--gold)">'+totSoldAll+'</div></div>'
-      :'<div style="padding:10px 6px;text-align:center;border-right:1px solid var(--brd)"><div style="font:400 8px/1 var(--font-m);color:var(--txm);text-transform:uppercase;margin-bottom:4px">Dubai Sold</div><div style="font:700 20px/1 var(--font-m);color:var(--txm)">0</div></div>')
-      +'<div style="padding:10px 6px;text-align:center;border-right:1px solid var(--brd)"><div style="font:400 8px/1 var(--font-m);color:var(--txm);text-transform:uppercase;margin-bottom:4px">Transit</div><div style="font:700 20px/1 var(--font-m);color:var(--gold)">'+totT+'</div></div>'
-      +'<div style="padding:10px 6px;text-align:center;border-right:1px solid var(--brd)"><div style="font:400 8px/1 var(--font-m);color:var(--txm);text-transform:uppercase;margin-bottom:4px">CTG Rcvd</div><div style="font:700 20px/1 var(--font-m);color:var(--gn)">'+totR+'</div></div>'
-      +'<div style="padding:10px 6px;text-align:center"><div style="font:400 8px/1 var(--font-m);color:var(--txm);text-transform:uppercase;margin-bottom:4px">Left</div><div style="font:700 20px/1 var(--font-m);color:var(--pu)">'+totLeftFinal+'</div></div>'
-      +'</div>'
-      +(mi.length?'<div><div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 1fr;gap:4px;padding:5px 8px;background:var(--s3);border-top:1px solid var(--brd)">'
-        +'<div style="font:500 9px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Model</div>'
-        +'<div style="font:500 9px/1 var(--font-m);color:var(--bl);text-transform:uppercase;text-align:center">Bought</div>'
-        +'<div style="font:500 9px/1 var(--font-m);color:var(--gold);text-transform:uppercase;text-align:center">Sold</div>'
-        +'<div style="font:500 9px/1 var(--font-m);color:var(--gold);text-transform:uppercase;text-align:center">Transit</div>'
-        +'<div style="font:500 9px/1 var(--font-m);color:var(--gn);text-transform:uppercase;text-align:center">Rcvd</div>'
-        +'<div style="font:500 9px/1 var(--font-m);color:var(--pu);text-transform:uppercase;text-align:center">Left</div>'
-        +'</div>'+mr+'</div>':'')
-      +'<div style="padding:8px 14px;background:var(--s2);border-top:1px solid var(--brd);font:400 11px/1 var(--font-m);color:var(--txd)">'
+    // ── Cost footer ──
+    var footer='<div style="padding:8px 14px;background:var(--s2);border-top:1px solid var(--brd);font:400 11px/1 var(--font-m);color:var(--txd)">'
       +'Purchase: <b style="color:var(--gold)">'+fA(pv)+'</b>'
       +(cv>0?' | Prep: <b style="color:var(--pu)">'+fA(cv)+'</b> | Grand: <b style="color:var(--gn)">'+fA(pv+cv)+'</b>':'')
-      +(soldAED>0?' | <span style="color:var(--gold)">🏪 Sale: <b>'+fA(soldAED)+'</b></span>':'')
-      +'</div></div>';
+      +(saleRev>0?' | <span style="color:var(--gold)">🏪 Sale: <b>'+fA(saleRev)+'</b> (লাভ: <b style="color:var(--gn)">'+fA(saleProfit)+'</b>)</span>':'')
+      +'</div>';
+
+    // ── Card ──
+    html+='<div style="background:var(--s1);'+cardBorder+';border-radius:var(--rl);margin-bottom:14px;overflow:hidden">'
+
+      // Header bar
+      +'<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--s2);border-bottom:1px solid var(--brd)">'
+        +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
+          +lb+statusBadge
+          +'<span style="font:400 12px/1 var(--font-b);color:var(--txd)">'+sup+'</span>'
+        +'</div>'
+        // Progress
+        +'<div style="display:flex;align-items:center;gap:10px">'
+          +(isComplete
+            ?'<span style="font:600 11px/1 var(--font-m);color:var(--gn)">100% নিষ্পত্তি</span>'
+            :'<span style="font:400 11px/1 var(--font-m);color:var(--txd)">'+pct+'% নিষ্পত্তি</span>')
+        +'</div>'
+      +'</div>'
+
+      // 5-column flow
+      +'<div style="display:grid;grid-template-columns:repeat(5,1fr)">'+flowCols+'</div>'
+
+      // Model breakdown header
+      +(mi.length?
+        '<div>'
+          +'<div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:4px;padding:5px 8px;background:var(--s3);border-top:1px solid var(--brd)">'
+            +'<div style="font:500 9px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Model</div>'
+            +'<div style="font:500 9px/1 var(--font-m);color:var(--bl);text-transform:uppercase;text-align:center">Bought</div>'
+            +'<div style="font:500 9px/1 var(--font-m);color:var(--gold);text-transform:uppercase;text-align:center">Sold</div>'
+            +'<div style="font:500 9px/1 var(--font-m);color:var(--bl);text-transform:uppercase;text-align:center">🇦🇪 Dubai</div>'
+            +'<div style="font:500 9px/1 var(--font-m);color:#FFB800;text-transform:uppercase;text-align:center">✈️ Transit</div>'
+            // removed: CTG header (shown in summary above)
+          +'</div>'+mr
+        +'</div>':'')
+
+      // Cost footer
+      +footer
+    +'</div>';
   });
 
-  var sd = document.getElementById('m3-lot-status');
-  if(sd) sd.innerHTML = html;
+  var sd=document.getElementById('m3-lot-status');
+  if(sd) sd.innerHTML=html;
 }
 
 // Override ctgRunKPI with new version including Dubai Sales
