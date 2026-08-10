@@ -356,7 +356,11 @@ body{padding-bottom:calc(56px + var(--safe-bottom));}
 <div class="kbadge"><div class="kbl">AED Balance</div><div class="kbv gn" id="hBAL">dh0</div></div>
 <div class="kbadge"><div class="kbl">Total Lots</div><div class="kbv" id="hLOTS">0</div></div>
 <div class="kbadge"><div class="kbl">Total PCs</div><div class="kbv bl" id="hPCS">0</div></div>
-<div class="kbadge" style="border-color:var(--pu2)"><div class="kbl">Inventory Value</div><div class="kbv" id="hINV" style="color:var(--pu)">—</div></div>
+<div class="kbadge" style="border-color:var(--pu2)" title="Dubai Office + Transit stock value"><div class="kbl">Inventory Value</div><div class="kbv" id="hINV" style="color:var(--pu)">—</div></div>
+<div class="kbadge" style="border-color:var(--gn);background:linear-gradient(135deg,var(--gn2),var(--s1));box-shadow:0 0 10px rgba(0,200,100,.15)" title="AED Balance + Dubai Inventory = Total Dubai Assets">
+  <div class="kbl" style="color:var(--gn)">⭐ Total Value</div>
+  <div class="kbv" id="hTotalValue" style="color:var(--gn);font-size:15px">—</div>
+</div>
 <div class="rate-badge" onclick="editRate()"><div><div class="rate-l">Rate</div><div class="rate-v" id="hRATE">1 AED = ৳?</div></div><i class="fas fa-pencil" style="color:var(--txm);font-size:10px"></i></div>
 <button class="btn-ico" onclick="document.getElementById('cfgModal').classList.add('on')" title="Firebase Settings"><i class="fas fa-cog"></i></button>
 </div>
@@ -387,9 +391,9 @@ body{padding-bottom:calc(56px + var(--safe-bottom));}
     <span class="sf-val" id="sf-transit" style="color:#FFB800">0p</span>
   </div>
   <span class="sf-sep">›</span>
-  <div class="sf-badge" title="CTG-তে পেয়েছে">
+  <div class="sf-badge" title="CTG-তে পৌঁছেছে — এখন Bangladesh Stock (Dubai inventory নয়)" style="opacity:.7">
     <span class="sf-icon">🇧🇩</span>
-    <span class="sf-label">CTG Rcvd</span>
+    <span class="sf-label">BD Stock</span>
     <span class="sf-val" id="sf-ctg" style="color:var(--gn)">0p</span>
   </div>
 </div>
@@ -1114,23 +1118,46 @@ function updateHeader(){
   const bal=tAED-(spPur+spAdv+spCst+spOff+spPer+spCTG);
   const lots=new Set(S.purchases.map(p=>p.lot)).size;
   const pcs=S.purchases.reduce((s,p)=>s+(p.qty||0),0);
-  // Inventory Value = per-lot (purchase+prep) cost × remaining pcs
+  // Inventory Value = Dubai Office + Transit pcs × avg cost/pc
+  // (CTG Received = Bangladesh stock, NOT in Dubai inventory)
   const allLots=[...new Set(S.purchases.map(p=>p.lot).filter(Boolean))];
   let invVal=0;
+  let totalDubaiPcs=0, totalTransitPcs=0;
   allLots.forEach(lot=>{
     const purPcs=S.purchases.filter(p=>p.lot===lot).reduce((s,p)=>s+(p.qty||0),0);
     const purAED=S.purchases.filter(p=>p.lot===lot).reduce((s,p)=>s+(p.totalAED||0),0);
     const prepAED=S.lot_costs.filter(c=>c.lot===lot).reduce((s,c)=>s+(c.totalAED||0),0);
     const grandPP=purPcs>0?(purAED+prepAED)/purPcs:0;
-    const ctgRcvd=S.courier.filter(c=>c.ctgReceiveDate).reduce((s,c)=>s+getLotEntries(c).filter(l=>l.lotRef===lot).reduce((ss,l)=>ss+(l.lotQty||0),0),0);
-    invVal+=Math.max(0,purPcs-ctgRcvd)*grandPP;
+    // Dubai Sales (MS module) - locally sold in Dubai
+    const dubaiSold=(S.dubai_sales||[]).filter(s=>s.lot===lot).reduce((ss,s)=>ss+(s.qty||0),0);
+    // Total couriered
+    const totalCouriered=S.courier.filter(c=>(c.lots||[]).some(l=>l.lotRef===lot)||c.lotRef===lot).reduce((s,c)=>s+(c.bookedQty||0),0);
+    // CTG Received (Bangladesh stock - NOT in Dubai inventory)
+    const ctgRcvd=S.courier.filter(c=>c.ctgReceiveDate&&((c.lots||[]).some(l=>l.lotRef===lot)||c.lotRef===lot)).reduce((s,c)=>s+(c.receivedQty||c.bookedQty||0),0);
+    // Dubai inventory = Dubai Office + Transit (still in Dubai/en-route)
+    const dubaiOfficePcs=Math.max(0,purPcs-dubaiSold-totalCouriered);
+    const transitPcs=Math.max(0,totalCouriered-ctgRcvd);
+    const dubaiInvPcs=dubaiOfficePcs+transitPcs;
+    invVal+=dubaiInvPcs*grandPP;
+    totalDubaiPcs+=dubaiOfficePcs;
+    totalTransitPcs+=transitPcs;
   });
   g('hBDT').textContent=fBDT(tBDT);g('hAED').textContent=fAED(tAED);
   g('hEXP').textContent=fAED(spPur+spAdv+spCst+spOff+spPer+spCTG);
   g('hBAL').textContent=fAED(bal);g('hBAL').className='kbv '+(bal>=0?'gn':'rd');
   g('hLOTS').textContent=lots;g('hPCS').textContent=pcs+' pcs';
   g('hRATE').textContent=`1 AED = ৳${rate}`;
-  const invEl=g('hINV');if(invEl)invEl.textContent=fAED(invVal);
+  const invEl=g('hINV');
+  if(invEl){
+    invEl.textContent=fAED(invVal);
+    invEl.title='🇦🇪 Dubai: '+totalDubaiPcs+'p + ✈️ Transit: '+totalTransitPcs+'p';
+  }
+  // ── Total Value = AED Balance + Inventory Value (highlighted) ──
+  const totalValue=bal+invVal;
+  const tvEl=g('hTotalValue');
+  if(tvEl) tvEl.textContent=fAED(totalValue);
+  // Update stock flow labels
+  if(typeof updateStockFlow==='function') updateStockFlow();
 }
 // ══ M1 ══
 async function savePayment(){
