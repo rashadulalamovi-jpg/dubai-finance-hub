@@ -366,7 +366,7 @@ body{padding-bottom:calc(56px + var(--safe-bottom));}
 <button class="btn-ico" onclick="document.getElementById('cfgModal').classList.add('on')" title="Firebase Settings"><i class="fas fa-cog"></i></button>
 </div>
 <!-- Stock Flow Sub-header Row 2 -->
-<div id="stock-flow-bar" style="display:flex;align-items:center;gap:6px;padding:5px 14px;background:var(--s2);border-top:1px solid var(--brd);flex-wrap:wrap">
+<div id="stock-flow-bar" style="display:flex;align-items:center;gap:6px;padding:5px 14px;background:var(--s2);border-top:1px solid var(--brd);overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch">
   <div style="font:500 9px/1 var(--font-m);color:var(--txm);text-transform:uppercase;letter-spacing:.5px;margin-right:4px;white-space:nowrap">Stock Flow:</div>
   <div class="sf-badge" title="মোট কেনা laptop">
     <span class="sf-icon">🛒</span>
@@ -2683,7 +2683,10 @@ window.ctgRptMode = function(m) {
   
   if(m==='today') {
     var todayInput = document.getElementById('rpt-today-date');
-    var today = todayInput && todayInput.value ? todayInput.value : _ctgPadDate(new Date());
+    // Use Dubai timezone (UTC+4) for correct date
+    var dubaiNow = new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Dubai'}));
+    var dubaiToday = dubaiNow.getFullYear()+'-'+String(dubaiNow.getMonth()+1).padStart(2,'0')+'-'+String(dubaiNow.getDate()).padStart(2,'0');
+    var today = todayInput && todayInput.value ? todayInput.value : dubaiToday;
     if(todayInput && !todayInput.value) todayInput.value = today;
     _ctgRptFrom = today; _ctgRptTo = today;
     var tLabel = document.getElementById('rpt-today-label');
@@ -3551,9 +3554,10 @@ window.ctgDailyCard = function(dateStr) {
   if(!el) return;
   
   var DS = ctgGetS ? ctgGetS() : (typeof S!=='undefined' ? S : {});
+  // Use Dubai timezone (UTC+4)
   var d = dateStr || (function(){
-    var t=new Date();
-    return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');
+    var dubaiNow = new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Dubai'}));
+    return dubaiNow.getFullYear()+'-'+String(dubaiNow.getMonth()+1).padStart(2,'0')+'-'+String(dubaiNow.getDate()).padStart(2,'0');
   })();
 
   var days=['রবিবার','সোমবার','মঙ্গলবার','বুধবার','বৃহস্পতিবার','শুক্রবার','শনিবার'];
@@ -3704,6 +3708,89 @@ window.ctgDailyCard = function(dateStr) {
   html+='</div>';
   html+='</div>';
 
+  // ── Stock Movement Section ──
+  var dpArr=d.split('-');var dDate=new Date(+dpArr[0],+dpArr[1]-1,+dpArr[2]);
+  var yesterday=new Date(dDate);yesterday.setDate(yesterday.getDate()-1);
+  var yStr=yesterday.getFullYear()+'-'+String(yesterday.getMonth()+1).padStart(2,'0')+'-'+String(yesterday.getDate()).padStart(2,'0');
+  
+  // Today's purchases
+  var todayPur=pur; // already filtered by inDay
+  var todayPurPcs=todayPur.reduce(function(s,p){return s+(p.qty||0);},0);
+  var todayPurModels=[];
+  todayPur.forEach(function(p){
+    var label=(p.lot?p.lot+': ':'')+(p.model||'');
+    var qty=p.qty||0;
+    if(label&&qty) todayPurModels.push(label+' +'+qty+'p');
+  });
+  
+  // Yesterday closing stock = all purchases up to yesterday - all sold up to yesterday
+  var allPurUpToYday=(DS.purchases||[]).filter(function(p){return (p.date||'').substring(0,10)<=yStr;}).reduce(function(s,p){return s+(p.qty||0);},0);
+  var allSoldUpToYday=(DS.dubai_sales||[]).filter(function(s){return (s.date||'').substring(0,10)<=yStr;}).reduce(function(ss,s){return ss+(s.qty||0);},0);
+  var yesterdayClosing=allPurUpToYday-allSoldUpToYday;
+  
+  // Today's sold
+  var todaySold=ms.reduce(function(s,x){return s+(x.qty||0);},0);
+  var todayTotal=yesterdayClosing+todayPurPcs-todaySold;
+  
+  // Current Stock Location
+  var allPurchased=(DS.purchases||[]).reduce(function(s,p){return s+(p.qty||0);},0);
+  var allSold=(DS.dubai_sales||[]).reduce(function(ss,s){return ss+(s.qty||0);},0);
+  var allCouriered=(DS.courier||[]).reduce(function(s,c){return s+(c.bookedQty||0);},0);
+  var allReceived=(DS.courier||[]).reduce(function(s,c){return s+(c.receivedQty||0);},0);
+  var dubaiOfficePcs=Math.max(0,allPurchased-allSold-allCouriered);
+  var transitPcs=Math.max(0,allCouriered-allReceived);
+  
+  // AED values for location
+  var allPurAED=(DS.purchases||[]).reduce(function(s,p){return s+(p.totalAED||0);},0);
+  var allPrepAED=(DS.lot_costs||[]).reduce(function(s,c){return s+(c.totalAED||0);},0);
+  var avgCostPerPc2=allPurchased>0?(allPurAED+allPrepAED)/allPurchased:0;
+  var dubaiAED2=dubaiOfficePcs*avgCostPerPc2;
+  var transitAED2=transitPcs*avgCostPerPc2;
+
+  var hasStockMovement=(todayPurPcs>0||todaySold>0||yesterdayClosing>0);
+  
+  if(hasStockMovement||dubaiOfficePcs>0||transitPcs>0){
+    html+='<div class="dr-section" style="margin-bottom:14px">';
+    
+    // Stock Movement
+    if(hasStockMovement){
+      html+='<div class="dr-section-title" style="color:var(--bl)">📦 Stock Movement</div>';
+      html+='<div class="dr-row"><span class="dr-label">গতকাল Closing Stock</span><span class="dr-val" style="color:var(--txd)">'+yesterdayClosing+'p</span></div>';
+      if(todayPurPcs>0){
+        html+='<div class="dr-row"><span class="dr-label" style="color:var(--gn)">➕ আজ Purchase</span><span class="dr-val" style="color:var(--gn)">+'+todayPurPcs+'p</span></div>';
+        if(todayPurModels.length) todayPurModels.forEach(function(m){html+='<div style="font:400 10px/1.3 var(--font-b);color:var(--txm);padding:1px 0 1px 12px">• '+m+'</div>';});
+      }
+      if(todaySold>0) html+='<div class="dr-row"><span class="dr-label" style="color:var(--gold)">🏪 আজ Dubai Sale</span><span class="dr-val" style="color:var(--gold)">-'+todaySold+'p</span></div>';
+      // Today total
+      html+='<div style="margin-top:6px;padding:6px 10px;background:var(--s3);border-radius:6px;border-left:3px solid var(--bl);display:flex;justify-content:space-between">';
+      html+='<span style="font:600 11px/1 var(--font-m);color:var(--bl)">📦 আজকের মোট Stock</span>';
+      html+='<span style="font:700 14px/1 var(--font-m);color:var(--bl)">'+todayTotal+'p</span>';
+      html+='</div>';
+    }
+    
+    // Stock Location
+    if(dubaiOfficePcs>0||transitPcs>0){
+      html+='<div class="dr-section-title" style="color:var(--gold);margin-top:10px">📍 Stock Location</div>';
+      if(dubaiOfficePcs>0){
+        html+='<div class="dr-row"><span class="dr-label">🇦🇪 Dubai Office</span>'
+          +'<div style="text-align:right"><div class="dr-val" style="color:var(--bl)">'+dubaiOfficePcs+'p</div>'
+          +'<div class="sf-aed" style="color:var(--txm)">'+fA(dubaiAED2)+'</div></div></div>';
+      }
+      if(transitPcs>0){
+        html+='<div class="dr-row"><span class="dr-label">✈️ In Transit</span>'
+          +'<div style="text-align:right"><div class="dr-val" style="color:#FFB800">'+transitPcs+'p</div>'
+          +'<div class="sf-aed" style="color:var(--txm)">'+fA(transitAED2)+'</div></div></div>';
+      }
+      var dubaiTotal=dubaiOfficePcs+transitPcs;
+      var dubaiTotalAED=dubaiAED2+transitAED2;
+      html+='<div style="margin-top:6px;padding:6px 10px;background:var(--s3);border-radius:6px;border-left:3px solid var(--gold);display:flex;justify-content:space-between;align-items:center">';
+      html+='<span style="font:600 11px/1 var(--font-m);color:var(--gold)">🎯 Dubai Total</span>';
+      html+='<div style="text-align:right"><div style="font:700 14px/1 var(--font-m);color:var(--gold)">'+dubaiTotal+'p</div><div style="font:400 9px/1 var(--font-m);color:var(--txm)">'+fA(dubaiTotalAED)+'</div></div>';
+      html+='</div>';
+    }
+    html+='</div>';
+  }
+
   // Balance
   html+='<div style="border-top:1px solid var(--brd);padding-top:12px">';
   html+='<div style="padding:14px 16px;background:'+balBg+';border:1px solid '+balColor+';border-radius:10px">';
@@ -3756,6 +3843,13 @@ window.ctgDailyCard = function(dateStr) {
     if(tCT>0)     wa+='  \uD83C\uDFAA CTG: '+fA(tCT)+'\n';
     if(tNJ>0)     wa+='  \uD83E\uDD1D Nezam: '+fA(tNJ)+'\n';
     wa+='  *\u09AE\u09CB\u099F \u0996\u09B0\u099A: '+fA(tTodayOut)+'*\n';
+  }
+  // Stock in WA text
+  if(dubaiOfficePcs>0||transitPcs>0){
+    wa+='\n\n\uD83D\uDCE6 *Stock Location*\n';
+    if(dubaiOfficePcs>0) wa+='  \uD83C\uDDE6\uD83C\uDDEA Dubai Office: '+dubaiOfficePcs+'p ('+fA(dubaiAED2)+')\n';
+    if(transitPcs>0) wa+='  \u2708\uFE0F In Transit: '+transitPcs+'p ('+fA(transitAED2)+')\n';
+    wa+='  \uD83C\uDFAF Dubai Total: '+(dubaiOfficePcs+transitPcs)+'p\n';
   }
   wa+='\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n';
   wa+=(balance>=0?'\u2705':'\u26A0\uFE0F')+' *\u09AE\u09CB\u099F AED Balance: '+fA(balance)+'*';
