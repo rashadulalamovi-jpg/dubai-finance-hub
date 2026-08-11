@@ -278,6 +278,29 @@ body{padding-bottom:calc(56px + var(--safe-bottom));}
 .sf-aed{font:400 9px/1.2 var(--font-m);color:var(--txm)}
 .sf-sep{color:var(--txm);font-size:11px;margin:0 1px}
 </style>
+  <!-- Flatpickr Date Picker -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <style>
+    /* Flatpickr dark theme override */
+    .flatpickr-calendar{background:var(--s2)!important;border:1px solid var(--brd2)!important;box-shadow:0 8px 30px rgba(0,0,0,.4)!important;border-radius:10px!important;font-family:var(--font-b)!important}
+    .flatpickr-day{color:var(--tx)!important;border-radius:6px!important}
+    .flatpickr-day:hover{background:var(--s3)!important;border-color:var(--brd)!important}
+    .flatpickr-day.selected,.flatpickr-day.selected:hover{background:var(--gold)!important;border-color:var(--gold)!important;color:var(--bg)!important;font-weight:700}
+    .flatpickr-day.today{border-color:var(--bl)!important;color:var(--bl)!important}
+    .flatpickr-day.today.selected{color:var(--bg)!important}
+    .flatpickr-months .flatpickr-month{background:var(--s3)!important;color:var(--tx)!important;border-radius:10px 10px 0 0!important}
+    .flatpickr-current-month input,.flatpickr-current-month select{color:var(--tx)!important;font-family:var(--font-m)!important;font-weight:700}
+    .flatpickr-weekday{color:var(--txm)!important;font-weight:600}
+    .flatpickr-prev-month svg,.flatpickr-next-month svg{fill:var(--gold)!important}
+    .flatpickr-prev-month:hover svg,.flatpickr-next-month:hover svg{fill:var(--tx)!important}
+    /* Date input wrapper */
+    .date-wrap{display:inline-flex;align-items:center;gap:4px}
+    .date-input-fp{padding:6px 10px;background:var(--s2);border:1px solid var(--brd);border-radius:var(--r);color:var(--tx);font:400 12px/1 var(--font-m);cursor:pointer;min-width:110px}
+    .date-input-fp:focus{outline:none;border-color:var(--gold)}
+    .dq-btn{padding:4px 8px;border:1px solid var(--brd);border-radius:var(--r);background:var(--s3);color:var(--txd);font:500 10px/1 var(--font-m);cursor:pointer;white-space:nowrap;transition:all .15s}
+    .dq-btn:hover{background:var(--gold);color:var(--bg);border-color:var(--gold)}
+    .dq-btn.active{background:var(--gold);color:var(--bg);border-color:var(--gold)}
+  </style>
 </head>
 <body>
 <!-- Firebase Modal -->
@@ -366,7 +389,7 @@ body{padding-bottom:calc(56px + var(--safe-bottom));}
 <button class="btn-ico" onclick="document.getElementById('cfgModal').classList.add('on')" title="Firebase Settings"><i class="fas fa-cog"></i></button>
 </div>
 <!-- Stock Flow Sub-header Row 2 -->
-<div id="stock-flow-bar" style="display:flex;align-items:center;gap:6px;padding:5px 14px;background:var(--s2);border-top:1px solid var(--brd);overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch">
+<div id="stock-flow-bar" style="display:flex;align-items:center;gap:6px;padding:5px 14px;background:var(--s2);border-top:1px solid var(--brd);flex-wrap:wrap">
   <div style="font:500 9px/1 var(--font-m);color:var(--txm);text-transform:uppercase;letter-spacing:.5px;margin-right:4px;white-space:nowrap">Stock Flow:</div>
   <div class="sf-badge" title="মোট কেনা laptop">
     <span class="sf-icon">🛒</span>
@@ -1089,7 +1112,39 @@ function editRate(){const r=prompt('নতুন Rate (1 AED = ? BDT):',localSto
 function getRate(){return parseFloat(localStorage.getItem('rate')||'34.20');}
 function nextLot(){const lots=new Set(S.purchases.map(p=>p.lot).filter(Boolean));let n=lots.size+1;while(lots.has(`Lot-${String(n).padStart(2,'0')}`))n++;return `Lot-${String(n).padStart(2,'0')}`;}
 function refreshSelectors(){
-  const lots=[...new Set(S.purchases.map(p=>p.lot).filter(Boolean))].sort();
+  // Get lots with status info for sorting
+  const allLotsRaw=[...new Set(S.purchases.map(p=>p.lot).filter(Boolean))];
+  
+  // Calculate remaining for each lot (to sort completed to bottom)
+  const lotMeta = allLotsRaw.map(lot=>{
+    const purchased=S.purchases.filter(p=>p.lot===lot).reduce((s,p)=>s+(p.qty||0),0);
+    const dubaiSold=(S.dubai_sales||[]).filter(s=>s.lot===lot).reduce((ss,s)=>ss+(s.qty||0),0);
+    const courierForLot=S.courier.filter(c=>getLotEntries(c).some(l=>l.lotRef===lot));
+    const booked=courierForLot.reduce((s,c)=>{
+      const lq=getLotEntries(c).filter(l=>l.lotRef===lot).reduce((ss,l)=>ss+(l.lotQty||0),0);
+      const totalLq=getLotEntries(c).reduce((ss,l)=>ss+(l.lotQty||0),0);
+      const bq=c.bookedQty||0;
+      return s+(totalLq>0?Math.min(lq,bq*(lq/totalLq)):lq);
+    },0);
+    const received=courierForLot.filter(c=>c.ctgReceiveDate).reduce((s,c)=>
+      s+getLotEntries(c).filter(l=>l.lotRef===lot).reduce((ss,l)=>ss+(l.lotQty||0),0),0);
+    const dubaiOffice=Math.max(0,purchased-dubaiSold-booked);
+    const inTransit=Math.max(0,booked-received);
+    const remaining=dubaiOffice+inTransit; // total not yet in BD
+    const isComplete=(dubaiSold+received)>=purchased;
+    // Lot number for sorting (Lot-23 → 23)
+    const lotNum=parseInt((lot.match(/\d+/)||[0])[0])||0;
+    return {lot, remaining, isComplete, lotNum};
+  });
+  
+  // Sort: active lots first (newest → oldest), then completed lots (newest → oldest)
+  lotMeta.sort((a,b)=>{
+    if(a.isComplete !== b.isComplete) return a.isComplete ? 1 : -1; // completed to bottom
+    return b.lotNum - a.lotNum; // within each group: newest first
+  });
+  
+  const lots=lotMeta.map(m=>m.lot);
+  const lotMetaMap=Object.fromEntries(lotMeta.map(m=>[m.lot,m]));
   const fill=id=>{const el=g(id);if(!el)return;const cur=el.value;el.innerHTML=`<option value="">— Lot —</option>`+lots.map(l=>`<option value="${l}">${l}</option>`).join('');el.value=cur;};
   fill('p2l');fill('p4l');fill('p7lot');
   // Advance Ref dropdown: show full details, only Outstanding/pending advances
@@ -1597,7 +1652,25 @@ function rLotCosts(){
   // Lot breakdown
   const lbd={};
   data.forEach(c=>{if(!lbd[c.lot])lbd[c.lot]={total:0,cats:{}};lbd[c.lot].total+=c.totalAED||0;lbd[c.lot].cats[c.category]=(lbd[c.lot].cats[c.category]||0)+(c.totalAED||0);});
-  g('lbd-container').innerHTML=Object.entries(lbd).map(([lot,v])=>{
+  // Sort lots: newest first (Lot-23 before Lot-01)
+  // Sort M4: active lots newest first, completed to bottom
+  const sortedLbdEntries = Object.entries(lbd).sort((a,b)=>{
+    const lot_a=a[0], lot_b=b[0];
+    // Check if lot is "complete" (all stock received or sold)
+    function isLotComplete(lot){
+      const purPcs=S.purchases.filter(p=>p.lot===lot).reduce((s,p)=>s+(p.qty||0),0);
+      const sold=(S.dubai_sales||[]).filter(s=>s.lot===lot).reduce((ss,s)=>ss+(s.qty||0),0);
+      const couriered=S.courier.filter(c=>(c.lots||[]).some(l=>l.lotRef===lot)||c.lotRef===lot).reduce((s,c)=>s+(c.bookedQty||0),0);
+      const received=S.courier.filter(c=>c.ctgReceiveDate&&((c.lots||[]).some(l=>l.lotRef===lot)||c.lotRef===lot)).reduce((s,c)=>s+(c.receivedQty||c.bookedQty||0),0);
+      return purPcs>0 && (sold+received)>=purPcs;
+    }
+    const cA=isLotComplete(lot_a), cB=isLotComplete(lot_b);
+    if(cA!==cB) return cA?1:-1; // completed to bottom
+    const na=parseInt((lot_a.match(/\d+/)||[0])[0])||0;
+    const nb=parseInt((lot_b.match(/\d+/)||[0])[0])||0;
+    return nb-na; // newest first within group
+  });
+  g('lbd-container').innerHTML=sortedLbdEntries.map(([lot,v])=>{
     const pcs=S.purchases.filter(p=>p.lot===lot).reduce((s,p)=>s+(p.qty||0),0);
     const purItems=S.purchases.filter(p=>p.lot===lot);
     const purTotal=purItems.reduce((s,p)=>s+(p.totalAED||0),0);
@@ -1846,7 +1919,10 @@ function rLotCourierStatus(){
     const pct=purchased>0?Math.round((received/purchased)*100):0;
     return `<div style="background:var(--s2);border:1px solid var(--brd);border-radius:var(--r);padding:12px 16px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <span class="tag t-lt" style="cursor:pointer;font-size:12px" onclick="showLotDetail('${lot}')">${lot} ▶</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="tag t-lt" style="cursor:pointer;font-size:12px" onclick="showLotDetail('${lot}')">${lot} ▶</span>
+          ${lotMetaMap[lot]?.isComplete ? '<span style="background:var(--gn2);border:1px solid var(--gn);border-radius:4px;padding:2px 8px;font:700 10px/1 var(--font-m);color:var(--gn)">✅ COMPLETED</span>' : ''}
+        </div>
         <span style="font-size:11px;color:var(--txd);font-family:var(--font-m)">Delivered: ${pct}%</span>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;text-align:center">
@@ -1971,12 +2047,166 @@ function showLotDetail(lot){
   if(costItems.length){html+=`<div><div style="font-size:11px;color:var(--rd);font-weight:600;margin-bottom:6px;text-transform:uppercase">🔧 Preparation Costs</div>
     <table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:var(--s2)">${['Category','Description','Qty','Unit','Total'].map(h=>`<th style="padding:6px 8px;text-align:left;color:var(--txd);font-size:10px;text-transform:uppercase">${h}</th>`).join('')}</tr></thead>
     <tbody>${costItems.map(c=>`<tr style="border-bottom:1px solid var(--brd)"><td style="padding:6px 8px">${tag('t-pd',c.category||'—')}</td><td style="padding:6px 8px;color:var(--tx)">${c.description||'—'}</td><td style="padding:6px 8px;color:var(--txd);font-family:var(--font-m)">${c.qty||1}</td><td style="padding:6px 8px;color:var(--txd);font-family:var(--font-m)">${fAED(c.unitPrice)}</td><td style="padding:6px 8px;color:var(--rd);font-family:var(--font-m)">${fAED(c.totalAED)}</td></tr>`).join('')}
-    <tr style="background:var(--s2)"><td colspan="4" style="padding:6px 8px;color:var(--txd);font-size:11px">Prep Subtotal</td><td style="padding:6px 8px;color:var(--rd);font-family:var(--font-m);font-weight:700">${fAED(costTotal)}</td></tr></tbody></table></div>`;}
+    <tr style="background:var(--s2)"><td colspan="5" style="padding:6px 8px;color:var(--txd);font-size:11px">Prep Subtotal</td><td style="padding:6px 8px;color:var(--rd);font-family:var(--font-m);font-weight:700">${fAED(costTotal)}</td></tr></tbody></table></div>`;}
   html+=`<div style="margin-top:12px;background:var(--gn2);border:1px solid var(--gn);border-radius:8px;padding:12px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px"><span style="color:var(--gn);font-weight:700">🏆 Grand Total (${lot})</span><span style="font-family:var(--font-m);color:var(--gn);font-weight:700">${fAED(grandTotal)} | ${fAED(grandPP)}/pc (${pcs} pcs)</span></div>`;
   g('lotModalBody').innerHTML=html;g('lotModal').classList.add('on');
 }
 function printLot(){
-  const content=`<!DOCTYPE html><html><head><title>${_currentLot} Cost Report</title><style>body{font-family:Arial,sans-serif;padding:20px;color:#111}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid #ccc;padding:8px;text-align:left;font-size:12px}th{background:#f0f0f0}</style></head><body><h2>${_currentLot} — Full Cost Report</h2>${g('lotModalBody').innerHTML}</body></html>`;
+  const content=`<!DOCTYPE html><html><head><title>${_currentLot} Cost Report</title><style>body{font-family:Arial,sans-serif;padding:20px;color:#111}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid #ccc;padding:8px;text-align:left;font-size:12px}th{background:#f0f0f0}</style></head><body><h2>${_currentLot} — Full Cost Report</h2>${g('lotModalBody').innerHTML}
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script>
+  // ════════════════════════════════════════════════
+  // CTG Date Picker System — Flatpickr + Quick Buttons
+  // ════════════════════════════════════════════════
+  
+  // Get Dubai today date
+  function getDubaiToday() {
+    var n = new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Dubai'}));
+    return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');
+  }
+  function getDubaiYesterday() {
+    var n = new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Dubai'}));
+    n.setDate(n.getDate()-1);
+    return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');
+  }
+  // Convert YYYY-MM-DD to DD-MM-YYYY for display
+  function toDisplayDate(ymd) {
+    if(!ymd) return '';
+    var p=ymd.split('-');
+    return p[2]+'-'+p[1]+'-'+p[0];
+  }
+  // Convert DD-MM-YYYY back to YYYY-MM-DD
+  function toISODate(dmy) {
+    if(!dmy) return '';
+    var p=dmy.split('-');
+    if(p.length===3 && p[2].length===4) return p[2]+'-'+p[1]+'-'+p[0];
+    return dmy; // already ISO
+  }
+
+  // Initialize one date field with Flatpickr + quick buttons
+  window.ctgInitDate = function(inputEl, opts) {
+    if(!inputEl || inputEl._fpInit) return;
+    inputEl._fpInit = true;
+    opts = opts || {};
+    
+    var wrapper = document.createElement('div');
+    wrapper.className = 'date-wrap';
+    inputEl.parentNode.insertBefore(wrapper, inputEl);
+    
+    // Quick buttons
+    var todayBtn = document.createElement('button');
+    todayBtn.className = 'dq-btn'; todayBtn.type='button'; todayBtn.textContent='আজ';
+    var ydayBtn = document.createElement('button');
+    ydayBtn.className = 'dq-btn'; ydayBtn.type='button'; ydayBtn.textContent='গতকাল';
+    
+    // New input for display (DD-MM-YYYY)
+    var displayInput = document.createElement('input');
+    displayInput.className = 'date-input-fp';
+    displayInput.type = 'text';
+    displayInput.placeholder = 'DD-MM-YYYY';
+    displayInput.readOnly = true;
+    
+    // Hidden original input (YYYY-MM-DD for Firebase)
+    inputEl.style.display = 'none';
+    inputEl.style.width = '0';
+    inputEl.style.height = '0';
+    inputEl.style.position = 'absolute';
+    inputEl.style.opacity = '0';
+    
+    wrapper.appendChild(todayBtn);
+    wrapper.appendChild(ydayBtn);
+    wrapper.appendChild(displayInput);
+    wrapper.appendChild(inputEl);
+    
+    // Flatpickr on display input
+    var fp = flatpickr(displayInput, {
+      dateFormat: 'd-m-Y',
+      defaultDate: inputEl.value ? toDisplayDate(inputEl.value) : (opts.defaultToday ? toDisplayDate(getDubaiToday()) : null),
+      allowInput: false,
+      disableMobile: false,
+      onChange: function(dates, dateStr) {
+        // Set hidden input to YYYY-MM-DD
+        if(dates[0]) {
+          var d = dates[0];
+          var iso = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+          inputEl.value = iso;
+          // Trigger change event
+          inputEl.dispatchEvent(new Event('change', {bubbles:true}));
+        }
+        // Update button states
+        var today = getDubaiToday();
+        var yday = getDubaiYesterday();
+        todayBtn.classList.toggle('active', inputEl.value===today);
+        ydayBtn.classList.toggle('active', inputEl.value===yday);
+        if(opts.onChange) opts.onChange(inputEl.value);
+      }
+    });
+    
+    // Set initial display if inputEl had a value
+    if(inputEl.value) {
+      displayInput.value = toDisplayDate(inputEl.value);
+      var today = getDubaiToday(); var yday = getDubaiYesterday();
+      todayBtn.classList.toggle('active', inputEl.value===today);
+      ydayBtn.classList.toggle('active', inputEl.value===yday);
+    }
+    
+    // Quick button handlers
+    todayBtn.onclick = function(){
+      var t=getDubaiToday();
+      fp.setDate(toDisplayDate(t)); inputEl.value=t;
+      todayBtn.classList.add('active'); ydayBtn.classList.remove('active');
+      inputEl.dispatchEvent(new Event('change',{bubbles:true}));
+      if(opts.onChange) opts.onChange(t);
+    };
+    ydayBtn.onclick = function(){
+      var y=getDubaiYesterday();
+      fp.setDate(toDisplayDate(y)); inputEl.value=y;
+      ydayBtn.classList.add('active'); todayBtn.classList.remove('active');
+      inputEl.dispatchEvent(new Event('change',{bubbles:true}));
+      if(opts.onChange) opts.onChange(y);
+    };
+    
+    inputEl._fp = fp;
+    return fp;
+  };
+
+  // Auto-init all date inputs when form opens
+  window.ctgInitAllDates = function(container) {
+    var el = container || document;
+    el.querySelectorAll('input[type="date"]:not([data-no-fp]):not(._fpInit)').forEach(function(inp) {
+      if(!inp._fpInit) ctgInitDate(inp, {defaultToday: !inp.value});
+    });
+  };
+
+  // Watch for form opens (tog function)
+  var _origTog = window.tog;
+  window.tog = function(id) {
+    if(_origTog) _origTog.apply(this, arguments);
+    setTimeout(function() {
+      var panel = document.getElementById(id);
+      if(panel && panel.style.display !== 'none') {
+        ctgInitAllDates(panel);
+      }
+    }, 50);
+  };
+  
+  // Also init on tab switch
+  var _origTabFP = window.tab;
+  window.tab = function(id, el) {
+    if(_origTabFP) _origTabFP.call(this, id, el);
+    setTimeout(function() {
+      var panel = document.getElementById('panel-'+id);
+      if(panel) ctgInitAllDates(panel);
+    }, 100);
+  };
+
+  // Init any visible date inputs on load
+  setTimeout(function() { ctgInitAllDates(); }, 2000);
+
+  console.log('[CTG] Flatpickr date system initialized');
+  </script>
+
+</body></html>`;
   const w=window.open('','_blank');w.document.write(content);w.document.close();w.print();
 }
 function copyLotWA(){
@@ -2362,11 +2592,21 @@ window.showLotDetail=function(lot){
   var sc='';
   [['Purchase Date',_fDt(pi[0]?pi[0].date:''),'var(--tx)'],['Models',mi.length,'var(--bl)'],['Total PCS',pcs,'var(--bl)'],['Purchase Cost',_fA(pt),'var(--gold)'],['Prep Cost',_fA(ct),'var(--pu)'],['Grand Total',_fA(gt),'var(--gn)'],['Avg Cost/PC',_fA(gpp),'var(--gold)'],['In Transit',intrans+' pcs','var(--bl)']].forEach(function(c){sc+='<div style="background:var(--s2);border:1px solid var(--brd);border-radius:var(--r);padding:12px"><div style="font:400 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase;margin-bottom:6px">'+c[0]+'</div><div style="font:700 14px/1 var(--font-m);color:'+c[2]+'">'+c[1]+'</div></div>';});
   var pr='';mi.forEach(function(x){pr+='<tr style="border-bottom:1px solid var(--brd)"><td style="padding:8px 10px;font-family:var(--font-b);color:var(--tx)">'+x.m+'</td><td style="padding:8px 10px;color:var(--bl);text-align:center;font-family:var(--font-m)">'+x.q+'</td><td style="padding:8px 10px;color:var(--gold);font-family:var(--font-m)">'+_fA(x.u)+'</td><td style="padding:8px 10px;color:var(--gold);font-weight:700;font-family:var(--font-m)">'+_fA(x.t)+'</td></tr>';});
-  var cR='';ci.forEach(function(c){cR+='<tr style="border-bottom:1px solid var(--brd)"><td style="padding:7px 10px"><span style="background:var(--s3);border:1px solid var(--gold2);border-radius:4px;padding:2px 7px;font:600 10px/1 var(--font-m);color:var(--gold)">'+(c.category||'—')+'</span></td><td style="padding:7px 10px;color:var(--tx)">'+(c.description||'—')+'</td><td style="padding:7px 10px;color:var(--bl);text-align:center;font-family:var(--font-m)">'+(c.qty||1)+'</td><td style="padding:7px 10px;color:var(--gold);font-family:var(--font-m)">'+_fA(c.unitPrice)+'</td><td style="padding:7px 10px;color:var(--pu);font-weight:700;font-family:var(--font-m)">'+_fA(c.totalAED)+'</td></tr>';});
+  var cR='';ci.forEach(function(c){
+    var cDate=c.date?c.date.split('-').reverse().join('/'):'—';
+    cR+='<tr style="border-bottom:1px solid var(--brd)">'
+      +'<td style="padding:7px 10px;white-space:nowrap;font:400 11px/1 var(--font-m);color:var(--txd)">'+cDate+'</td>'
+      +'<td style="padding:7px 10px"><span style="background:var(--s3);border:1px solid var(--gold2);border-radius:4px;padding:2px 7px;font:600 10px/1 var(--font-m);color:var(--gold)">'+(c.category||'—')+'</span></td>'
+      +'<td style="padding:7px 10px;color:var(--tx)">'+(c.description||'—')+'</td>'
+      +'<td style="padding:7px 10px;color:var(--bl);text-align:center;font-family:var(--font-m)">'+(c.qty||1)+'</td>'
+      +'<td style="padding:7px 10px;color:var(--gold);font-family:var(--font-m)">'+_fA(c.unitPrice)+'</td>'
+      +'<td style="padding:7px 10px;color:var(--pu);font-weight:700;font-family:var(--font-m)">'+_fA(c.totalAED)+'</td>'
+    +'</tr>';
+  });
   var fr='',as2=0;mi.forEach(function(x,i){var last=i===mi.length-1;var ap=last?(ct-as2):parseFloat((pp*x.q).toFixed(2));if(!last)as2+=ap;var ft=x.t+ap,fp2=x.q>0?ft/x.q:0;fr+='<tr><td style="padding:8px 10px;font-family:var(--font-b);color:var(--tx)">'+x.m+'</td><td style="padding:8px 10px;color:var(--bl);text-align:center;font-family:var(--font-m)">'+x.q+'</td><td style="padding:8px 10px;color:var(--gold);font-family:var(--font-m)">'+_fA(x.u)+'</td><td style="padding:8px 10px;color:var(--gold);font-family:var(--font-m)">'+_fA(x.t)+'</td><td style="padding:8px 10px;color:var(--pu);font-family:var(--font-m)">'+_fA(ap)+'</td><td style="padding:8px 10px;color:var(--gn);font-weight:700;font-family:var(--font-m)">'+_fA(ft)+'</td><td style="padding:8px 10px;color:var(--gn);font-family:var(--font-m)">'+_fA(fp2)+'</td></tr>';});
   var h='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px">'+sc+'</div>';
   h+='<div style="margin-bottom:16px"><div style="font:600 11px/1 var(--font-m);color:var(--gold);text-transform:uppercase;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--brd)">\u{1F4E6} Purchase Items \u2014 Model-wise</div><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead><tr style="background:var(--s2)"><th style="padding:8px 10px;text-align:left;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Model</th><th style="padding:8px 10px;text-align:center;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Qty</th><th style="padding:8px 10px;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Unit(AED)</th><th style="padding:8px 10px;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Total(AED)</th></tr></thead><tbody>'+pr+'<tr style="background:var(--s2)"><td style="padding:6px 10px;font:600 11px/1 var(--font-m);color:var(--txd)">Total</td><td style="padding:6px 10px;color:var(--bl);text-align:center;font-weight:700;font-family:var(--font-m)">'+pcs+'</td><td></td><td style="padding:6px 10px;color:var(--gold);font-weight:700;font-family:var(--font-m)">'+_fA(pt)+'</td></tr></tbody></table></div></div>';
-  if(ci.length){h+='<div style="margin-bottom:14px"><div style="font:600 11px/1 var(--font-m);color:var(--pu);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--brd)">\u{1F527} Preparation Costs \u2014 Breakdown</div><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead><tr style="background:var(--s2)"><th style="padding:7px 10px;text-align:left;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Category</th><th style="padding:7px 10px;text-align:left;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Description</th><th style="padding:7px 10px;text-align:center;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Qty</th><th style="padding:7px 10px;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Unit</th><th style="padding:7px 10px;font:500 10px/1 var(--font-m);color:var(--pu);text-transform:uppercase">Total</th></tr></thead><tbody>'+cR+'<tr style="background:var(--s2)"><td colspan="4" style="padding:6px 10px;font:600 11px/1 var(--font-m);color:var(--txd)">\u09AE\u09CB\u099F Preparation Cost</td><td style="padding:6px 10px;color:var(--pu);font-weight:700;font-family:var(--font-m)">'+_fA(ct)+'</td></tr></tbody></table></div><div style="padding:7px 12px;background:var(--s3);border-radius:0 0 var(--r) var(--r);font:400 11px/1 var(--font-b);color:var(--txd)">Avg Prep/PC: <b style="color:var(--pu)">'+_fA(pp)+'</b> ('+_fA(ct)+' \u00F7 '+pcs+' pcs)</div></div>';}else{h+='<div style="padding:10px 12px;background:var(--s2);border-radius:var(--r);font:400 11px/1 var(--font-b);color:var(--txd);margin-bottom:12px">\u{1F527} No Preparation Costs yet</div>';}
+  if(ci.length){h+='<div style="margin-bottom:14px"><div style="font:600 11px/1 var(--font-m);color:var(--pu);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--brd)">\u{1F527} Preparation Costs \u2014 Breakdown</div><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead><tr style="background:var(--s2)"><th style="padding:7px 10px;text-align:left;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase"><th style="padding:7px 10px;text-align:left;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Date</th>Category</th><th style="padding:7px 10px;text-align:left;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Description</th><th style="padding:7px 10px;text-align:center;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Qty</th><th style="padding:7px 10px;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Unit</th><th style="padding:7px 10px;font:500 10px/1 var(--font-m);color:var(--pu);text-transform:uppercase">Total</th></tr></thead><tbody>'+cR+'<tr style="background:var(--s2)"><td colspan="4" style="padding:6px 10px;font:600 11px/1 var(--font-m);color:var(--txd)">\u09AE\u09CB\u099F Preparation Cost</td><td style="padding:6px 10px;color:var(--pu);font-weight:700;font-family:var(--font-m)">'+_fA(ct)+'</td></tr></tbody></table></div><div style="padding:7px 12px;background:var(--s3);border-radius:0 0 var(--r) var(--r);font:400 11px/1 var(--font-b);color:var(--txd)">Avg Prep/PC: <b style="color:var(--pu)">'+_fA(pp)+'</b> ('+_fA(ct)+' \u00F7 '+pcs+' pcs)</div></div>';}else{h+='<div style="padding:10px 12px;background:var(--s2);border-radius:var(--r);font:400 11px/1 var(--font-b);color:var(--txd);margin-bottom:12px">\u{1F527} No Preparation Costs yet</div>';}
   if(mi.length){h+='<div><div style="font:600 11px/1 var(--font-m);color:var(--gn);text-transform:uppercase;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--brd)">\u2705 Model-wise Final Cost</div><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead><tr style="background:var(--s2)"><th style="padding:8px 10px;text-align:left;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Model</th><th style="padding:8px 10px;text-align:center;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Qty</th><th style="padding:8px 10px;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Unit</th><th style="padding:8px 10px;font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase">Pur.Total</th><th style="padding:8px 10px;font:500 10px/1 var(--font-m);color:var(--pu);text-transform:uppercase">AllocPrep</th><th style="padding:8px 10px;font:500 10px/1 var(--font-m);color:var(--gn);text-transform:uppercase">FinalTotal</th><th style="padding:8px 10px;font:500 10px/1 var(--font-m);color:var(--gn);text-transform:uppercase">Final/PC</th></tr></thead><tbody>'+fr+'<tr style="background:var(--gn2);border-top:2px solid var(--gn)"><td style="padding:8px 10px;font:700 12px/1 var(--font-m);color:var(--gn)">GRAND TOTAL</td><td style="padding:8px 10px;text-align:center;font:700 12px/1 var(--font-m);color:var(--bl)">'+pcs+'</td><td></td><td style="padding:8px 10px;font:700 12px/1 var(--font-m);color:var(--gold)">'+_fA(pt)+'</td><td style="padding:8px 10px;font:700 12px/1 var(--font-m);color:var(--pu)">'+_fA(ct)+'</td><td style="padding:8px 10px;font:700 14px/1 var(--font-m);color:var(--gn)">'+_fA(gt)+'</td><td style="padding:8px 10px;font:700 12px/1 var(--font-m);color:var(--gn)">'+_fA(gpp)+'</td></tr></tbody></table></div></div>';}
   if(document.getElementById('lotModalTitle'))document.getElementById('lotModalTitle').textContent='\uD83D\uDCCB '+lot+' \u2014 Full Cost Breakdown';
   if(document.getElementById('lotModalBody'))document.getElementById('lotModalBody').innerHTML=h;
@@ -3360,9 +3600,48 @@ window.tab = function(id, el) {
 function ctgRunKPIWithSales() {
   var DS = ctgGetS ? ctgGetS() : (typeof S!=='undefined'?S:{});
   var pu=DS.purchases||[], co=DS.courier||[], lc=DS.lot_costs||[], ms=DS.dubai_sales||[];
-  var lots=[];
-  pu.forEach(function(p){if(p.lot&&lots.indexOf(p.lot)===-1)lots.push(p.lot);});
+  var lotsRaw=[];
+  pu.forEach(function(p){if(p.lot&&lotsRaw.indexOf(p.lot)===-1)lotsRaw.push(p.lot);});
+  if(!lotsRaw.length) return;
+
+  // Build lot meta for sorting
+  var lotMeta2=lotsRaw.map(function(lot){
+    var purPcs=pu.filter(function(p){return p.lot===lot;}).reduce(function(s,p){return s+(p.qty||0);},0);
+    var dubaiSold2=ms.filter(function(s){return s.lot===lot;}).reduce(function(ss,s){return ss+(s.qty||0);},0);
+    var totalCouriered2=co.filter(function(c){return(c.lots||[]).some(function(l){return l.lotRef===lot;})||c.lotRef===lot;}).reduce(function(s,c){return s+(c.bookedQty||0);},0);
+    var totalReceived2=co.filter(function(c){return c.ctgReceiveDate&&((c.lots||[]).some(function(l){return l.lotRef===lot;})||c.lotRef===lot);}).reduce(function(s,c){return s+(c.receivedQty||c.bookedQty||0);},0);
+    var dubaiOffice2=Math.max(0,purPcs-dubaiSold2-totalCouriered2);
+    var transit2=Math.max(0,totalCouriered2-totalReceived2);
+    var isComplete=(dubaiSold2+totalReceived2)>=purPcs&&purPcs>0;
+    var lotNum=parseInt((lot.match(/\d+/)||[0])[0])||0;
+    return {lot:lot,isComplete:isComplete,lotNum:lotNum};
+  });
+
+  // Sort: active newest first → completed newest first at bottom
+  lotMeta2.sort(function(a,b){
+    if(a.isComplete!==b.isComplete) return a.isComplete?1:-1;
+    return b.lotNum-a.lotNum;
+  });
+  var lots=lotMeta2.map(function(m){return m.lot;});
   if(!lots.length) return;
+  
+  // Sort: active lots newest first, completed lots (sold+rcvd=purchased) last
+  lots.sort(function(a,b){
+    // Get purchased and received for each lot
+    function getInfo(lot){
+      var pcs=pu.filter(function(p){return p.lot===lot;}).reduce(function(s,p){return s+(p.qty||0);},0);
+      var sold=(ms||[]).filter(function(s){return s.lot===lot;}).reduce(function(ss,s){return ss+(s.qty||0);},0);
+      var rcvd=(co||[]).filter(function(c){return(c.lots||[]).some(function(l){return l.lotRef===lot;})||c.lotRef===lot;})
+        .filter(function(c){return c.ctgReceiveDate;})
+        .reduce(function(s,c){return s+(c.receivedQty||c.bookedQty||0);},0);
+      var done=(sold+rcvd)>=pcs&&pcs>0;
+      var num=parseInt((lot.match(/\d+/)||[0])[0])||0;
+      return {done,num};
+    }
+    var ia=getInfo(a),ib=getInfo(b);
+    if(ia.done!==ib.done) return ia.done?1:-1;
+    return ib.num-ia.num;
+  });
 
   var fA=function(n){if(!n||isNaN(n))return'dh0';return'dh'+(+n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});};
   var html='';
@@ -3565,7 +3844,31 @@ window.ctgDailyCard = function(dateStr) {
   var dp=d.split('-'); var dt=new Date(+dp[0],+dp[1]-1,+dp[2]);
   var dateLabel=days[dt.getDay()]+', '+parseInt(dp[2])+' '+months[dt.getMonth()]+' '+dp[0];
 
-  function inDay(x){ return (x.date||'').substring(0,10)===d; }
+  // Robust date check: handles string, Firestore Timestamp, _ts fallback, Dubai timezone
+  function toDateStr(dateVal) {
+    if(!dateVal) return '';
+    // Firestore Timestamp object
+    if(typeof dateVal==='object' && dateVal.toDate) {
+      var dt=dateVal.toDate();
+      return new Date(dt.toLocaleString('en-US',{timeZone:'Asia/Dubai'})).toLocaleDateString('en-CA');
+    }
+    // ISO string with time (e.g. "2026-08-11T10:30:00Z") — convert to Dubai date
+    if(typeof dateVal==='string' && dateVal.length>10 && dateVal.includes('T')) {
+      var dt2=new Date(dateVal);
+      return new Date(dt2.toLocaleString('en-US',{timeZone:'Asia/Dubai'})).toLocaleDateString('en-CA');
+    }
+    // Plain date string "YYYY-MM-DD"
+    return String(dateVal).substring(0,10);
+  }
+  function inDay(x){
+    var dStr=toDateStr(x.date);
+    if(dStr===d) return true;
+    // Fallback to _ts if date field missing or doesn't match
+    if(!x.date && x._ts) {
+      return toDateStr(x._ts)===d;
+    }
+    return false;
+  }
   var pay=(DS.payments||[]).filter(inDay);
   var adv=(DS.advances||[]).filter(inDay);
   var pur=(DS.purchases||[]).filter(inDay);
