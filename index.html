@@ -2379,7 +2379,19 @@ function renderDashboard(){
 }
 function sv2(id,val){const el=g(id);if(el)el.textContent=val;}
 function fmtN(n){if(isNaN(n)||n===undefined||n===null)return '0.00';return Math.abs(n)>=1000?n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):n.toFixed(2);}
-function tog(id){const el=g(id);if(el)el.style.display=el.style.display==='none'||!el.style.display?'block':'none';}
+function tog(id){
+  const el=g(id);
+  if(!el)return;
+  const isOpening=el.style.display==='none'||!el.style.display;
+  el.style.display=isOpening?'block':'none';
+  if(isOpening){
+    // Scroll form into view from the top
+    setTimeout(function(){
+      el.scrollIntoView({behavior:'smooth',block:'start'});
+      window.scrollBy(0,-80); // account for sticky header
+    },60);
+  }
+}
 document.addEventListener('click',e=>{['ctgModal','lotModal','advDetailModal'].forEach(mid=>{const m=g(mid);if(m&&e.target===m)m.classList.remove('on');});});
 let _tt;
 
