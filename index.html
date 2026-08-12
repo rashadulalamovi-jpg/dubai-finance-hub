@@ -1908,6 +1908,21 @@ async function saveCTGReceive(){
 }
 
 // ══ LOT COURIER STATUS ══
+function getLotCourierQty(lot){
+  var lotCouriers=S.courier.filter(function(c){return (c.lots||[]).some(function(l){return l.lotRef===lot;})||c.lotRef===lot;});
+  var booked=0,received=0;
+  lotCouriers.forEach(function(c){
+    var lotQty=(c.lots||[]).filter(function(l){return l.lotRef===lot;}).reduce(function(s,l){return s+(l.lotQty||0);},0);
+    if(!lotQty&&c.lotRef===lot) lotQty=c.lotQty||c.bookedQty||0;
+    booked+=lotQty;
+    if(c.ctgReceiveDate&&lotQty>0){
+      var totalLQ=(c.lots||[]).reduce(function(s,l){return s+(l.lotQty||0);},0)||c.bookedQty||0;
+      var rcvd=c.receivedQty||c.bookedQty||0;
+      received+=totalLQ>0?Math.round(rcvd*lotQty/totalLQ):lotQty;
+    }
+  });
+  return {booked:booked,received:received};
+}
 function rLotCourierStatus(){
   const container=g('m3-lot-status');if(!container)return;
   const lotsRaw=[...new Set(S.purchases.map(p=>p.lot).filter(Boolean))];
@@ -1917,9 +1932,9 @@ function rLotCourierStatus(){
   const lotSortMeta=lotsRaw.map(lot=>{
     const purchased=S.purchases.filter(p=>p.lot===lot).reduce((s,p)=>s+(p.qty||0),0);
     const dubaiSold2=(S.dubai_sales||[]).filter(s=>s.lot===lot).reduce((ss,s)=>ss+(s.qty||0),0);
-    const totalCouriered2=S.courier.filter(c=>getLotEntries(c).some(l=>l.lotRef===lot)).reduce((s,c)=>s+(c.bookedQty||0),0);
-    const received2=S.courier.filter(c=>c.ctgReceiveDate&&getLotEntries(c).some(l=>l.lotRef===lot)).reduce((s,c)=>s+(c.receivedQty||c.bookedQty||0),0);
-    const isComplete=(dubaiSold2+received2)>=purchased&&purchased>0;
+    const _sq2=getLotCourierQty(lot);
+    const dubaiRemaining2=Math.max(0,purchased-dubaiSold2-_sq2.booked);
+    const isComplete=(dubaiSold2+_sq2.received)>=purchased&&purchased>0&&dubaiRemaining2===0;
     const lotNum=parseInt((lot.match(/\d+/)||[0])[0])||0;
     return {lot,isComplete,lotNum};
   });
@@ -1932,12 +1947,11 @@ function rLotCourierStatus(){
   container.innerHTML=`<div style="margin-bottom:18px"><div class="cl" style="margin-bottom:10px">📦 Lot-wise Courier Status</div><div style="display:grid;gap:8px">
   ${lots.map(lot=>{
     const purchased=S.purchases.filter(p=>p.lot===lot).reduce((s,p)=>s+(p.qty||0),0);
-    const courierForLot=S.courier.filter(c=>getLotEntries(c).some(l=>l.lotRef===lot));
-    const booked=courierForLot.reduce((s,c)=>{const lq=getLotEntries(c).filter(l=>l.lotRef===lot).reduce((ss,l)=>ss+(l.lotQty||0),0);const bq=c.bookedQty||0;const totalLq=getLotEntries(c).reduce((ss,l)=>ss+(l.lotQty||0),0);return s+(totalLq>0?Math.min(lq,bq*(lq/totalLq)):lq);},0);
-    const received=courierForLot.filter(c=>c.ctgReceiveDate).reduce((s,c)=>s+getLotEntries(c).filter(l=>l.lotRef===lot).reduce((ss,l)=>ss+(l.lotQty||0),0),0);
+    var _cq=getLotCourierQty(lot);
+    var booked=_cq.booked, received=_cq.received;
     const dubaiSold=(S.dubai_sales||[]).filter(s=>s.lot===lot).reduce((ss,s)=>ss+(s.qty||0),0);
-    const inTransit=Math.max(0,booked-received),dubaiRemaining=Math.max(0,purchased-dubaiSold-booked);
-    const isLotDone=lotCompleteMap[lot]||false;
+    const inTransit=Math.max(0,booked-received), dubaiRemaining=Math.max(0,purchased-dubaiSold-booked);
+    const isLotDone=(dubaiSold+received)>=purchased&&purchased>0&&dubaiRemaining===0;
     const pct=purchased>0?Math.round((received/purchased)*100):0;
     return `<div style="background:var(--s2);border:${isLotDone?'2px solid var(--gn)':'1px solid var(--brd)'};border-radius:var(--r);padding:12px 16px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
@@ -3484,7 +3498,9 @@ function ctgRunKPIWithSales() {
     var totalReceived2=co.filter(function(c){return c.ctgReceiveDate&&((c.lots||[]).some(function(l){return l.lotRef===lot;})||c.lotRef===lot);}).reduce(function(s,c){return s+(c.receivedQty||c.bookedQty||0);},0);
     var dubaiOffice2=Math.max(0,purPcs-dubaiSold2-totalCouriered2);
     var transit2=Math.max(0,totalCouriered2-totalReceived2);
-    var isComplete=(dubaiSold2+totalReceived2)>=purPcs&&purPcs>0;
+    var _kq=getLotCourierQty(lot);
+    var dubaiRem2=Math.max(0,purPcs-dubaiSold-_kq.booked);
+    var isComplete=(dubaiSold+_kq.received)>=purPcs&&purPcs>0&&dubaiRem2===0;
     var lotNum=parseInt((lot.match(/\d+/)||[0])[0])||0;
     return {lot:lot,isComplete:isComplete,lotNum:lotNum};
   });
