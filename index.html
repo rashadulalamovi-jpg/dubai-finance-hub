@@ -2385,11 +2385,13 @@ function tog(id){
   const isOpening=el.style.display==='none'||!el.style.display;
   el.style.display=isOpening?'block':'none';
   if(isOpening){
-    // Scroll form into view from the top
     setTimeout(function(){
-      el.scrollIntoView({behavior:'smooth',block:'start'});
-      window.scrollBy(0,-80); // account for sticky header
-    },60);
+      // Scroll to the active panel's top (not the form itself)
+      var panel=el.closest('.panel')||el.closest('[id^="panel-"]');
+      var target=panel||el;
+      target.scrollIntoView({behavior:'smooth',block:'start'});
+      window.scrollBy(0,-90); // header offset
+    },80);
   }
 }
 document.addEventListener('click',e=>{['ctgModal','lotModal','advDetailModal'].forEach(mid=>{const m=g(mid);if(m&&e.target===m)m.classList.remove('on');});});
