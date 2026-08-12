@@ -2385,13 +2385,14 @@ function tog(id){
   const isOpening=el.style.display==='none'||!el.style.display;
   el.style.display=isOpening?'block':'none';
   if(isOpening){
+    // Scroll to top AFTER Flatpickr init (which runs at 80ms)
     setTimeout(function(){
-      // Scroll to the active panel's top (not the form itself)
-      var panel=el.closest('.panel')||el.closest('[id^="panel-"]');
-      var target=panel||el;
-      target.scrollIntoView({behavior:'smooth',block:'start'});
-      window.scrollBy(0,-90); // header offset
-    },80);
+      // Blur focused element to prevent scroll-back, then scroll to top
+      if(document.activeElement&&document.activeElement!==document.body){
+        document.activeElement.blur();
+      }
+      window.scrollTo({top:0,behavior:'instant'});
+    },400);
   }
 }
 document.addEventListener('click',e=>{['ctgModal','lotModal','advDetailModal'].forEach(mid=>{const m=g(mid);if(m&&e.target===m)m.classList.remove('on');});});
@@ -4157,7 +4158,7 @@ console.log('[CTG Dubai v3 FINAL] All features loaded - any browser OK');
     inputEl.style.cssText='display:none;width:0;height:0;position:absolute;opacity:0;';
     wrap.appendChild(tBtn);wrap.appendChild(yBtn);wrap.appendChild(dInput);wrap.appendChild(inputEl);
     if(typeof flatpickr==='undefined'){console.warn('Flatpickr not loaded');return;}
-    var fp=flatpickr(dInput,{dateFormat:'d-m-Y',defaultDate:inputEl.value?toDisplayDate(inputEl.value):(opts.defaultToday?toDisplayDate(getDubaiToday()):null),allowInput:false,
+    var fp=flatpickr(dInput,{dateFormat:'d-m-Y',defaultDate:inputEl.value?toDisplayDate(inputEl.value):(opts.defaultToday?toDisplayDate(getDubaiToday()):null),allowInput:false,scrollInput:false,
       onChange:function(dates,dateStr){
         if(dates[0]){var d=dates[0];var iso=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');inputEl.value=iso;inputEl.dispatchEvent(new Event('change',{bubbles:true}));}
         var t=getDubaiToday(),y=getDubaiYesterday();tBtn.classList.toggle('active',inputEl.value===t);yBtn.classList.toggle('active',inputEl.value===y);
