@@ -2053,159 +2053,7 @@ function showLotDetail(lot){
 }
 function printLot(){
   const content=`<!DOCTYPE html><html><head><title>${_currentLot} Cost Report</title><style>body{font-family:Arial,sans-serif;padding:20px;color:#111}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid #ccc;padding:8px;text-align:left;font-size:12px}th{background:#f0f0f0}</style></head><body><h2>${_currentLot} — Full Cost Report</h2>${g('lotModalBody').innerHTML}
-  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-  <script>
-  // ════════════════════════════════════════════════
-  // CTG Date Picker System — Flatpickr + Quick Buttons
-  // ════════════════════════════════════════════════
   
-  // Get Dubai today date
-  function getDubaiToday() {
-    var n = new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Dubai'}));
-    return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');
-  }
-  function getDubaiYesterday() {
-    var n = new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Dubai'}));
-    n.setDate(n.getDate()-1);
-    return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');
-  }
-  // Convert YYYY-MM-DD to DD-MM-YYYY for display
-  function toDisplayDate(ymd) {
-    if(!ymd) return '';
-    var p=ymd.split('-');
-    return p[2]+'-'+p[1]+'-'+p[0];
-  }
-  // Convert DD-MM-YYYY back to YYYY-MM-DD
-  function toISODate(dmy) {
-    if(!dmy) return '';
-    var p=dmy.split('-');
-    if(p.length===3 && p[2].length===4) return p[2]+'-'+p[1]+'-'+p[0];
-    return dmy; // already ISO
-  }
-
-  // Initialize one date field with Flatpickr + quick buttons
-  window.ctgInitDate = function(inputEl, opts) {
-    if(!inputEl || inputEl._fpInit) return;
-    inputEl._fpInit = true;
-    opts = opts || {};
-    
-    var wrapper = document.createElement('div');
-    wrapper.className = 'date-wrap';
-    inputEl.parentNode.insertBefore(wrapper, inputEl);
-    
-    // Quick buttons
-    var todayBtn = document.createElement('button');
-    todayBtn.className = 'dq-btn'; todayBtn.type='button'; todayBtn.textContent='আজ';
-    var ydayBtn = document.createElement('button');
-    ydayBtn.className = 'dq-btn'; ydayBtn.type='button'; ydayBtn.textContent='গতকাল';
-    
-    // New input for display (DD-MM-YYYY)
-    var displayInput = document.createElement('input');
-    displayInput.className = 'date-input-fp';
-    displayInput.type = 'text';
-    displayInput.placeholder = 'DD-MM-YYYY';
-    displayInput.readOnly = true;
-    
-    // Hidden original input (YYYY-MM-DD for Firebase)
-    inputEl.style.display = 'none';
-    inputEl.style.width = '0';
-    inputEl.style.height = '0';
-    inputEl.style.position = 'absolute';
-    inputEl.style.opacity = '0';
-    
-    wrapper.appendChild(todayBtn);
-    wrapper.appendChild(ydayBtn);
-    wrapper.appendChild(displayInput);
-    wrapper.appendChild(inputEl);
-    
-    // Flatpickr on display input
-    var fp = flatpickr(displayInput, {
-      dateFormat: 'd-m-Y',
-      defaultDate: inputEl.value ? toDisplayDate(inputEl.value) : (opts.defaultToday ? toDisplayDate(getDubaiToday()) : null),
-      allowInput: false,
-      disableMobile: false,
-      onChange: function(dates, dateStr) {
-        // Set hidden input to YYYY-MM-DD
-        if(dates[0]) {
-          var d = dates[0];
-          var iso = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-          inputEl.value = iso;
-          // Trigger change event
-          inputEl.dispatchEvent(new Event('change', {bubbles:true}));
-        }
-        // Update button states
-        var today = getDubaiToday();
-        var yday = getDubaiYesterday();
-        todayBtn.classList.toggle('active', inputEl.value===today);
-        ydayBtn.classList.toggle('active', inputEl.value===yday);
-        if(opts.onChange) opts.onChange(inputEl.value);
-      }
-    });
-    
-    // Set initial display if inputEl had a value
-    if(inputEl.value) {
-      displayInput.value = toDisplayDate(inputEl.value);
-      var today = getDubaiToday(); var yday = getDubaiYesterday();
-      todayBtn.classList.toggle('active', inputEl.value===today);
-      ydayBtn.classList.toggle('active', inputEl.value===yday);
-    }
-    
-    // Quick button handlers
-    todayBtn.onclick = function(){
-      var t=getDubaiToday();
-      fp.setDate(toDisplayDate(t)); inputEl.value=t;
-      todayBtn.classList.add('active'); ydayBtn.classList.remove('active');
-      inputEl.dispatchEvent(new Event('change',{bubbles:true}));
-      if(opts.onChange) opts.onChange(t);
-    };
-    ydayBtn.onclick = function(){
-      var y=getDubaiYesterday();
-      fp.setDate(toDisplayDate(y)); inputEl.value=y;
-      ydayBtn.classList.add('active'); todayBtn.classList.remove('active');
-      inputEl.dispatchEvent(new Event('change',{bubbles:true}));
-      if(opts.onChange) opts.onChange(y);
-    };
-    
-    inputEl._fp = fp;
-    return fp;
-  };
-
-  // Auto-init all date inputs when form opens
-  window.ctgInitAllDates = function(container) {
-    var el = container || document;
-    el.querySelectorAll('input[type="date"]:not([data-no-fp]):not(._fpInit)').forEach(function(inp) {
-      if(!inp._fpInit) ctgInitDate(inp, {defaultToday: !inp.value});
-    });
-  };
-
-  // Watch for form opens (tog function)
-  var _origTog = window.tog;
-  window.tog = function(id) {
-    if(_origTog) _origTog.apply(this, arguments);
-    setTimeout(function() {
-      var panel = document.getElementById(id);
-      if(panel && panel.style.display !== 'none') {
-        ctgInitAllDates(panel);
-      }
-    }, 50);
-  };
-  
-  // Also init on tab switch
-  var _origTabFP = window.tab;
-  window.tab = function(id, el) {
-    if(_origTabFP) _origTabFP.call(this, id, el);
-    setTimeout(function() {
-      var panel = document.getElementById('panel-'+id);
-      if(panel) ctgInitAllDates(panel);
-    }, 100);
-  };
-
-  // Init any visible date inputs on load
-  setTimeout(function() { ctgInitAllDates(); }, 2000);
-
-  console.log('[CTG] Flatpickr date system initialized');
-  </script>
-
 </body></html>`;
   const w=window.open('','_blank');w.document.write(content);w.document.close();w.print();
 }
@@ -4234,5 +4082,49 @@ window.updateStockFlow = function() {
 console.log('[CTG Dubai v3 FINAL] All features loaded - any browser OK');
 
 </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script>
+  // ── CTG Date Picker System — Flatpickr + Quick Buttons ──
+  function getDubaiToday(){var n=new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Dubai'}));return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');}
+  function getDubaiYesterday(){var n=new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Dubai'}));n.setDate(n.getDate()-1);return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');}
+  function toDisplayDate(y){if(!y)return'';var p=y.split('-');return p[2]+'-'+p[1]+'-'+p[0];}
+  
+  window.ctgInitDate=function(inputEl,opts){
+    if(!inputEl||inputEl._fpInit)return;inputEl._fpInit=true;opts=opts||{};
+    var wrap=document.createElement('div');wrap.className='date-wrap';
+    inputEl.parentNode.insertBefore(wrap,inputEl);
+    var tBtn=document.createElement('button');tBtn.className='dq-btn';tBtn.type='button';tBtn.textContent='আজ';
+    var yBtn=document.createElement('button');yBtn.className='dq-btn';yBtn.type='button';yBtn.textContent='গতকাল';
+    var dInput=document.createElement('input');dInput.className='date-input-fp';dInput.type='text';dInput.placeholder='DD-MM-YYYY';dInput.readOnly=true;
+    inputEl.style.cssText='display:none;width:0;height:0;position:absolute;opacity:0;';
+    wrap.appendChild(tBtn);wrap.appendChild(yBtn);wrap.appendChild(dInput);wrap.appendChild(inputEl);
+    if(typeof flatpickr==='undefined'){console.warn('Flatpickr not loaded');return;}
+    var fp=flatpickr(dInput,{dateFormat:'d-m-Y',defaultDate:inputEl.value?toDisplayDate(inputEl.value):(opts.defaultToday?toDisplayDate(getDubaiToday()):null),allowInput:false,
+      onChange:function(dates,dateStr){
+        if(dates[0]){var d=dates[0];var iso=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');inputEl.value=iso;inputEl.dispatchEvent(new Event('change',{bubbles:true}));}
+        var t=getDubaiToday(),y=getDubaiYesterday();tBtn.classList.toggle('active',inputEl.value===t);yBtn.classList.toggle('active',inputEl.value===y);
+        if(opts.onChange)opts.onChange(inputEl.value);
+      }
+    });
+    if(inputEl.value){dInput.value=toDisplayDate(inputEl.value);var t2=getDubaiToday(),y2=getDubaiYesterday();tBtn.classList.toggle('active',inputEl.value===t2);yBtn.classList.toggle('active',inputEl.value===y2);}
+    tBtn.onclick=function(){var t=getDubaiToday();fp.setDate(toDisplayDate(t));inputEl.value=t;tBtn.classList.add('active');yBtn.classList.remove('active');inputEl.dispatchEvent(new Event('change',{bubbles:true}));if(opts.onChange)opts.onChange(t);};
+    yBtn.onclick=function(){var y=getDubaiYesterday();fp.setDate(toDisplayDate(y));inputEl.value=y;yBtn.classList.add('active');tBtn.classList.remove('active');inputEl.dispatchEvent(new Event('change',{bubbles:true}));if(opts.onChange)opts.onChange(y);};
+    inputEl._fp=fp;return fp;
+  };
+
+  window.ctgInitAllDates=function(container){
+    var el=container||document;
+    el.querySelectorAll('input[type="date"]:not(._fpInit)').forEach(function(inp){if(!inp._fpInit)ctgInitDate(inp,{defaultToday:!inp.value});});
+  };
+
+  var _origTogFP=window.tog;
+  window.tog=function(id){if(_origTogFP)_origTogFP.apply(this,arguments);setTimeout(function(){var p=document.getElementById(id);if(p&&p.style.display!=='none')ctgInitAllDates(p);},80);};
+  var _origTabFP=window.tab;
+  window.tab=function(id,el){if(_origTabFP)_origTabFP.call(this,id,el);setTimeout(function(){var p=document.getElementById('panel-'+id);if(p)ctgInitAllDates(p);},120);};
+  
+  setTimeout(function(){ctgInitAllDates();},2500);
+  console.log('[CTG] Flatpickr date system OK');
+  </script>
 </body>
 </html>
