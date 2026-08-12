@@ -1907,21 +1907,40 @@ async function saveCTGReceive(){
 // ══ LOT COURIER STATUS ══
 function rLotCourierStatus(){
   const container=g('m3-lot-status');if(!container)return;
-  const lots=[...new Set(S.purchases.map(p=>p.lot).filter(Boolean))].sort();
-  if(!lots.length){container.innerHTML='';return;}
+  const lotsRaw=[...new Set(S.purchases.map(p=>p.lot).filter(Boolean))];
+  if(!lotsRaw.length){container.innerHTML='';return;}
+  
+  // Sort: active lots newest first, completed lots to bottom
+  const lotSortMeta=lotsRaw.map(lot=>{
+    const purchased=S.purchases.filter(p=>p.lot===lot).reduce((s,p)=>s+(p.qty||0),0);
+    const dubaiSold2=(S.dubai_sales||[]).filter(s=>s.lot===lot).reduce((ss,s)=>ss+(s.qty||0),0);
+    const totalCouriered2=S.courier.filter(c=>getLotEntries(c).some(l=>l.lotRef===lot)).reduce((s,c)=>s+(c.bookedQty||0),0);
+    const received2=S.courier.filter(c=>c.ctgReceiveDate&&getLotEntries(c).some(l=>l.lotRef===lot)).reduce((s,c)=>s+(c.receivedQty||c.bookedQty||0),0);
+    const isComplete=(dubaiSold2+received2)>=purchased&&purchased>0;
+    const lotNum=parseInt((lot.match(/\d+/)||[0])[0])||0;
+    return {lot,isComplete,lotNum};
+  });
+  lotSortMeta.sort((a,b)=>{
+    if(a.isComplete!==b.isComplete) return a.isComplete?1:-1; // completed to bottom
+    return b.lotNum-a.lotNum; // newest first
+  });
+  const lots=lotSortMeta.map(m=>m.lot);
+  const lotCompleteMap=Object.fromEntries(lotSortMeta.map(m=>[m.lot,m.isComplete]));
   container.innerHTML=`<div style="margin-bottom:18px"><div class="cl" style="margin-bottom:10px">📦 Lot-wise Courier Status</div><div style="display:grid;gap:8px">
   ${lots.map(lot=>{
     const purchased=S.purchases.filter(p=>p.lot===lot).reduce((s,p)=>s+(p.qty||0),0);
     const courierForLot=S.courier.filter(c=>getLotEntries(c).some(l=>l.lotRef===lot));
     const booked=courierForLot.reduce((s,c)=>{const lq=getLotEntries(c).filter(l=>l.lotRef===lot).reduce((ss,l)=>ss+(l.lotQty||0),0);const bq=c.bookedQty||0;const totalLq=getLotEntries(c).reduce((ss,l)=>ss+(l.lotQty||0),0);return s+(totalLq>0?Math.min(lq,bq*(lq/totalLq)):lq);},0);
     const received=courierForLot.filter(c=>c.ctgReceiveDate).reduce((s,c)=>s+getLotEntries(c).filter(l=>l.lotRef===lot).reduce((ss,l)=>ss+(l.lotQty||0),0),0);
-    const inTransit=Math.max(0,booked-received),dubaiRemaining=Math.max(0,purchased-booked);
+    const dubaiSold=(S.dubai_sales||[]).filter(s=>s.lot===lot).reduce((ss,s)=>ss+(s.qty||0),0);
+    const inTransit=Math.max(0,booked-received),dubaiRemaining=Math.max(0,purchased-dubaiSold-booked);
+    const isLotDone=lotCompleteMap[lot]||false;
     const pct=purchased>0?Math.round((received/purchased)*100):0;
-    return `<div style="background:var(--s2);border:1px solid var(--brd);border-radius:var(--r);padding:12px 16px">
+    return `<div style="background:var(--s2);border:${isLotDone?'2px solid var(--gn)':'1px solid var(--brd)'};border-radius:var(--r);padding:12px 16px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
         <div style="display:flex;align-items:center;gap:8px">
           <span class="tag t-lt" style="cursor:pointer;font-size:12px" onclick="showLotDetail('${lot}')">${lot} ▶</span>
-          ${lotMetaMap[lot]?.isComplete ? '<span style="background:var(--gn2);border:1px solid var(--gn);border-radius:4px;padding:2px 8px;font:700 10px/1 var(--font-m);color:var(--gn)">✅ COMPLETED</span>' : ''}
+          ${lotCompleteMap[lot] ? '<span style="background:var(--gn2);border:1px solid var(--gn);border-radius:4px;padding:2px 8px;font:700 10px/1 var(--font-m);color:var(--gn)">✅ COMPLETED</span>' : ''}
         </div>
         <span style="font-size:11px;color:var(--txd);font-family:var(--font-m)">Delivered: ${pct}%</span>
       </div>
@@ -3658,8 +3677,10 @@ function ctgRunKPIWithSales() {
   if(sd) sd.innerHTML=html;
 }
 
-// Override ctgRunKPI with new version including Dubai Sales
-window.ctgRunKPI = ctgRunKPIWithSales;
+// Use original rLotCourierStatus design for M3 (with smart sort)
+window.ctgRunKPI = function() {
+  try { rLotCourierStatus(); } catch(e) { console.warn('rLotCourierStatus error:', e); }
+};
 // Also override rPurchases to call new KPI
 var _rp_ms = window.rPurchases;
 window.rPurchases = function() {
