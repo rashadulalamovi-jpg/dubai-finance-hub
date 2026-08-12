@@ -659,7 +659,6 @@ body{padding-bottom:calc(56px + var(--safe-bottom));}
 <div class="card gn"><div class="cl">Lots Count</div><div class="cv" id="m3tl">0</div></div>
 <div class="card pu"><div class="cl">Avg Cost/Pc</div><div class="cv" id="m3av">—</div></div>
 </div>
-<div id="m3-lot-status"></div>
 <div class="fwrap" id="f-m3"><div class="ftitle"><i class="fas fa-shopping-cart"></i> <span id="p3-form-title">নতুন পার্চেজ</span></div>
 <!-- Advance Ref Selector -->
 <div style="margin-bottom:12px;padding:10px 14px;background:var(--s2);border:1px solid var(--brd2);border-radius:var(--r)">
@@ -719,6 +718,7 @@ body{padding-bottom:calc(56px + var(--safe-bottom));}
 </div>
 </div></div>
 <div class="twrap"><div class="thead2"><span class="ttitle">পার্চেজ রেকর্ড (Lot-wise)</span></div>
+<div id="m3-lot-status"></div>
 <div class="tscroll"><table>
 <thead><tr><th>তারিখ</th><th>Lot</th><th>Model</th><th>Qty</th><th>Unit(AED)</th><th>Total(AED)</th><th>Adv.Ded.</th><th style="color:var(--gn)">Remaining Paid</th><th>Advance Ref</th><th>Invoice</th><th>Del</th></tr></thead>
 <tbody id="tb-m3"><tr><td colspan="10"><div class="empty"><i class="fas fa-database"></i><p>কোনো রেকর্ড নেই</p></div></td></tr></tbody>
@@ -731,7 +731,6 @@ body{padding-bottom:calc(56px + var(--safe-bottom));}
 <div class="card rd"><div class="cl">Total Prep Cost</div><div class="cv" id="m4tc">—</div><div class="cs">সকল লটের খরচ</div></div>
 <div class="card g"><div class="cl">Avg Cost/Pc</div><div class="cv" id="m4av">—</div></div>
 </div>
-<div id="lbd-container" style="margin-bottom:18px"></div>
 <div class="fwrap" id="f-m4"><div class="ftitle"><i class="fas fa-tools"></i> লট খরচ এন্ট্রি</div>
 <div class="fgrid">
 <div class="fg"><label>তারিখ</label><input type="date" id="p4d"></div>
@@ -1189,30 +1188,17 @@ function updateHeader(){
   const bal=tAED-(spPur+spAdv+spCst+spOff+spPer+spCTG);
   const lots=new Set(S.purchases.map(p=>p.lot)).size;
   const pcs=S.purchases.reduce((s,p)=>s+(p.qty||0),0);
-  // Inventory Value = Dubai Office + Transit pcs × avg cost/pc
-  // (CTG Received = Bangladesh stock, NOT in Dubai inventory)
-  const allLots=[...new Set(S.purchases.map(p=>p.lot).filter(Boolean))];
-  let invVal=0;
-  let totalDubaiPcs=0, totalTransitPcs=0;
-  allLots.forEach(lot=>{
-    const purPcs=S.purchases.filter(p=>p.lot===lot).reduce((s,p)=>s+(p.qty||0),0);
-    const purAED=S.purchases.filter(p=>p.lot===lot).reduce((s,p)=>s+(p.totalAED||0),0);
-    const prepAED=S.lot_costs.filter(c=>c.lot===lot).reduce((s,c)=>s+(c.totalAED||0),0);
-    const grandPP=purPcs>0?(purAED+prepAED)/purPcs:0;
-    // Dubai Sales (MS module) - locally sold in Dubai
-    const dubaiSold=(S.dubai_sales||[]).filter(s=>s.lot===lot).reduce((ss,s)=>ss+(s.qty||0),0);
-    // Total couriered
-    const totalCouriered=S.courier.filter(c=>(c.lots||[]).some(l=>l.lotRef===lot)||c.lotRef===lot).reduce((s,c)=>s+(c.bookedQty||0),0);
-    // CTG Received (Bangladesh stock - NOT in Dubai inventory)
-    const ctgRcvd=S.courier.filter(c=>c.ctgReceiveDate&&((c.lots||[]).some(l=>l.lotRef===lot)||c.lotRef===lot)).reduce((s,c)=>s+(c.receivedQty||c.bookedQty||0),0);
-    // Dubai inventory = Dubai Office + Transit (still in Dubai/en-route)
-    const dubaiOfficePcs=Math.max(0,purPcs-dubaiSold-totalCouriered);
-    const transitPcs=Math.max(0,totalCouriered-ctgRcvd);
-    const dubaiInvPcs=dubaiOfficePcs+transitPcs;
-    invVal+=dubaiInvPcs*grandPP;
-    totalDubaiPcs+=dubaiOfficePcs;
-    totalTransitPcs+=transitPcs;
-  });
+  // Inventory Value = 🇦🇪Dubai Office + ✈️Transit (global formula, matches Stock Flow bar)
+  const _invAllPur=S.purchases.reduce((s,p)=>s+(p.qty||0),0);
+  const _invAllSold=(S.dubai_sales||[]).reduce((s,x)=>s+(x.qty||0),0);
+  const _invAllCour=S.courier.reduce((s,c)=>s+(c.bookedQty||0),0);
+  const _invAllRcvd=S.courier.reduce((s,c)=>s+(c.receivedQty||0),0);
+  const totalDubaiPcs=Math.max(0,_invAllPur-_invAllSold-_invAllCour);
+  const totalTransitPcs=Math.max(0,_invAllCour-_invAllRcvd);
+  const _invTotalPurAED=S.purchases.reduce((s,p)=>s+(p.totalAED||0),0);
+  const _invTotalPrepAED=S.lot_costs.reduce((s,c)=>s+(c.totalAED||0),0);
+  const _invAvgCost=_invAllPur>0?(_invTotalPurAED+_invTotalPrepAED)/_invAllPur:0;
+  const invVal=(totalDubaiPcs+totalTransitPcs)*_invAvgCost;
   g('hBDT').textContent=fBDT(tBDT);g('hAED').textContent=fAED(tAED);
   g('hEXP').textContent=fAED(spPur+spAdv+spCst+spOff+spPer+spCTG);
   g('hBAL').textContent=fAED(bal);g('hBAL').className='kbv '+(bal>=0?'gn':'rd');
