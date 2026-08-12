@@ -648,7 +648,7 @@ body{padding-bottom:calc(56px + var(--safe-bottom));}
 <div class="twrap"><div class="thead2"><span class="ttitle">অ্যাডভান্স রেকর্ড</span></div>
 <div class="tscroll"><table>
 <thead><tr><th>তারিখ</th><th>Lot</th><th>Supplier</th><th>Mobile</th><th>Models / Qty</th><th>Deal Total</th><th>Advance (AED)</th><th>Invoice</th><th>Status</th><th>Action</th></tr></thead>
-<tbody id="tb-m2"><tr><td colspan="10"><div class="empty"><i class="fas fa-database"></i><p>কোনো রেকর্ড নেই</p></div></td></tr></tbody>
+<tbody id="tb-m2"><tr><td colspan="11"><div class="empty"><i class="fas fa-database"></i><p>কোনো রেকর্ড নেই</p></div></td></tr></tbody>
 </table></div></div></div>
 <!-- M3 -->
 <div class="panel" id="panel-m3">
@@ -833,8 +833,8 @@ body{padding-bottom:calc(56px + var(--safe-bottom));}
 </div>
 <div class="twrap"><div class="thead2"><span class="ttitle">কুরিয়ার রেকর্ড</span></div>
 <div class="tscroll"><table>
-<thead><tr><th>Date</th><th>Lot/Qty (booked/total)</th><th>Model</th><th>Booked</th><th>CTG Date</th><th>Days</th><th>Flow</th><th>Remaining</th><th>Action</th></tr></thead>
-<tbody id="tb-m7"><tr><td colspan="12"><div class="empty"><i class="fas fa-database"></i><p>কোনো রেকর্ড নেই</p></div></td></tr></tbody>
+<thead><tr><th>Date</th><th>Cargo</th><th>Lot/Qty (booked/total)</th><th>Model</th><th>Booked</th><th>CTG Date</th><th>Days</th><th>Flow</th><th>Remaining</th><th>Action</th></tr></thead>
+<tbody id="tb-m7"><tr><td colspan="13"><div class="empty"><i class="fas fa-database"></i><p>কোনো রেকর্ড নেই</p></div></td></tr></tbody>
 </table></div></div></div>
 
 <!-- M8 -->
@@ -1857,6 +1857,9 @@ function rCourier(){
 
     return `<tr>
       <td style="white-space:nowrap">${fD(c.bookDate)}</td>
+      <td style="white-space:nowrap">
+        ${c.cargoCompany?`<span style="background:var(--s3);border:1px solid var(--brd);border-radius:4px;padding:2px 7px;font:500 10px/1 var(--font-m);color:var(--txd)">${c.cargoCompany}</span>`:'<span style="color:var(--txm)">—</span>'}
+      </td>
       <td>${lotDisplay}</td>
       <td class="bn" style="max-width:160px;overflow:hidden">${modelText}</td>
       <td class="ag" style="font:700 14px/1 var(--font-m)">${c.bookedQty}</td>
@@ -1941,6 +1944,7 @@ function rLotCourierStatus(){
         <div style="display:flex;align-items:center;gap:8px">
           <span class="tag t-lt" style="cursor:pointer;font-size:12px" onclick="showLotDetail('${lot}')">${lot} ▶</span>
           ${lotCompleteMap[lot] ? '<span style="background:var(--gn2);border:1px solid var(--gn);border-radius:4px;padding:2px 8px;font:700 10px/1 var(--font-m);color:var(--gn)">✅ COMPLETED</span>' : ''}
+          <span style="font:400 11px/1 var(--font-b);color:var(--txd);margin-left:4px">${(()=>{const mi=[];S.purchases.filter(p=>p.lot===lot).forEach(p=>{if(p.items&&p.items.length)p.items.forEach(it=>{mi.push({m:it.model||'',q:it.qty||0});});else if(p.model)mi.push({m:p.model,q:p.qty||0});});mi.sort((a,b)=>b.q-a.q);const top=mi.slice(0,2);return top.map(x=>x.m+(mi.length>1?' ×'+x.q+'p':'')).join(' | ');})()}</span>
         </div>
         <span style="font-size:11px;color:var(--txd);font-family:var(--font-m)">Delivered: ${pct}%</span>
       </div>
@@ -2460,7 +2464,8 @@ window.showLotDetail=function(lot){
   [['Purchase Date',_fDt(pi[0]?pi[0].date:''),'var(--tx)'],['Models',mi.length,'var(--bl)'],['Total PCS',pcs,'var(--bl)'],['Purchase Cost',_fA(pt),'var(--gold)'],['Prep Cost',_fA(ct),'var(--pu)'],['Grand Total',_fA(gt),'var(--gn)'],['Avg Cost/PC',_fA(gpp),'var(--gold)'],['In Transit',intrans+' pcs','var(--bl)']].forEach(function(c){sc+='<div style="background:var(--s2);border:1px solid var(--brd);border-radius:var(--r);padding:12px"><div style="font:400 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase;margin-bottom:6px">'+c[0]+'</div><div style="font:700 14px/1 var(--font-m);color:'+c[2]+'">'+c[1]+'</div></div>';});
   var pr='';mi.forEach(function(x){pr+='<tr style="border-bottom:1px solid var(--brd)"><td style="padding:8px 10px;font-family:var(--font-b);color:var(--tx)">'+x.m+'</td><td style="padding:8px 10px;color:var(--bl);text-align:center;font-family:var(--font-m)">'+x.q+'</td><td style="padding:8px 10px;color:var(--gold);font-family:var(--font-m)">'+_fA(x.u)+'</td><td style="padding:8px 10px;color:var(--gold);font-weight:700;font-family:var(--font-m)">'+_fA(x.t)+'</td></tr>';});
   var cR='';ci.forEach(function(c){
-    var cDate=c.date?c.date.split('-').reverse().join('/'):'—';
+    var cDate='—';
+    if(c.date){var _dp=c.date.split('-');var _mo=['January','February','March','April','May','June','July','August','September','October','November','December'];cDate=parseInt(_dp[2])+' '+_mo[parseInt(_dp[1])-1]+' '+String(_dp[0]).slice(2);}
     cR+='<tr style="border-bottom:1px solid var(--brd)">'
       +'<td style="padding:7px 10px;white-space:nowrap;font:400 11px/1 var(--font-m);color:var(--txd)">'+cDate+'</td>'
       +'<td style="padding:7px 10px"><span style="background:var(--s3);border:1px solid var(--gold2);border-radius:4px;padding:2px 7px;font:600 10px/1 var(--font-m);color:var(--gold)">'+(c.category||'—')+'</span></td>'
