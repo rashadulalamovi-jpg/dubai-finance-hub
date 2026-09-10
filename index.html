@@ -805,7 +805,13 @@ body{padding-bottom:calc(56px + var(--safe-bottom));}
 </table></div></div></div>
 <!-- M7 -->
 <div class="panel" id="panel-m7">
-<div class="sh"><div><h2>📦 কুরিয়ার ট্র্যাকিং <span class="mod-badge">M7</span></h2></div><button class="btn-add" onclick="initCourierForm()">+ কুরিয়ার এন্ট্রি</button></div>
+<div class="sh"><div><h2>📦 কুরিয়ার ট্র্যাকিং <span class="mod-badge">M7</span></h2></div><button class="btn-add" onclick="initCourierForm()" id="hc-cargo-btn">+ কুরিয়ার এন্ট্রি</button></div>
+<!-- Courier Type Tabs -->
+<div style="display:flex;gap:0;border-bottom:1px solid var(--brd);margin-bottom:14px">
+  <button type="button" id="hc-tab-cargo" onclick="switchCourierTab('cargo')" style="padding:9px 18px;background:none;border:none;border-bottom:2px solid var(--gold);color:var(--gold);font:600 13px/1 var(--font-b);cursor:pointer">🚚 কার্গো বুকিং</button>
+  <button type="button" id="hc-tab-hand" onclick="switchCourierTab('hand')" style="padding:9px 18px;background:none;border:none;border-bottom:2px solid transparent;color:var(--txd);font:400 13px/1 var(--font-b);cursor:pointer">🧳 হ্যান্ড ক্যারিং</button>
+</div>
+<div id="cargo-section">
 <div class="cards">
 <div class="card g"><div class="cl">Total Booked</div><div class="cv" id="m7bk">0</div><div class="cs">পিছ</div></div>
 <div class="card gn"><div class="cl">CTG Received</div><div class="cv" id="m7rv">0</div><div class="cs">পিছ</div></div>
@@ -835,7 +841,68 @@ body{padding-bottom:calc(56px + var(--safe-bottom));}
 <div class="tscroll"><table>
 <thead><tr><th>Date</th><th>Cargo</th><th>Lot/Qty (booked/total)</th><th>Model</th><th>Booked</th><th>CTG Date</th><th>Days</th><th>Flow</th><th>Remaining</th><th>Action</th></tr></thead>
 <tbody id="tb-m7"><tr><td colspan="13"><div class="empty"><i class="fas fa-database"></i><p>কোনো রেকর্ড নেই</p></div></td></tr></tbody>
-</table></div></div></div>
+</table></div></div>
+</div>
+<div id="hc-section" style="display:none">
+<div class="cards">
+<div class="card g"><div class="cl">মোট বুকিং</div><div class="cv" id="hcbk">0</div><div class="cs">পিছ</div></div>
+<div class="card gn"><div class="cl">পেয়েছি</div><div class="cv" id="hcrv">0</div><div class="cs">পিছ</div></div>
+<div class="card bl"><div class="cl">বাকি</div><div class="cv" id="hctr">0</div><div class="cs">পিছ</div></div>
+<div class="card rd"><div class="cl">টাকা বাকি</div><div class="cv" id="hcdue">dh0</div><div class="cs">পরিশোধ বাকি</div></div>
+</div>
+<div style="display:flex;gap:8px;margin:12px 0">
+<button class="btn-add" onclick="resetHCBooking();tog('f-hc-book')">+ নতুন বুকিং</button>
+<button class="btn-add" style="background:var(--gn2);border-color:var(--gn);color:var(--gn)" onclick="resetHCReceive();tog('f-hc-recv')">✓ রিসিভ এন্ট্রি</button>
+<button class="btn-add" style="background:var(--pu2);border-color:var(--pu);color:var(--pu)" onclick="resetHCPay();tog('f-hc-pay')">💰 পেমেন্ট</button>
+</div>
+
+<div class="fwrap" id="f-hc-book"><div class="ftitle"><i class="fas fa-briefcase"></i> নতুন হ্যান্ড ক্যারি বুকিং</div>
+<div class="fgrid">
+<div class="fg"><label>তারিখ</label><input type="date" id="hcb-date"></div>
+<div class="fg"><label>এজেন্ট নাম</label><input type="text" id="hcb-agent" list="hc-agents" placeholder="Absar"><datalist id="hc-agents"></datalist></div>
+<div class="fg"><label>রেট / পিছ (AED)</label><input type="number" id="hcb-rate" placeholder="180" oninput="hcCalcTotal()"></div>
+<div class="fg full" style="grid-column:1/-1">
+<label style="display:flex;justify-content:space-between;align-items:center"><span>লট ব্রেকডাউন</span><button type="button" onclick="hcAddLotRow()" style="padding:3px 10px;background:var(--s2);border:1px solid var(--brd2);border-radius:4px;color:var(--bl);font-size:11px;cursor:pointer">+ Lot যুক্ত করুন</button></label>
+<div id="hcb-lot-rows" style="display:flex;flex-direction:column;gap:6px;margin-top:6px"></div>
+<div id="hcb-total" style="font-size:12px;color:var(--gold);margin-top:8px;font-family:var(--font-m);font-weight:700"></div>
+</div>
+<div class="fg full"><label>নোট (optional)</label><input type="text" id="hcb-note" placeholder="..."></div>
+</div>
+<div class="fbtns"><button class="btn btn-p" onclick="saveHCBooking()">Save Booking</button><button class="btn btn-s" onclick="tog('f-hc-book')">Cancel</button></div>
+</div>
+
+<div class="fwrap" id="f-hc-recv"><div class="ftitle"><i class="fas fa-check-circle"></i> রিসিভ এন্ট্রি</div>
+<div class="fgrid">
+<div class="fg"><label>তারিখ</label><input type="date" id="hcr-date"></div>
+<div class="fg"><label>এজেন্ট</label><select id="hcr-agent" onchange="hcLoadPendingBookings()"><option value="">— এজেন্ট —</option></select></div>
+<div class="fg full" style="grid-column:1/-1"><div id="hcr-pending" style="font-size:12px;color:var(--txd)"></div></div>
+</div>
+<div class="fbtns"><button class="btn btn-p" onclick="saveHCReceive()">Save Receive</button><button class="btn btn-s" onclick="tog('f-hc-recv')">Cancel</button></div>
+</div>
+
+<div class="fwrap" id="f-hc-pay"><div class="ftitle"><i class="fas fa-money-bill"></i> পেমেন্ট এন্ট্রি</div>
+<div class="fgrid">
+<div class="fg"><label>তারিখ</label><input type="date" id="hcp-date"></div>
+<div class="fg"><label>এজেন্ট</label><select id="hcp-agent" onchange="hcShowAgentDue()"><option value="">— এজেন্ট —</option></select></div>
+<div class="fg full" style="grid-column:1/-1"><div id="hcp-due-info" style="font-size:12px;color:var(--txd);padding:8px 12px;background:var(--s3);border-radius:var(--r)"></div></div>
+<div class="fg full" style="grid-column:1/-1">
+<label>পেমেন্ট কোথা থেকে</label>
+<div style="display:flex;gap:10px;margin-top:6px">
+<label style="display:flex;align-items:center;gap:6px;padding:8px 14px;background:var(--s2);border:1px solid var(--bl);border-radius:var(--r);cursor:pointer;font-size:13px;color:var(--bl)"><input type="radio" name="hcp-from" value="dubai" checked onchange="hcToggleCurrency()" style="width:auto;margin:0">🇦🇪 দুবাই অফিস (AED)</label>
+<label style="display:flex;align-items:center;gap:6px;padding:8px 14px;background:var(--s2);border:1px solid var(--gn);border-radius:var(--r);cursor:pointer;font-size:13px;color:var(--gn)"><input type="radio" name="hcp-from" value="ctg" onchange="hcToggleCurrency()" style="width:auto;margin:0">🇧🇩 CTG অফিস (BDT)</label>
+</div>
+</div>
+<div class="fg"><label id="hcp-amt-label">Amount (AED)</label><input type="number" id="hcp-amount" placeholder="0" oninput="hcCalcPayPcs()"></div>
+<div class="fg" id="hcp-rate-wrap" style="display:none"><label>Rate (1 AED = ৳)</label><input type="number" id="hcp-rate" placeholder="34.2" step="0.01" oninput="hcCalcPayPcs()"></div>
+<div class="fg"><label>কত পিছের টাকা</label><input type="number" id="hcp-pcs" placeholder="0"></div>
+<div class="fg full"><label>নোট</label><input type="text" id="hcp-note" placeholder="..."></div>
+</div>
+<div class="fbtns"><button class="btn btn-p" onclick="saveHCPayment()">Save Payment</button><button class="btn btn-s" onclick="tog('f-hc-pay')">Cancel</button></div>
+</div>
+
+<div id="hc-agent-cards" style="margin-top:16px"></div>
+</div>
+</div>
 
 <!-- M8 -->
 <div class="panel" id="panel-m8">
@@ -1037,8 +1104,8 @@ body{padding-bottom:calc(56px + var(--safe-bottom));}
 
 <script>
 // ══ STATE ══
-const COLS={P:'payments',AD:'advances',PU:'purchases',LC:'lot_costs',OE:'office_expenses',PE:'personal_expenses',CO:'courier',NE:'nejam_commission',CT:'ctg_office',DS:'dubai_sales'};
-const S={payments:[],advances:[],purchases:[],lot_costs:[],office_expenses:[],personal_expenses:[],courier:[],nejam_commission:[],ctg_office:[],dubai_sales:[]};
+const COLS={P:'payments',AD:'advances',PU:'purchases',LC:'lot_costs',OE:'office_expenses',PE:'personal_expenses',CO:'courier',NE:'nejam_commission',CT:'ctg_office',DS:'dubai_sales',HCB:'hand_carry_bookings',HCR:'hand_carry_receipts',HCP:'hand_carry_payments'};
+const S={payments:[],advances:[],purchases:[],lot_costs:[],office_expenses:[],personal_expenses:[],courier:[],nejam_commission:[],ctg_office:[],dubai_sales:[],hand_carry_bookings:[],hand_carry_receipts:[],hand_carry_payments:[]};
 let db=null;
 
 // ══ INIT ══
@@ -1186,14 +1253,15 @@ function updateHeader(){
   const spOff=S.office_expenses.reduce((s,e)=>s+(e.amount||0),0);
   const spPer=S.personal_expenses.reduce((s,e)=>s+(e.amount||0),0);
   const spCTG=S.ctg_office.reduce((s,e)=>s+(e.totalAED||0),0);
-  const bal=tAED-(spPur+spAdv+spCst+spOff+spPer+spCTG);
+  const hcPaidDubai=(S.hand_carry_payments||[]).reduce(function(a,p){return a+(p.paidFrom==='dubai'?(p.amount||0):0);},0);
+  const bal=tAED-(spPur+spAdv+spCst+spOff+spPer+spCTG+hcPaidDubai);
   const lots=new Set(S.purchases.map(p=>p.lot)).size;
   const pcs=S.purchases.reduce((s,p)=>s+(p.qty||0),0);
   // Inventory Value = 🇦🇪Dubai Office + ✈️Transit (global formula, matches Stock Flow bar)
   const _invAllPur=S.purchases.reduce((s,p)=>s+(p.qty||0),0);
   const _invAllSold=(S.dubai_sales||[]).reduce((s,x)=>s+(x.qty||0),0);
-  const _invAllCour=S.courier.reduce((s,c)=>s+(c.bookedQty||0),0);
-  const _invAllRcvd=S.courier.reduce((s,c)=>s+(c.receivedQty||0),0);
+  const _invAllCour=S.courier.reduce((s,c)=>s+(c.bookedQty||0),0)+(S.hand_carry_bookings||[]).reduce((s,b)=>s+(b.totalPcs||0),0);
+  const _invAllRcvd=S.courier.reduce((s,c)=>s+(c.receivedQty||0),0)+(S.hand_carry_receipts||[]).reduce((s,r)=>s+(r.qty||0),0);
   const totalDubaiPcs=Math.max(0,_invAllPur-_invAllSold-_invAllCour);
   const totalTransitPcs=Math.max(0,_invAllCour-_invAllRcvd);
   const _invTotalPurAED=S.purchases.reduce((s,p)=>s+(p.totalAED||0),0);
@@ -1201,7 +1269,7 @@ function updateHeader(){
   const _invAvgCost=_invAllPur>0?(_invTotalPurAED+_invTotalPrepAED)/_invAllPur:0;
   const invVal=(totalDubaiPcs+totalTransitPcs)*_invAvgCost;
   g('hBDT').textContent=fBDT(tBDT);g('hAED').textContent=fAED(tAED);
-  g('hEXP').textContent=fAED(spPur+spAdv+spCst+spOff+spPer+spCTG);
+  g('hEXP').textContent=fAED(spPur+spAdv+spCst+spOff+spPer+spCTG+hcPaidDubai);
   g('hBAL').textContent=fAED(bal);g('hBAL').className='kbv '+(bal>=0?'gn':'rd');
   g('hLOTS').textContent=lots;g('hPCS').textContent=pcs+' pcs';
   g('hRATE').textContent=`1 AED = ৳${rate}`;
@@ -4089,8 +4157,10 @@ window.updateStockFlow = function() {
   
   var totalPurchased=pu.reduce(function(s,p){return s+(p.qty||0);},0);
   var totalSold=ms.reduce(function(s,x){return s+(x.qty||0);},0);
-  var totalCouriered=co.reduce(function(s,c){return s+(c.bookedQty||0);},0);
-  var totalReceived=co.reduce(function(s,c){return s+(c.receivedQty||0);},0);
+  var hcBooked=(DS.hand_carry_bookings||[]).reduce(function(s,b){return s+(b.totalPcs||0);},0);
+  var hcRcvd=(DS.hand_carry_receipts||[]).reduce(function(s,r){return s+(r.qty||0);},0);
+  var totalCouriered=co.reduce(function(s,c){return s+(c.bookedQty||0);},0)+hcBooked;
+  var totalReceived=co.reduce(function(s,c){return s+(c.receivedQty||0);},0)+hcRcvd;
   var dubaiOffice=Math.max(0,totalPurchased-totalSold-totalCouriered);
   var inTransit=Math.max(0,totalCouriered-totalReceived);
   var ctgRcvd=totalReceived;
@@ -4123,6 +4193,370 @@ window.updateStockFlow = function() {
   var soldCard=document.getElementById('sf-sold-card');
   if(soldCard) soldCard.style.opacity=totalSold>0?'1':'0.35';
 };
+
+
+// ════════════════════════════════════════════
+// HAND CARRY MODULE (M7 Tab 2)
+// ════════════════════════════════════════════
+var _hcLotRowIdx = 0;
+
+window.switchCourierTab = function(tab){
+  var cargoSec=document.getElementById('cargo-section');
+  var hcSec=document.getElementById('hc-section');
+  var tc=document.getElementById('hc-tab-cargo');
+  var th=document.getElementById('hc-tab-hand');
+  var addBtn=document.getElementById('hc-cargo-btn');
+  if(tab==='hand'){
+    if(cargoSec)cargoSec.style.display='none';
+    if(hcSec)hcSec.style.display='block';
+    if(addBtn)addBtn.style.display='none';
+    if(tc){tc.style.borderBottomColor='transparent';tc.style.color='var(--txd)';tc.style.fontWeight='400';}
+    if(th){th.style.borderBottomColor='var(--gold)';th.style.color='var(--gold)';th.style.fontWeight='600';}
+    rHandCarry();
+  } else {
+    if(cargoSec)cargoSec.style.display='block';
+    if(hcSec)hcSec.style.display='none';
+    if(addBtn)addBtn.style.display='';
+    if(th){th.style.borderBottomColor='transparent';th.style.color='var(--txd)';th.style.fontWeight='400';}
+    if(tc){tc.style.borderBottomColor='var(--gold)';tc.style.color='var(--gold)';tc.style.fontWeight='600';}
+  }
+};
+
+function hcAgents(){
+  var DS=ctgGetS?ctgGetS():S;
+  var set={};
+  (DS.hand_carry_bookings||[]).forEach(function(b){if(b.agent)set[b.agent]=1;});
+  return Object.keys(set).sort();
+}
+
+// Per-agent aggregate
+function hcAgentStats(agent){
+  var DS=ctgGetS?ctgGetS():S;
+  var bks=(DS.hand_carry_bookings||[]).filter(function(b){return b.agent===agent;});
+  var rcs=(DS.hand_carry_receipts||[]).filter(function(r){return r.agent===agent;});
+  var pys=(DS.hand_carry_payments||[]).filter(function(p){return p.agent===agent;});
+  var booked=bks.reduce(function(s,b){return s+(b.totalPcs||0);},0);
+  var received=rcs.reduce(function(s,r){return s+(r.qty||0);},0);
+  var dueAED=bks.reduce(function(s,b){return s+(b.totalAED||0);},0);
+  var paidAED=pys.reduce(function(s,p){return s+(p.aedValue||0);},0);
+  var paidPcs=pys.reduce(function(s,p){return s+(p.coveredPcs||0);},0);
+  return {bookings:bks,receipts:rcs,payments:pys,booked:booked,received:received,
+          pending:Math.max(0,booked-received),dueAED:dueAED,paidAED:paidAED,paidPcs:paidPcs,
+          dueRemaining:Math.max(0,dueAED-paidAED),pcsUnpaid:Math.max(0,booked-paidPcs)};
+}
+
+// ── Booking form ──
+window.resetHCBooking=function(){
+  var d=document.getElementById('hcb-date');
+  if(d&&!d.value)d.value=(typeof getDubaiToday==='function')?getDubaiToday():new Date().toISOString().slice(0,10);
+  var a=document.getElementById('hcb-agent');if(a)a.value='';
+  var r=document.getElementById('hcb-rate');if(r)r.value='';
+  var n=document.getElementById('hcb-note');if(n)n.value='';
+  var dl=document.getElementById('hc-agents');
+  if(dl)dl.innerHTML=hcAgents().map(function(x){return '<option value="'+x+'">';}).join('');
+  _hcLotRowIdx=0;
+  var rows=document.getElementById('hcb-lot-rows');if(rows)rows.innerHTML='';
+  hcAddLotRow();
+};
+
+window.hcAddLotRow=function(){
+  var DS=ctgGetS?ctgGetS():S;
+  var rows=document.getElementById('hcb-lot-rows');if(!rows)return;
+  var idx=_hcLotRowIdx++;
+  var lots=[];
+  (DS.purchases||[]).forEach(function(p){if(p.lot&&lots.indexOf(p.lot)===-1)lots.push(p.lot);});
+  lots.sort(function(a,b){return (parseInt((b.match(/\d+/)||[0])[0])||0)-(parseInt((a.match(/\d+/)||[0])[0])||0);});
+  var div=document.createElement('div');
+  div.id='hcb-row-'+idx;
+  div.innerHTML='<div style="display:flex;gap:6px;align-items:center">'
+    +'<select id="hcb-lot-'+idx+'" onchange="hcLotChange('+idx+')" style="flex:1;padding:7px 8px;background:var(--s2);border:1px solid var(--brd);border-radius:var(--r);color:var(--tx);font-size:12px"><option value="">— Lot —</option>'
+    +lots.map(function(l){return '<option value="'+l+'">'+l+'</option>';}).join('')+'</select>'
+    +'<button type="button" onclick="hcRemoveLotRow('+idx+')" style="padding:6px 10px;background:var(--rd2);border:1px solid var(--rd);border-radius:4px;color:var(--rd);cursor:pointer;font-size:11px">✕</button></div>'
+    +'<div id="hcb-models-'+idx+'" style="margin-top:6px"></div>';
+  rows.appendChild(div);
+};
+
+window.hcRemoveLotRow=function(idx){
+  var el=document.getElementById('hcb-row-'+idx);
+  if(el)el.remove();
+  hcCalcTotal();
+};
+
+window.hcLotChange=function(idx){
+  var DS=ctgGetS?ctgGetS():S;
+  var sel=document.getElementById('hcb-lot-'+idx);
+  var box=document.getElementById('hcb-models-'+idx);
+  if(!sel||!box)return;
+  var lot=sel.value;
+  if(!lot){box.innerHTML='';hcCalcTotal();return;}
+  var mi=[];
+  (DS.purchases||[]).filter(function(p){return p.lot===lot;}).forEach(function(p){
+    if(p.items&&p.items.length)p.items.forEach(function(it){mi.push({m:it.model||'',q:it.qty||0});});
+    else if(p.model)mi.push({m:p.model,q:p.qty||0});
+  });
+  var rows='';
+  mi.forEach(function(x,i){
+    var sold=(DS.dubai_sales||[]).filter(function(sx){return sx.lot===lot&&sx.model===x.m;}).reduce(function(s,sx){return s+(sx.qty||0);},0);
+    var cour=(DS.courier||[]).reduce(function(s,c){
+      var les=(c.lots||[]).filter(function(l){return l.lotRef===lot;});
+      var q=0;les.forEach(function(l){if(l.items){var f=l.items.filter(function(it){return it.model===x.m;})[0];if(f)q+=(f.qty||0);}});
+      return s+q;},0);
+    var hc=(DS.hand_carry_bookings||[]).reduce(function(s,b){
+      if(b.lot!==lot)return s;
+      var f=(b.items||[]).filter(function(it){return it.model===x.m;})[0];
+      return s+(f?(f.qty||0):0);},0);
+    var avail=Math.max(0,x.q-sold-cour-hc);
+    rows+='<div style="display:grid;grid-template-columns:2fr 60px 70px 80px;gap:6px;padding:5px 8px;border-bottom:1px solid var(--brd);align-items:center;font-size:12px">'
+      +'<div style="color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+x.m+'</div>'
+      +'<div style="text-align:center;color:var(--txd);font-family:var(--font-m)">'+x.q+'</div>'
+      +'<div style="text-align:center;color:'+(avail>0?'var(--gn)':'var(--txm)')+';font-family:var(--font-m);font-weight:700">'+avail+'</div>'
+      +'<input type="number" id="hcm-'+idx+'-'+i+'" data-model="'+x.m+'" data-max="'+avail+'" min="0" max="'+avail+'" placeholder="0" oninput="hcCapQty(this);hcCalcTotal()" style="width:100%;padding:4px 6px;background:var(--s2);border:1px solid var(--gold2);border-radius:4px;color:var(--gold);font-size:12px;text-align:center;font-family:var(--font-m)">'
+      +'</div>';
+  });
+  box.innerHTML='<div style="background:var(--s3);border-left:3px solid var(--bl);border-radius:0 var(--r) var(--r) 0;padding:8px 10px">'
+    +'<div style="font:600 11px/1 var(--font-m);color:var(--bl);margin-bottom:6px">📦 '+lot+' — মডেল ওয়াইজ</div>'
+    +'<div style="display:grid;grid-template-columns:2fr 60px 70px 80px;gap:6px;padding:0 8px 4px;font:500 9px/1 var(--font-m);color:var(--txm);text-transform:uppercase">'
+    +'<div>Model</div><div style="text-align:center">কেনা</div><div style="text-align:center">Avail</div><div style="text-align:center">বুক</div></div>'
+    +rows+'</div>';
+  hcCalcTotal();
+};
+
+window.hcCapQty=function(el){
+  var mx=parseFloat(el.dataset.max)||0;
+  if(parseFloat(el.value)>mx)el.value=mx;
+};
+
+window.hcCalcTotal=function(){
+  var rate=parseFloat(document.getElementById('hcb-rate')?.value)||0;
+  var total=0;
+  document.querySelectorAll('[id^="hcm-"]').forEach(function(inp){total+=parseFloat(inp.value)||0;});
+  var el=document.getElementById('hcb-total');
+  if(el)el.textContent=total>0?('মোট: '+total+' pcs × dh'+rate+' = dh'+(total*rate).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})):'';
+};
+
+window.saveHCBooking=async function(){
+  var date=document.getElementById('hcb-date')?.value;
+  var agent=(document.getElementById('hcb-agent')?.value||'').trim();
+  var rate=parseFloat(document.getElementById('hcb-rate')?.value)||0;
+  var note=document.getElementById('hcb-note')?.value||'';
+  if(!date||!agent||!rate){showToast('তারিখ, এজেন্ট ও রেট দিন','err');return;}
+  var groups={};
+  document.querySelectorAll('[id^="hcb-row-"]').forEach(function(row){
+    var idx=row.id.replace('hcb-row-','');
+    var lot=document.getElementById('hcb-lot-'+idx)?.value;
+    if(!lot)return;
+    var items=[];
+    row.querySelectorAll('[id^="hcm-'+idx+'-"]').forEach(function(inp){
+      var q=parseFloat(inp.value)||0;
+      if(q>0)items.push({model:inp.dataset.model,qty:q});
+    });
+    if(items.length){
+      if(!groups[lot])groups[lot]=[];
+      groups[lot]=groups[lot].concat(items);
+    }
+  });
+  var lotKeys=Object.keys(groups);
+  if(!lotKeys.length){showToast('অন্তত একটি মডেল বুক করুন','err');return;}
+  for(var i=0;i<lotKeys.length;i++){
+    var lot=lotKeys[i];
+    var items=groups[lot];
+    var pcs=items.reduce(function(s,it){return s+it.qty;},0);
+    await add(COLS.HCB,{date:date,agent:agent,lot:lot,ratePerPc:rate,items:items,totalPcs:pcs,totalAED:pcs*rate,note:note});
+  }
+  showToast('হ্যান্ড ক্যারি বুকিং সেভ ✓','ok');
+  tog('f-hc-book');
+  rHandCarry();updateHeader();
+};
+
+// ── Receive form ──
+window.resetHCReceive=function(){
+  var d=document.getElementById('hcr-date');
+  if(d&&!d.value)d.value=(typeof getDubaiToday==='function')?getDubaiToday():new Date().toISOString().slice(0,10);
+  var sel=document.getElementById('hcr-agent');
+  if(sel)sel.innerHTML='<option value="">— এজেন্ট —</option>'+hcAgents().map(function(a){return '<option value="'+a+'">'+a+'</option>';}).join('');
+  var p=document.getElementById('hcr-pending');if(p)p.innerHTML='';
+};
+
+window.hcLoadPendingBookings=function(){
+  var DS=ctgGetS?ctgGetS():S;
+  var agent=document.getElementById('hcr-agent')?.value;
+  var box=document.getElementById('hcr-pending');
+  if(!box)return;
+  if(!agent){box.innerHTML='';return;}
+  var bks=(DS.hand_carry_bookings||[]).filter(function(b){return b.agent===agent;});
+  var rows='';
+  bks.forEach(function(b){
+    (b.items||[]).forEach(function(it,i){
+      var rcvd=(DS.hand_carry_receipts||[]).filter(function(r){return r.bookingId===b.id&&r.model===it.model;}).reduce(function(s,r){return s+(r.qty||0);},0);
+      var pending=Math.max(0,(it.qty||0)-rcvd);
+      if(pending<=0)return;
+      rows+='<div style="display:grid;grid-template-columns:80px 1fr 60px 60px 80px;gap:6px;padding:6px 8px;border-bottom:1px solid var(--brd);align-items:center;font-size:12px">'
+        +'<div><span style="background:var(--bl2);border:1px solid var(--bl);border-radius:3px;padding:1px 6px;font:600 10px/1 var(--font-m);color:var(--bl)">'+b.lot+'</span></div>'
+        +'<div style="color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+it.model+'</div>'
+        +'<div style="text-align:center;color:var(--txd);font-family:var(--font-m)">'+it.qty+'</div>'
+        +'<div style="text-align:center;color:var(--gold);font-family:var(--font-m);font-weight:700">'+pending+'</div>'
+        +'<input type="number" class="hcr-qty" data-bid="'+b.id+'" data-lot="'+b.lot+'" data-model="'+it.model+'" data-max="'+pending+'" min="0" max="'+pending+'" placeholder="0" oninput="hcCapQty(this)" style="width:100%;padding:4px 6px;background:var(--s2);border:1px solid var(--gn);border-radius:4px;color:var(--gn);font-size:12px;text-align:center;font-family:var(--font-m)">'
+        +'</div>';
+    });
+  });
+  box.innerHTML=rows?('<div style="background:var(--s3);border-radius:var(--r);padding:8px 10px">'
+    +'<div style="display:grid;grid-template-columns:80px 1fr 60px 60px 80px;gap:6px;padding:0 8px 5px;font:500 9px/1 var(--font-m);color:var(--txm);text-transform:uppercase">'
+    +'<div>Lot</div><div>Model</div><div style="text-align:center">বুক</div><div style="text-align:center">বাকি</div><div style="text-align:center">রিসিভ</div></div>'
+    +rows+'</div>'):'<div style="color:var(--txm)">এই এজেন্টের কোনো বাকি নেই</div>';
+};
+
+window.saveHCReceive=async function(){
+  var date=document.getElementById('hcr-date')?.value;
+  var agent=document.getElementById('hcr-agent')?.value;
+  if(!date||!agent){showToast('তারিখ ও এজেন্ট দিন','err');return;}
+  var saved=0;
+  var inputs=document.querySelectorAll('.hcr-qty');
+  for(var i=0;i<inputs.length;i++){
+    var q=parseFloat(inputs[i].value)||0;
+    if(q<=0)continue;
+    await add(COLS.HCR,{date:date,agent:agent,bookingId:inputs[i].dataset.bid,lot:inputs[i].dataset.lot,model:inputs[i].dataset.model,qty:q});
+    saved++;
+  }
+  if(!saved){showToast('কোনো qty দেওয়া হয়নি','err');return;}
+  showToast('রিসিভ সেভ ✓','ok');
+  tog('f-hc-recv');
+  rHandCarry();updateHeader();
+};
+
+// ── Payment form ──
+window.resetHCPay=function(){
+  var d=document.getElementById('hcp-date');
+  if(d&&!d.value)d.value=(typeof getDubaiToday==='function')?getDubaiToday():new Date().toISOString().slice(0,10);
+  var sel=document.getElementById('hcp-agent');
+  if(sel)sel.innerHTML='<option value="">— এজেন্ট —</option>'+hcAgents().map(function(a){return '<option value="'+a+'">'+a+'</option>';}).join('');
+  ['hcp-amount','hcp-pcs','hcp-note'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
+  var r=document.getElementById('hcp-rate');if(r)r.value=(typeof getRate==='function')?getRate():34.2;
+  var info=document.getElementById('hcp-due-info');if(info)info.textContent='এজেন্ট সিলেক্ট করুন';
+  hcToggleCurrency();
+};
+
+window.hcToggleCurrency=function(){
+  var from=document.querySelector('input[name="hcp-from"]:checked')?.value||'dubai';
+  var lbl=document.getElementById('hcp-amt-label');
+  var rw=document.getElementById('hcp-rate-wrap');
+  if(from==='ctg'){
+    if(lbl)lbl.textContent='Amount (BDT ৳)';
+    if(rw)rw.style.display='';
+  } else {
+    if(lbl)lbl.textContent='Amount (AED)';
+    if(rw)rw.style.display='none';
+  }
+  hcCalcPayPcs();
+};
+
+window.hcCalcPayPcs=function(){
+  var from=document.querySelector('input[name="hcp-from"]:checked')?.value||'dubai';
+  var amt=parseFloat(document.getElementById('hcp-amount')?.value)||0;
+  var info=document.getElementById('hcp-due-info');
+  if(!info)return;
+  var agent=document.getElementById('hcp-agent')?.value;
+  if(!agent)return;
+  var st=hcAgentStats(agent);
+  var aed=amt;
+  if(from==='ctg'){
+    var rate=parseFloat(document.getElementById('hcp-rate')?.value)||34.2;
+    aed=rate>0?amt/rate:0;
+  }
+  info.innerHTML='মোট প্রাপ্য: <b style="color:var(--gold)">dh'+st.dueAED.toFixed(2)+'</b> | পরিশোধ: <b style="color:var(--gn)">dh'+st.paidAED.toFixed(2)+'</b> ('+st.paidPcs+'p) | বাকি: <b style="color:var(--rd)">dh'+st.dueRemaining.toFixed(2)+'</b>'
+    +(aed>0?('<br>এই পেমেন্ট ≈ <b style="color:var(--bl)">dh'+aed.toFixed(2)+'</b>'):'');
+};
+
+window.hcShowAgentDue=function(){hcCalcPayPcs();};
+
+window.saveHCPayment=async function(){
+  var date=document.getElementById('hcp-date')?.value;
+  var agent=document.getElementById('hcp-agent')?.value;
+  var from=document.querySelector('input[name="hcp-from"]:checked')?.value||'dubai';
+  var amt=parseFloat(document.getElementById('hcp-amount')?.value)||0;
+  var pcs=parseFloat(document.getElementById('hcp-pcs')?.value)||0;
+  var note=document.getElementById('hcp-note')?.value||'';
+  if(!date||!agent||!amt){showToast('তারিখ, এজেন্ট ও Amount দিন','err');return;}
+  var rate=parseFloat(document.getElementById('hcp-rate')?.value)||34.2;
+  var aedValue=from==='ctg'?(rate>0?amt/rate:0):amt;
+  await add(COLS.HCP,{date:date,agent:agent,paidFrom:from,amount:amt,
+    currency:from==='ctg'?'BDT':'AED',rate:from==='ctg'?rate:null,
+    aedValue:aedValue,coveredPcs:pcs,note:note});
+  showToast('পেমেন্ট সেভ ✓','ok');
+  tog('f-hc-pay');
+  rHandCarry();updateHeader();
+};
+
+// ── Render agent cards ──
+window.rHandCarry=function(){
+  var DS=ctgGetS?ctgGetS():S;
+  var box=document.getElementById('hc-agent-cards');
+  if(!box)return;
+  var agents=hcAgents();
+  var fA=function(n){if(!n||isNaN(n))return'dh0';return'dh'+(+n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});};
+  var fD=function(d){if(!d)return'—';var p=d.split('-');var mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return parseInt(p[2])+' '+mo[parseInt(p[1])-1];};
+
+  // KPIs
+  var tBk=0,tRv=0,tDueRem=0;
+  agents.forEach(function(a){var st=hcAgentStats(a);tBk+=st.booked;tRv+=st.received;tDueRem+=st.dueRemaining;});
+  var set=function(id,v){var e=document.getElementById(id);if(e)e.textContent=v;};
+  set('hcbk',tBk);set('hcrv',tRv);set('hctr',Math.max(0,tBk-tRv));set('hcdue',fA(tDueRem));
+
+  if(!agents.length){box.innerHTML='<div class="empty"><i class="fas fa-briefcase"></i><p>কোনো হ্যান্ড ক্যারি বুকিং নেই</p></div>';return;}
+
+  box.innerHTML=agents.map(function(agent){
+    var st=hcAgentStats(agent);
+    var initials=agent.substring(0,2).toUpperCase();
+    var bkRows=st.bookings.sort(function(a,b){return (b.date||'').localeCompare(a.date||'');}).map(function(b){
+      var rcvd=(DS.hand_carry_receipts||[]).filter(function(r){return r.bookingId===b.id;}).reduce(function(s,r){return s+(r.qty||0);},0);
+      var done=rcvd>=(b.totalPcs||0);
+      return '<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px">'
+        +'<span style="color:var(--txd)">'+fD(b.date)+' &nbsp;<span style="background:var(--bl2);border:1px solid var(--bl);border-radius:3px;padding:1px 5px;font:600 9px/1 var(--font-m);color:var(--bl)">'+b.lot+'</span>&nbsp; '+b.totalPcs+'p @'+b.ratePerPc+'</span>'
+        +'<span style="color:'+(done?'var(--gn)':'var(--gold)')+';font-family:var(--font-m)">'+rcvd+'p পেয়েছি</span></div>';
+    }).join('');
+    var rcRows=st.receipts.sort(function(a,b){return (b.date||'').localeCompare(a.date||'');}).map(function(r){
+      return '<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px;color:var(--txd)">'
+        +'<span>'+fD(r.date)+' &nbsp;'+r.lot+' &nbsp;'+(r.model||'').substring(0,28)+'</span>'
+        +'<span style="color:var(--gn);font-family:var(--font-m)">'+r.qty+'p</span></div>';
+    }).join('')||'<div style="font-size:12px;color:var(--txm);padding:3px 0">— কিছু পাওয়া যায়নি —</div>';
+    var pyRows=st.payments.sort(function(a,b){return (b.date||'').localeCompare(a.date||'');}).map(function(p){
+      var isDubai=p.paidFrom==='dubai';
+      var amtTxt=isDubai?fA(p.amount):('৳'+(+p.amount).toLocaleString('en-BD'));
+      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:12px">'
+        +'<span style="color:var(--txd)">'+fD(p.date)+' &nbsp;'+amtTxt+(p.coveredPcs?' &nbsp;('+p.coveredPcs+'p)':'')+'</span>'
+        +'<span style="background:'+(isDubai?'var(--bl2)':'var(--gn2)')+';border:1px solid '+(isDubai?'var(--bl)':'var(--gn)')+';border-radius:3px;padding:1px 7px;font:500 10px/1 var(--font-m);color:'+(isDubai?'var(--bl)':'var(--gn)')+'">'+(isDubai?'🇦🇪 দুবাই':'🇧🇩 CTG')+'</span></div>';
+    }).join('')||'<div style="font-size:12px;color:var(--txm);padding:3px 0">— কোনো পেমেন্ট নেই —</div>';
+
+    return '<div style="background:var(--s1);border:1px solid var(--brd2);border-radius:var(--rl);padding:14px 16px;margin-bottom:14px">'
+      +'<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">'
+        +'<div style="width:38px;height:38px;border-radius:50%;background:var(--bl2);border:1px solid var(--bl);display:flex;align-items:center;justify-content:center;font:700 13px/1 var(--font-m);color:var(--bl)">'+initials+'</div>'
+        +'<div style="flex:1"><div style="font:600 14px/1.3 var(--font-b);color:var(--tx)">'+agent+'</div>'
+        +'<div style="font:400 11px/1 var(--font-b);color:var(--txm)">হ্যান্ড ক্যারিং এজেন্ট</div></div>'
+      +'</div>'
+      +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px 0;border-top:1px solid var(--brd);border-bottom:1px solid var(--brd);margin-bottom:12px;text-align:center">'
+        +'<div><div style="font:400 10px/1 var(--font-m);color:var(--txm);margin-bottom:3px">বুকিং</div><div style="font:700 17px/1 var(--font-m);color:var(--gold)">'+st.booked+'p</div></div>'
+        +'<div><div style="font:400 10px/1 var(--font-m);color:var(--txm);margin-bottom:3px">পেয়েছি</div><div style="font:700 17px/1 var(--font-m);color:var(--gn)">'+st.received+'p</div></div>'
+        +'<div><div style="font:400 10px/1 var(--font-m);color:var(--txm);margin-bottom:3px">বাকি</div><div style="font:700 17px/1 var(--font-m);color:var(--bl)">'+st.pending+'p</div></div>'
+      +'</div>'
+      +'<div style="font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase;margin-bottom:5px">বুকিং লিস্ট</div>'+bkRows
+      +'<div style="font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase;margin:10px 0 5px">রিসিভিং</div>'+rcRows
+      +'<div style="font:500 10px/1 var(--font-m);color:var(--txm);text-transform:uppercase;margin:10px 0 5px">পেমেন্ট</div>'+pyRows
+      +'<div style="border-top:1px solid var(--brd);padding-top:10px;margin-top:10px;font-size:12px">'
+        +'<div style="display:flex;justify-content:space-between;padding:2px 0"><span style="color:var(--txd)">মোট প্রাপ্য</span><span style="color:var(--tx);font-family:var(--font-m)">'+fA(st.dueAED)+'</span></div>'
+        +'<div style="display:flex;justify-content:space-between;padding:2px 0"><span style="color:var(--txd)">পরিশোধ ('+st.paidPcs+'p)</span><span style="color:var(--gn);font-family:var(--font-m)">'+fA(st.paidAED)+'</span></div>'
+        +'<div style="display:flex;justify-content:space-between;padding:2px 0"><span style="color:var(--txd)">বাকি ('+st.pcsUnpaid+'p)</span><span style="color:var(--rd);font-weight:700;font-family:var(--font-m)">'+fA(st.dueRemaining)+'</span></div>'
+      +'</div>'
+    +'</div>';
+  }).join('');
+};
+
+// Hook into refreshAll
+var _ctgRA_hc=window.refreshAll;
+window.refreshAll=function(){
+  if(_ctgRA_hc)_ctgRA_hc.apply(this,arguments);
+  setTimeout(function(){try{if(typeof rHandCarry==='function')rHandCarry();}catch(e){}},90);
+};
+
+console.log('[CTG] Hand Carry module loaded');
 
 console.log('[CTG Dubai v3 FINAL] All features loaded - any browser OK');
 
