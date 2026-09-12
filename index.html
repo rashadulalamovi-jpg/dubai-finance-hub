@@ -3320,7 +3320,8 @@ window.msLoadLotInfo = function(lot) {
   var totalPurCost = mi.reduce(function(s,x){return s+x.totalPrice;},0);
   var totalPrepCost = lotCosts.reduce(function(s,c){return s+(c.totalAED||0);},0);
   var grandTotal = totalPurCost + totalPrepCost;
-  var avgCostPerPc = totalPcs > 0 ? grandTotal / totalPcs : 0;
+  // Prep cost allocated equally per piece (same as Lot Detail modal)
+  var prepPerPc = totalPcs > 0 ? totalPrepCost / totalPcs : 0;
 
   // Calculate already sold and couriered per model
   mi.forEach(function(x) {
@@ -3340,7 +3341,11 @@ window.msLoadLotInfo = function(lot) {
     x.soldQty = soldQty;
     x.courierQty = courierQty;
     x.available = Math.max(0, x.qty - soldQty - courierQty);
-    x.costPerPc = avgCostPerPc; // Proportional prep allocation
+    // Model Landed Cost = model's own unit price + allocated prep per pc
+    var unitP = x.unitPrice || (x.qty>0 ? x.totalPrice/x.qty : 0);
+    x.unitPriceResolved = unitP;
+    x.prepPerPc = prepPerPc;
+    x.costPerPc = unitP + prepPerPc;
   });
 
   // Add model options
@@ -3349,6 +3354,8 @@ window.msLoadLotInfo = function(lot) {
     opt.value = x.m;
     opt.textContent = x.m + ' (Avail: ' + x.available + ')';
     opt.dataset.cost = x.costPerPc.toFixed(2);
+    opt.dataset.unit = (x.unitPriceResolved||0).toFixed(2);
+    opt.dataset.prep = (x.prepPerPc||0).toFixed(2);
     opt.dataset.available = x.available;
     modelSel.appendChild(opt);
   });
@@ -3370,7 +3377,18 @@ window.msLoadModelCost = function(model) {
   if(!opt) return;
   var cost = opt.dataset.cost || '0';
   var avail = opt.dataset.available || '0';
-  if(costEl) costEl.value = cost;
+  if(costEl) {
+    costEl.value = cost;
+    var u=parseFloat(opt.dataset.unit||0), pr=parseFloat(opt.dataset.prep||0);
+    var note=document.getElementById('ms-cost-note');
+    if(!note){
+      note=document.createElement('div');
+      note.id='ms-cost-note';
+      note.style.cssText='font:400 10px/1.4 var(--font-m);color:var(--txm);margin-top:4px';
+      costEl.parentNode.appendChild(note);
+    }
+    note.textContent='Unit dh'+u.toFixed(2)+' + Prep dh'+pr.toFixed(2)+'/pc';
+  }
   if(availEl) {
     var availNum = parseInt(avail);
     availEl.textContent = availNum + ' pcs';
@@ -4642,6 +4660,54 @@ window.ctgAudit=function(verbose){
   if(res.bookedQty_vs_lotEntries!==0)console.warn('⚠ courier.bookedQty ≠ lot entries sum — ডেটা এন্ট্রিতে ফারাক:',res.bookedQty_vs_lotEntries,'pcs');
   if(bad.length)console.warn('⚠ Lot mismatch:',bad);
   return res;
+};
+
+
+// ── Landed cost helper + repair for existing Dubai Sales records ──
+window.ctgModelLandedCost=function(lot,model){
+  var DS=(typeof ctgGetS==='function')?ctgGetS():S;
+  var purItems=(DS.purchases||[]).filter(function(p){return p.lot===lot;});
+  var mi=[];
+  purItems.forEach(function(p){
+    if(p.items&&p.items.length)p.items.forEach(function(it){mi.push({m:it.model||'?',qty:it.qty||0,unitPrice:it.unitPrice||0,totalPrice:it.totalPrice||0});});
+    else if(p.model)mi.push({m:p.model,qty:p.qty||0,unitPrice:p.unitPrice||0,totalPrice:p.totalAED||0});
+  });
+  var totalPcs=mi.reduce(function(a,x){return a+x.qty;},0);
+  var prepTotal=(DS.lot_costs||[]).reduce(function(a,c){return a+(c.lot===lot?(c.totalAED||0):0);},0);
+  var prepPerPc=totalPcs>0?prepTotal/totalPcs:0;
+  var row=mi.filter(function(x){return x.m===model;})[0];
+  if(!row) return null;
+  var unit=row.unitPrice||(row.qty>0?row.totalPrice/row.qty:0);
+  return {unit:unit,prepPerPc:prepPerPc,landed:unit+prepPerPc};
+};
+
+// Preview (apply=false) or repair (apply=true) stored costPrice/profit on dubai_sales
+window.ctgRepairSalesCost=async function(apply){
+  var DS=(typeof ctgGetS==='function')?ctgGetS():S;
+  var out=[];
+  var list=(DS.dubai_sales||[]);
+  for(var i=0;i<list.length;i++){
+    var sale=list[i];
+    var lc=ctgModelLandedCost(sale.lot,sale.model);
+    if(!lc) continue;
+    var newCost=+lc.landed.toFixed(2);
+    var oldCost=+(sale.costPrice||0).toFixed(2);
+    if(Math.abs(newCost-oldCost)<0.01) continue;
+    var qty=sale.qty||0, sell=sale.sellPrice||0;
+    var rec={id:sale.id,lot:sale.lot,model:sale.model,qty:qty,sell:sell,
+             oldCost:oldCost,newCost:newCost,
+             oldProfit:+(sale.totalProfit||0).toFixed(2),
+             newProfit:+(((sell-newCost)*qty).toFixed(2))};
+    out.push(rec);
+    if(apply&&typeof upd==='function'){
+      await upd(COLS.DS,sale.id,{costPrice:newCost,totalCost:+(newCost*qty).toFixed(2),
+        profitPerPc:+((sell-newCost).toFixed(2)),totalProfit:rec.newProfit});
+    }
+  }
+  console.table(out);
+  if(apply){ if(typeof showToast==='function')showToast(out.length+' টি সেলস রেকর্ড ঠিক করা হয়েছে','ok'); if(typeof refreshAll==='function')refreshAll(); }
+  else console.log('%cPreview only. চালান: ctgRepairSalesCost(true)','color:#f4b400');
+  return out;
 };
 
 console.log('[CTG] Hand Carry module loaded');
