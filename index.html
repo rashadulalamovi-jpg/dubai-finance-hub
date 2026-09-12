@@ -1258,12 +1258,10 @@ function updateHeader(){
   const lots=new Set(S.purchases.map(p=>p.lot)).size;
   const pcs=S.purchases.reduce((s,p)=>s+(p.qty||0),0);
   // Inventory Value = 🇦🇪Dubai Office + ✈️Transit (global formula, matches Stock Flow bar)
-  const _invAllPur=S.purchases.reduce((s,p)=>s+(p.qty||0),0);
-  const _invAllSold=(S.dubai_sales||[]).reduce((s,x)=>s+(x.qty||0),0);
-  const _invAllCour=S.courier.reduce((s,c)=>s+(c.bookedQty||0),0)+(S.hand_carry_bookings||[]).reduce((s,b)=>s+(b.totalPcs||0),0);
-  const _invAllRcvd=S.courier.reduce((s,c)=>s+(c.receivedQty||0),0)+(S.hand_carry_receipts||[]).reduce((s,r)=>s+(r.qty||0),0);
-  const totalDubaiPcs=Math.max(0,_invAllPur-_invAllSold-_invAllCour);
-  const totalTransitPcs=Math.max(0,_invAllCour-_invAllRcvd);
+  const _gfInv=(typeof ctgGlobalFlow==='function')?ctgGlobalFlow():{purchased:0,dubaiOffice:0,transit:0};
+  const _invAllPur=_gfInv.purchased;
+  const totalDubaiPcs=_gfInv.dubaiOffice;
+  const totalTransitPcs=_gfInv.transit;
   const _invTotalPurAED=S.purchases.reduce((s,p)=>s+(p.totalAED||0),0);
   const _invTotalPrepAED=S.lot_costs.reduce((s,c)=>s+(c.totalAED||0),0);
   const _invAvgCost=_invAllPur>0?(_invTotalPurAED+_invTotalPrepAED)/_invAllPur:0;
@@ -1963,23 +1961,70 @@ async function saveCTGReceive(){
 }
 
 // ══ LOT COURIER STATUS ══
+// ── Exact per-lot allocation (Largest Remainder Method — no rounding drift) ──
+function _lotEntriesOf(c){
+  if(c.lots&&c.lots.length) return c.lots;
+  if(c.lotRef) return [{lotRef:c.lotRef,lotQty:(c.lotQty||c.bookedQty||0)}];
+  return [];
+}
+// Courier-level booked = sum of its lot entries (authoritative), fallback bookedQty
+function _courierBooked(c){
+  var les=_lotEntriesOf(c);
+  var sum=les.reduce(function(a,l){return a+(l.lotQty||0);},0);
+  return sum>0?sum:(c.bookedQty||0);
+}
+// Distribute a courier's received qty across its lots so the parts sum EXACTLY to rcvd
+function _allocReceived(c){
+  var out={};
+  if(!c.ctgReceiveDate) return out;
+  var les=_lotEntriesOf(c);
+  var total=les.reduce(function(a,l){return a+(l.lotQty||0);},0);
+  var rcvd=(c.receivedQty!=null?c.receivedQty:(c.bookedQty||0));
+  if(!total||!les.length) return out;
+  if(rcvd>=total){ les.forEach(function(l){out[l.lotRef]=(out[l.lotRef]||0)+(l.lotQty||0);}); return out; }
+  var parts=les.map(function(l){
+    var exact=rcvd*(l.lotQty||0)/total;
+    var base=Math.floor(exact);
+    return {ref:l.lotRef,base:base,rem:exact-base};
+  });
+  var assigned=parts.reduce(function(a,p){return a+p.base;},0);
+  var left=rcvd-assigned;
+  parts.sort(function(a,b){return b.rem-a.rem;});
+  for(var i=0;i<left;i++){ parts[i%parts.length].base++; }
+  parts.forEach(function(p){ out[p.ref]=(out[p.ref]||0)+p.base; });
+  return out;
+}
 function getLotCourierQty(lot){
-  var lotCouriers=S.courier.filter(function(c){return (c.lots||[]).some(function(l){return l.lotRef===lot;})||c.lotRef===lot;});
   var booked=0,received=0;
-  // Hand Carry bookings/receipts for this lot
+  // Hand Carry
   booked+=(S.hand_carry_bookings||[]).reduce(function(a,b){return a+(b.lot===lot?(b.totalPcs||0):0);},0);
   received+=(S.hand_carry_receipts||[]).reduce(function(a,r){return a+(r.lot===lot?(r.qty||0):0);},0);
-  lotCouriers.forEach(function(c){
-    var lotQty=(c.lots||[]).filter(function(l){return l.lotRef===lot;}).reduce(function(s,l){return s+(l.lotQty||0);},0);
-    if(!lotQty&&c.lotRef===lot) lotQty=c.lotQty||c.bookedQty||0;
+  // Cargo courier
+  (S.courier||[]).forEach(function(c){
+    var les=_lotEntriesOf(c);
+    var lotQty=les.filter(function(l){return l.lotRef===lot;}).reduce(function(a,l){return a+(l.lotQty||0);},0);
+    if(!lotQty) return;
     booked+=lotQty;
-    if(c.ctgReceiveDate&&lotQty>0){
-      var totalLQ=(c.lots||[]).reduce(function(s,l){return s+(l.lotQty||0);},0)||c.bookedQty||0;
-      var rcvd=c.receivedQty||c.bookedQty||0;
-      received+=totalLQ>0?Math.round(rcvd*lotQty/totalLQ):lotQty;
-    }
+    var alloc=_allocReceived(c);
+    received+=(alloc[lot]||0);
   });
   return {booked:booked,received:received};
+}
+// Global totals built from the SAME source so per-lot and global always agree
+function ctgGlobalFlow(){
+  var DS=(typeof ctgGetS==='function')?ctgGetS():S;
+  var lots=[];
+  (DS.purchases||[]).forEach(function(p){if(p.lot&&lots.indexOf(p.lot)===-1)lots.push(p.lot);});
+  var purchased=0,sold=0,booked=0,received=0;
+  lots.forEach(function(lot){
+    purchased+=(DS.purchases||[]).reduce(function(a,p){return a+(p.lot===lot?(p.qty||0):0);},0);
+    sold+=(DS.dubai_sales||[]).reduce(function(a,x){return a+(x.lot===lot?(x.qty||0):0);},0);
+    var q=getLotCourierQty(lot);
+    booked+=q.booked; received+=q.received;
+  });
+  return {purchased:purchased,sold:sold,booked:booked,received:received,
+          dubaiOffice:Math.max(0,purchased-sold-booked),
+          transit:Math.max(0,booked-received),bdStock:received};
 }
 function rLotCourierStatus(){
   const container=g('m3-lot-status');if(!container)return;
@@ -4160,13 +4205,12 @@ window.updateStockFlow = function() {
   
   var totalPurchased=pu.reduce(function(s,p){return s+(p.qty||0);},0);
   var totalSold=ms.reduce(function(s,x){return s+(x.qty||0);},0);
-  var hcBooked=(DS.hand_carry_bookings||[]).reduce(function(s,b){return s+(b.totalPcs||0);},0);
-  var hcRcvd=(DS.hand_carry_receipts||[]).reduce(function(s,r){return s+(r.qty||0);},0);
-  var totalCouriered=co.reduce(function(s,c){return s+(c.bookedQty||0);},0)+hcBooked;
-  var totalReceived=co.reduce(function(s,c){return s+(c.receivedQty||0);},0)+hcRcvd;
-  var dubaiOffice=Math.max(0,totalPurchased-totalSold-totalCouriered);
-  var inTransit=Math.max(0,totalCouriered-totalReceived);
-  var ctgRcvd=totalReceived;
+  var _gf=(typeof ctgGlobalFlow==='function')?ctgGlobalFlow():null;
+  var totalCouriered=_gf?_gf.booked:0;
+  var totalReceived=_gf?_gf.received:0;
+  var dubaiOffice=_gf?_gf.dubaiOffice:0;
+  var inTransit=_gf?_gf.transit:0;
+  var ctgRcvd=_gf?_gf.bdStock:0;
   
   // Calculate avg cost per pc (purchase + prep)
   var totalPurAED=pu.reduce(function(s,p){return s+(p.totalAED||0);},0);
@@ -4557,6 +4601,47 @@ var _ctgRA_hc=window.refreshAll;
 window.refreshAll=function(){
   if(_ctgRA_hc)_ctgRA_hc.apply(this,arguments);
   setTimeout(function(){try{if(typeof rHandCarry==='function')rHandCarry();}catch(e){}},90);
+};
+
+
+// ── Stock Reconciliation Audit (console + optional UI warning) ──
+window.ctgAudit=function(verbose){
+  var DS=(typeof ctgGetS==='function')?ctgGetS():S;
+  var lots=[];(DS.purchases||[]).forEach(function(p){if(p.lot&&lots.indexOf(p.lot)===-1)lots.push(p.lot);});
+  var rows=[],bad=[];
+  var T={purchased:0,sold:0,booked:0,received:0,dubai:0,transit:0};
+  lots.forEach(function(lot){
+    var pur=(DS.purchases||[]).reduce(function(a,p){return a+(p.lot===lot?(p.qty||0):0);},0);
+    var sold=(DS.dubai_sales||[]).reduce(function(a,x){return a+(x.lot===lot?(x.qty||0):0);},0);
+    var q=getLotCourierQty(lot);
+    var dubai=Math.max(0,pur-sold-q.booked);
+    var transit=Math.max(0,q.booked-q.received);
+    var check=sold+dubai+transit+q.received; // must equal purchased
+    var diff=check-pur;
+    T.purchased+=pur;T.sold+=sold;T.booked+=q.booked;T.received+=q.received;T.dubai+=dubai;T.transit+=transit;
+    rows.push({lot:lot,purchased:pur,sold:sold,booked:q.booked,received:q.received,dubai:dubai,transit:transit,diff:diff});
+    if(diff!==0)bad.push({lot:lot,purchased:pur,accounted:check,diff:diff});
+  });
+  // Global cross-check: raw courier totals vs per-lot allocation
+  var rawBooked=(DS.courier||[]).reduce(function(a,c){return a+_courierBooked(c);},0)
+               +(DS.hand_carry_bookings||[]).reduce(function(a,b){return a+(b.totalPcs||0);},0);
+  var rawRcvd=(DS.courier||[]).reduce(function(a,c){return a+(c.ctgReceiveDate?(c.receivedQty!=null?c.receivedQty:(c.bookedQty||0)):0);},0)
+             +(DS.hand_carry_receipts||[]).reduce(function(a,r){return a+(r.qty||0);},0);
+  var bookedQtyField=(DS.courier||[]).reduce(function(a,c){return a+(c.bookedQty||0);},0);
+  var lotEntrySum=(DS.courier||[]).reduce(function(a,c){return a+_courierBooked(c);},0);
+  var res={
+    total:T,
+    identity_ok:(T.sold+T.dubai+T.transit+T.received)===T.purchased,
+    perLot_vs_raw_booked:T.booked-rawBooked,
+    perLot_vs_raw_received:T.received-rawRcvd,
+    bookedQty_vs_lotEntries:bookedQtyField-lotEntrySum,
+    problemLots:bad
+  };
+  console.log('%c[CTG AUDIT]','color:#f4b400;font-weight:bold',res);
+  if(verbose)console.table(rows);
+  if(res.bookedQty_vs_lotEntries!==0)console.warn('⚠ courier.bookedQty ≠ lot entries sum — ডেটা এন্ট্রিতে ফারাক:',res.bookedQty_vs_lotEntries,'pcs');
+  if(bad.length)console.warn('⚠ Lot mismatch:',bad);
+  return res;
 };
 
 console.log('[CTG] Hand Carry module loaded');
